@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DStringHelper.h">
+      <Filter>Common\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DCommonHelper.h">
+      <Filter>Common\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\Buma3DMemory.h">
+      <Filter>Common\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Internal\Buma3DDetails.h">
+      <Filter>Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Util\Buma3DPtr.h">
+      <Filter>Common\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Util\Buma3DUtils.h">
+      <Filter>Common\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\TLSFMemoryAllocator.h">
+      <Filter>Common\Util</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Internal">
+      <UniqueIdentifier>{947641d5-8d41-4791-86eb-c549c3098188}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{230d1745-9a03-41dc-9275-151ecc1c89e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Helper">
+      <UniqueIdentifier>{764b29a9-bf05-40bb-813f-90757bf2dffe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Util">
+      <UniqueIdentifier>{39b4a424-d0e9-4054-8843-a7f70b62b9a5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DStringHelper.cpp">
+      <Filter>Common\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\Buma3DMemory.cpp">
+      <Filter>Common\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\TLSFMemoryAllocator.cpp">
+      <Filter>Common\Util</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

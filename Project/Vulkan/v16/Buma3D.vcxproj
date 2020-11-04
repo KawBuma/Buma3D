@@ -1,0 +1,188 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{F15D18CE-08C3-47EA-9A61-F7CE425B2E13}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Buma3D</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+    <Import Project="..\..\SharedInc\v16\Buma3DSharedInc.vcxitems" Label="Shared" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="PropertySheet.props" />
+    <Import Project="Debug_x64.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="PropertySheet.props" />
+    <Import Project="Release_x64.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Source\API\Vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <SupportJustMyCode>false</SupportJustMyCode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Source\API\Vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <SupportJustMyCode>false</SupportJustMyCode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\BufferVk.h" />
+    <ClInclude Include="..\..\..\Source\API\vulkan\Buma3DPCH.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\CommandAllocatorVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\CommandListVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\CommandQueueVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\CommandSignatureVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\ComputePipelineStateVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\ConstantBufferViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DebugMessageQueueVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DebugMessageVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DepthStencilViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DeviceAdapterVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DeviceChildVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DeviceFactoryVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DeviceVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\FenceVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\FormatUtilsVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\FramebufferVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\GraphicsPipelineStateVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\IndexBufferViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\PipelineStateVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\QueryHeapVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\RayTracingPipelineStateVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\RenderPassVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\RenderTargetViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\ResourceHeapVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\ResourceVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\RootSignatureVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\SamplerViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\ShaderModuleVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\ShaderResourceViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\StreamOutputBufferViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\SurfaceVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\SwapChainVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\TextureVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\UnorderedAccessViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\UtilsVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\VertexBufferViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\ViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\VulkanDevicePFN.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\VulkanInstancePFN.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\BufferVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\Buma3DVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\vulkan\Buma3DPCH.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\CommandAllocatorVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\CommandListVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\CommandQueueVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\CommandSignatureVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\ComputePipelineStateVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\ConstantBufferViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DebugMessageQueueVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DebugMessageVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DepthStencilViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DeviceAdapterVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DeviceFactoryVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DeviceVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\FenceVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\FormatUtilsVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\FramebufferVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\GraphicsPipelineStateVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\IndexBufferViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\PipelineStateVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\QueryHeapVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\RayTracingPipelineStateVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\RenderPassVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\RenderTargetViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\ResourceHeapVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\RootSignatureVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\SamplerViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\ShaderModuleVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\ShaderResourceViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\StreamOutputBufferViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\SurfaceVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\SwapChainVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\TextureVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\UnorderedAccessViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\UtilsVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\VertexBufferViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\VulkanDevicePFN.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\VulkanInstancePFN.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Debug_x64.props" />
+    <None Include="PropertySheet.props" />
+    <None Include="Release_x64.props" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
