@@ -3,7 +3,7 @@
 namespace buma3d
 {
 
-B3D_API BMRESULT
+B3D_DLL_API BMRESULT
 B3D_APIENTRY Buma3DInitialize(const ALLOCATOR_DESC& _desc)
 {
     InitSystemAllocator(_desc.custom_allocator);
@@ -18,7 +18,7 @@ B3D_APIENTRY Buma3DGetInternalHeaderVersion()
     return B3D_HEADER_VERSION;
 }
 
-B3D_API BMRESULT
+B3D_DLL_API BMRESULT
 B3D_APIENTRY Buma3DCreateDeviceFactory(const DEVICE_FACTORY_DESC& _desc, IDeviceFactory** _dst)
 {
     util::Ptr<DeviceFactoryD3D12> ptr;
@@ -28,7 +28,7 @@ B3D_APIENTRY Buma3DCreateDeviceFactory(const DEVICE_FACTORY_DESC& _desc, IDevice
     return BMRESULT_SUCCEED;
 }
 
-B3D_API void
+B3D_DLL_API void
 B3D_APIENTRY Buma3DUninitialize()
 {
     UninitSystemAllocator();
