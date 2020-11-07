@@ -1,0 +1,326 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="PropertySheets">
+      <UniqueIdentifier>{f792cb7d-b6e1-4c64-bbb7-0c84583edeff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source\D3D12">
+      <UniqueIdentifier>{43521cfc-9d3d-41e7-8fb3-9bc059405b39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\Device">
+      <UniqueIdentifier>{65e06978-d213-425e-967a-41f45216682c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\SwapChain">
+      <UniqueIdentifier>{968fd516-98e2-4180-90dd-69819d3e9b18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\Command">
+      <UniqueIdentifier>{47c4468b-17cf-438a-8c6f-670a7f03c6e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\Misc">
+      <UniqueIdentifier>{c415859a-1cfb-4657-8ec4-80a864c3d219}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\Fence">
+      <UniqueIdentifier>{86017505-6531-426e-bb25-a1b4abbe0bbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\Resource">
+      <UniqueIdentifier>{2ce5c848-9c8c-4953-b251-4417f3adb6c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\View">
+      <UniqueIdentifier>{219c8a7f-4b29-4eb7-898f-ed1b89111374}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\Descriptor">
+      <UniqueIdentifier>{b860a522-f39d-45a9-b1ec-ec4fa8e4a007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\RenderPass">
+      <UniqueIdentifier>{2c08767f-7ef9-4f91-ab91-2e716ad0753a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\Pipeline">
+      <UniqueIdentifier>{6521a4d3-c961-45ef-99a4-b2a93f05df5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\Descriptor\Allocator">
+      <UniqueIdentifier>{d2596e79-ebbf-4d73-abe5-86a3ca3ed31b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\D3D12\Query">
+      <UniqueIdentifier>{3da7fa12-f3a8-428c-a0d6-e68326842a7f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DeviceFactoryD3D12.cpp">
+      <Filter>Source\D3D12\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DeviceAdapterD3D12.cpp">
+      <Filter>Source\D3D12\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DeviceD3D12.cpp">
+      <Filter>Source\D3D12\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\CommandQueueD3D12.cpp">
+      <Filter>Source\D3D12\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\SurfaceD3D12.cpp">
+      <Filter>Source\D3D12\SwapChain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\SwapChainD3D12.cpp">
+      <Filter>Source\D3D12\SwapChain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\FormatUtilsD3D12.cpp">
+      <Filter>Source\D3D12\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\UtilsD3D12.cpp">
+      <Filter>Source\D3D12\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\Buma3DD3D12.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\d3d12\Buma3DPCH.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\FenceD3D12.cpp">
+      <Filter>Source\D3D12\Fence</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DebugMessageD3D12.cpp">
+      <Filter>Source\D3D12\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DebugMessageQueueD3D12.cpp">
+      <Filter>Source\D3D12\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\ResourceHeapD3D12.cpp">
+      <Filter>Source\D3D12\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\BufferD3D12.cpp">
+      <Filter>Source\D3D12\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\TextureD3D12.cpp">
+      <Filter>Source\D3D12\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\ConstantBufferViewD3D12.cpp">
+      <Filter>Source\D3D12\View</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\ShaderResourceViewD3D12.cpp">
+      <Filter>Source\D3D12\View</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\UnorderedAccessViewD3D12.cpp">
+      <Filter>Source\D3D12\View</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\IndexBufferViewD3D12.cpp">
+      <Filter>Source\D3D12\View</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\VertexBufferViewD3D12.cpp">
+      <Filter>Source\D3D12\View</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\SamplerViewD3D12.cpp">
+      <Filter>Source\D3D12\View</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\RenderTargetViewD3D12.cpp">
+      <Filter>Source\D3D12\View</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DepthStencilViewD3D12.cpp">
+      <Filter>Source\D3D12\View</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\FramebufferD3D12.cpp">
+      <Filter>Source\D3D12\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\RenderPassD3D12.cpp">
+      <Filter>Source\D3D12\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\RootSignatureD3D12.cpp">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorPoolD3D12.cpp">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSetD3D12.cpp">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\PipelineStateD3D12.cpp">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\ComputePipelineStateD3D12.cpp">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\GraphicsPipelineStateD3D12.cpp">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\RayTracingPipelineStateD3D12.cpp">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\ShaderModuleD3D12.cpp">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\CommandAllocatorD3D12.cpp">
+      <Filter>Source\D3D12\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\CommandListD3D12.cpp">
+      <Filter>Source\D3D12\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\CommandSignatureD3D12.cpp">
+      <Filter>Source\D3D12\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\QueryHeapD3D12.cpp">
+      <Filter>Source\D3D12\Query</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\AccelerationStructureInfoQueryHeapD3D12.cpp">
+      <Filter>Source\D3D12\Query</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\StreamOutputBufferViewD3D12.cpp">
+      <Filter>Source\D3D12\View</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\Buma3DDLLMain.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Debug_x64.props">
+      <Filter>PropertySheets</Filter>
+    </None>
+    <None Include="PropertySheet.props">
+      <Filter>PropertySheets</Filter>
+    </None>
+    <None Include="Release_x64.props">
+      <Filter>PropertySheets</Filter>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DeviceFactoryD3D12.h">
+      <Filter>Source\D3D12\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DeviceAdapterD3D12.h">
+      <Filter>Source\D3D12\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DeviceD3D12.h">
+      <Filter>Source\D3D12\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\CommandQueueD3D12.h">
+      <Filter>Source\D3D12\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DeviceChildD3D12.h">
+      <Filter>Source\D3D12\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\SurfaceD3D12.h">
+      <Filter>Source\D3D12\SwapChain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\SwapChainD3D12.h">
+      <Filter>Source\D3D12\SwapChain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\FormatUtilsD3D12.h">
+      <Filter>Source\D3D12\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\UtilsD3D12.h">
+      <Filter>Source\D3D12\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\d3d12\Buma3DPCH.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\FenceD3D12.h">
+      <Filter>Source\D3D12\Fence</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DebugMessageD3D12.h">
+      <Filter>Source\D3D12\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DebugMessageQueueD3D12.h">
+      <Filter>Source\D3D12\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\ResourceHeapD3D12.h">
+      <Filter>Source\D3D12\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\ResourceD3D12.h">
+      <Filter>Source\D3D12\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\BufferD3D12.h">
+      <Filter>Source\D3D12\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\TextureD3D12.h">
+      <Filter>Source\D3D12\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\ConstantBufferViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\ShaderResourceViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\UnorderedAccessViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\IndexBufferViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\VertexBufferViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\SamplerViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\RenderTargetViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DepthStencilViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\FramebufferD3D12.h">
+      <Filter>Source\D3D12\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\RenderPassD3D12.h">
+      <Filter>Source\D3D12\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\RootSignatureD3D12.h">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorPoolD3D12.h">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSetD3D12.h">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\GPUDescriptorAllocator.h">
+      <Filter>Source\D3D12\Descriptor\Allocator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\CPUDescriptorAllocator.h">
+      <Filter>Source\D3D12\Descriptor\Allocator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\PipelineStateD3D12.h">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\ComputePipelineStateD3D12.h">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\GraphicsPipelineStateD3D12.h">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\RayTracingPipelineStateD3D12.h">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\ShaderModuleD3D12.h">
+      <Filter>Source\D3D12\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\CommandAllocatorD3D12.h">
+      <Filter>Source\D3D12\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\CommandListD3D12.h">
+      <Filter>Source\D3D12\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\CommandSignatureD3D12.h">
+      <Filter>Source\D3D12\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\ViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\QueryHeapD3D12.h">
+      <Filter>Source\D3D12\Query</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\AccelerationStructureInfoQueryHeapD3D12.h">
+      <Filter>Source\D3D12\Query</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\StreamOutputBufferViewD3D12.h">
+      <Filter>Source\D3D12\View</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

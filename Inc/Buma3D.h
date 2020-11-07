@@ -31,12 +31,18 @@
 
 
 // APIシンボル宣言の属性を定義
-#ifdef B3D_DLLEXPORT
-#define B3D_API __declspec(dllexport)
-#elif defined(B3D_DLLIMPORT)
-#define B3D_API __declspec(dllimport)
-#else
+#if defined(B3D_DLLEXPORT)
+#define B3D_DLL_API extern "C" __declspec(dllexport)
 #define B3D_API 
+
+#elif defined(B3D_DLLIMPORT)
+#define B3D_DLL_API extern "C" __declspec(dllimport)
+#define B3D_API 
+
+#else // static link library
+#define B3D_DLL_API 
+#define B3D_API 
+
 #endif
 
 #if B3D_PLATFORM_USING == B3D_PLATFORM_WINDOWS
@@ -3711,19 +3717,24 @@ struct ALLOCATOR_DESC
 };
 
 
+using PFN_Buma3DInitialize               = BMRESULT (B3D_APIENTRY*)(const ALLOCATOR_DESC& _desc);
+using PFN_Buma3DGetInternalHeaderVersion = BMRESULT (B3D_APIENTRY*)();
+using PFN_Buma3DCreateDeviceFactory      = BMRESULT (B3D_APIENTRY*)(const DEVICE_FACTORY_DESC& _desc, IDeviceFactory** _dst);
+using PFN_Buma3DUninitialize             = BMRESULT (B3D_APIENTRY*)();
+
 /**
  * @brief ライブラリの初期化処理を実行します。
  * @param _desc メモリアロケーターの記述構造。
  * @return 成功した場合BMRESULT_SUCCEEDが返ります。
 */
-B3D_API BMRESULT
+B3D_DLL_API BMRESULT
 B3D_APIENTRY Buma3DInitialize(const ALLOCATOR_DESC& _desc);
 
 /**
  * @brief 実装側で利用されている B3D_HEADER_VERSION の値を取得します。
  * @return uint32_t
 */
-B3D_API uint32_t
+B3D_DLL_API uint32_t
 B3D_APIENTRY Buma3DGetInternalHeaderVersion();
 
 /**
@@ -3732,14 +3743,14 @@ B3D_APIENTRY Buma3DGetInternalHeaderVersion();
  * @param _dst 作成された実体を受け取るインターフェースのポインタのポインタ。
  * @return 成功した場合BMRESULT_SUCCEED、デバッグレイヤの非サーポート等により失敗した場合BMRESULT_FAILEDが返ります。
 */
-B3D_API BMRESULT
+B3D_DLL_API BMRESULT
 B3D_APIENTRY Buma3DCreateDeviceFactory(const DEVICE_FACTORY_DESC& _desc, IDeviceFactory** _dst);
 
 /**
  * @brief ライブラリの終了処理を実行します。
  * @note ALLOCATOR_DESC::is_enable_allocator_debugがtrueで、メモリリークが発生した場合リークしたメモリの情報を出力します。
 */
-B3D_API void
+B3D_DLL_API void
 B3D_APIENTRY Buma3DUninitialize();
 
 

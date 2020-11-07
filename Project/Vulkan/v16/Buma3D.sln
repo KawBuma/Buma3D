@@ -7,8 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Buma3D", "Buma3D.vcxproj", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Buma3DSharedInc", "..\..\SharedInc\v16\Buma3DSharedInc.vcxitems", "{9552BD49-305E-4198-B23B-09A629FE1BBF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Buma3D_Vulkan_DLL", "Buma3D_Vulkan_DLL.vcxproj", "{26E803BA-793B-4C45-BD7B-A0B8498A0F98}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\..\SharedInc\v16\Buma3DSharedInc.vcxitems*{26e803ba-793b-4c45-bd7b-a0b8498a0f98}*SharedItemsImports = 4
 		..\..\SharedInc\v16\Buma3DSharedInc.vcxitems*{9552bd49-305e-4198-b23b-09a629fe1bbf}*SharedItemsImports = 9
 		..\..\SharedInc\v16\Buma3DSharedInc.vcxitems*{f15d18ce-08c3-47ea-9a61-f7ce425b2e13}*SharedItemsImports = 4
 	EndGlobalSection
@@ -21,6 +24,10 @@ Global
 		{F15D18CE-08C3-47EA-9A61-F7CE425B2E13}.Debug|x64.Build.0 = Debug|x64
 		{F15D18CE-08C3-47EA-9A61-F7CE425B2E13}.Release|x64.ActiveCfg = Release|x64
 		{F15D18CE-08C3-47EA-9A61-F7CE425B2E13}.Release|x64.Build.0 = Release|x64
+		{26E803BA-793B-4C45-BD7B-A0B8498A0F98}.Debug|x64.ActiveCfg = Debug|x64
+		{26E803BA-793B-4C45-BD7B-A0B8498A0F98}.Debug|x64.Build.0 = Debug|x64
+		{26E803BA-793B-4C45-BD7B-A0B8498A0F98}.Release|x64.ActiveCfg = Release|x64
+		{26E803BA-793B-4C45-BD7B-A0B8498A0F98}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
