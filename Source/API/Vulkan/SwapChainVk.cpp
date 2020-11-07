@@ -86,24 +86,36 @@ B3D_APIENTRY SwapChainVk::CopyDesc(const SWAP_CHAIN_DESC& _desc)
         }
     }
 
+
     hlp::SafeRelease(surface);
     (surface = _desc.surface->As<SurfaceVk>())->AddRef();
 
-    // Recreateの場合以前のコマンドキューを開放
-    for (auto& i : present_queues)
-        hlp::SafeRelease(i);
-
-    // コマンドキューをキャッシュ
-    present_queues.resize(_desc.buffer.count);
-    present_queues_head = present_queues.data();
-    // バックバッファの数だけキャッシュするので、num_present_queuesが1の場合インデックス0のキューを複数セットします。
-    for (uint32_t i = 0; i < _desc.buffer.count; i++)
+    if (_desc.present_queues == RCAST<ICommandQueue**>(present_queues_head)&&
+        _desc.buffer.count   == (uint32_t)present_queues.size())
     {
-        present_queues_head[i] = desc.present_queues[_desc.num_present_queues == 1 ? 0 : i]->As<CommandQueueVk>();
-        present_queues_head[i]->AddRef();
+        // Recreateの場合にGetDescから返された値が使用され、バックバッファ数に変更がない場合、何もしません。
     }
+    else
+    {
+        // コマンドキューをキャッシュ
+        util::DyArray<CommandQueueVk*> present_queues_tmp(_desc.buffer.count);
+        auto present_queues_tmp_data = present_queues_tmp.data();
+        for (uint32_t i = 0; i < _desc.buffer.count; i++)
+        {
+            // バックバッファの数だけキャッシュするので、num_present_queuesが1の場合インデックス0のキューを複数セットします。
+            present_queues_tmp_data[i] = _desc.present_queues[_desc.num_present_queues == 1 ? 0 : i]->As<CommandQueueVk>();
+            present_queues_tmp_data[i]->AddRef();
+        }
 
-    desc.present_queues = RCAST<ICommandQueue**>(present_queues_head);
+        // Recreateの場合、以前のコマンドキューを開放
+        for (auto& i : present_queues)
+            hlp::SafeRelease(i);
+
+        present_queues.swap(present_queues_tmp);
+        present_queues_head = present_queues.data();
+
+        desc.present_queues = RCAST<ICommandQueue**>(present_queues_head);
+    }
 
     // TEXTURE_FORMAT_DESC
     auto&& tfd = desc.buffer.format_desc;
