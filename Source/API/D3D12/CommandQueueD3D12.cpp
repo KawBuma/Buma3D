@@ -279,13 +279,14 @@ public:
 
 
 B3D_APIENTRY CommandQueueD3D12::CommandQueueD3D12()
-    : ref_count         { 1 }
-    , name              {}
-    , device            {}
-    , desc              {}
-    , d3d12_cmd_queue   {}
-    , si_buffer         {}
-    , bi_buffer         {}
+    : ref_count                 { 1 }
+    , name                      {}
+    , device                    {}
+    , desc                      {}
+    , d3d12_cmd_queue           {}
+    , si_buffer                 {}
+    , bi_buffer                 {}
+    , wait_idle_fence           {}
 {
 
 }
@@ -305,6 +306,10 @@ B3D_APIENTRY CommandQueueD3D12::Init(DeviceD3D12* _device, uint32_t _queue_index
 
     si_buffer = B3DNew(SubmitInfoBuffer);
     bi_buffer = B3DNew(BindInfoBuffer);
+
+    wait_idle_fence = B3DNew(WAIT_IDLE_FENCE);
+    auto hr = wait_idle_fence->Create(device->GetD3D12Device());
+    B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
 
     return BMRESULT_SUCCEED;
 }
@@ -346,12 +351,13 @@ B3D_APIENTRY CommandQueueD3D12::CreateD3D12CommandQueue()
 void 
 B3D_APIENTRY CommandQueueD3D12::Uninit()
 {
-    name.reset();
-    //hlp::SafeRelease(device);
-    desc = {};
     B3DSafeDelete(si_buffer);
     B3DSafeDelete(bi_buffer);
+    B3DSafeDelete(wait_idle_fence);
     hlp::SafeRelease(d3d12_cmd_queue);
+    //hlp::SafeRelease(device);
+    desc = {};
+    name.reset();
 }
 
 BMRESULT
@@ -402,6 +408,14 @@ B3D_APIENTRY CommandQueueD3D12::SetName(const char* _name)
         return BMRESULT_FAILED;
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(util::SetName(d3d12_cmd_queue, _name)));
 
+    if (wait_idle_fence)
+    {
+        B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(util::SetName(wait_idle_fence->fence
+                                                           , _name
+                                                           ? hlp::StringConvolution("CommandQueueD3D12::wait_idle_fence (", _name, ")").c_str()
+                                                           : nullptr)));
+    }
+
     if (name && !_name)
         name.reset();
     else
@@ -420,6 +434,18 @@ const COMMAND_QUEUE_DESC&
 B3D_APIENTRY CommandQueueD3D12::GetDesc() const
 {
     return desc;
+}
+
+BMRESULT
+B3D_APIENTRY CommandQueueD3D12::WaitIdle()
+{
+    auto hr = wait_idle_fence->Signal(d3d12_cmd_queue);
+    B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
+
+    hr = wait_idle_fence->Wait();
+    B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
+
+    return BMRESULT_SUCCEED;
 }
 
 BMRESULT

@@ -1045,7 +1045,7 @@ inline BMRESULT CheckHRESULT(HRESULT _hr, const char* _file, uint32_t _line)
 
 inline HRESULT SetName(ID3D12Object* _obj, const char* _str)
 {
-    return _obj->SetName(hlp::to_wstring(_str).c_str());
+    return _obj->SetName(_str ? hlp::to_wstring(_str).c_str() : nullptr);
 }
 
 inline HRESULT SetName(ID3D12Object* _obj, const wchar_t* _str)
@@ -1055,7 +1055,7 @@ inline HRESULT SetName(ID3D12Object* _obj, const wchar_t* _str)
 
 inline HRESULT SetName(ID3D12Object* _obj, const util::String& _str)
 {
-    return _obj->SetName(hlp::to_wstring(_str).c_str());
+    return _obj->SetName(_str.empty() ? nullptr : hlp::to_wstring(_str).c_str());
 }
 
 inline HRESULT SetName(ID3D12Object* _obj, const util::WString& _str)

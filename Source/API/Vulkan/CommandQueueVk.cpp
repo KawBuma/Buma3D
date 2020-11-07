@@ -855,6 +855,15 @@ B3D_APIENTRY CommandQueueVk::GetDesc() const
 }
 
 BMRESULT
+B3D_APIENTRY CommandQueueVk::WaitIdle()
+{
+    auto vkr = vkQueueWaitIdle(queue);
+    B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
+
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY CommandQueueVk::SubmitTileBindings(const SUBMIT_TILE_BINDINGS_DESC& _desc)
 {
     B3D_RET_IF_FAILED(bi_buffer->PrepareBindInfo(_desc.num_bind_infos, _desc.bind_infos));

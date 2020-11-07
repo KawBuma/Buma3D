@@ -1112,6 +1112,15 @@ B3D_APIENTRY DeviceVk::GetCommandQueue(COMMAND_TYPE _type, uint32_t _queue_index
 }
 
 BMRESULT
+B3D_APIENTRY DeviceVk::WaitIdle()
+{
+    auto vkr = vkDeviceWaitIdle(device);
+    B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
+
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY DeviceVk::CreateCommandAllocator(const COMMAND_ALLOCATOR_DESC& _desc, ICommandAllocator** _dst)
 {
     util::Ptr<CommandAllocatorVk> ptr;

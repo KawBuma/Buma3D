@@ -86,10 +86,10 @@ B3D_APIENTRY SwapChainVk::CopyDesc(const SWAP_CHAIN_DESC& _desc)
         }
     }
 
-
     hlp::SafeRelease(surface);
     (surface = _desc.surface->As<SurfaceVk>())->AddRef();
 
+    // コマンドキューをキャッシュ
     if (_desc.present_queues == RCAST<ICommandQueue**>(present_queues_head)&&
         _desc.buffer.count   == (uint32_t)present_queues.size())
     {
@@ -386,10 +386,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
 
     // Recreateの場合以前のバッファを開放し破棄
     if (_old_swapchain != VK_NULL_HANDLE)
-    {
-        ReleaseSwapChainBuffers();
         devpfn->vkDestroySwapchainKHR(vkdevice, _old_swapchain, B3D_VK_ALLOC_CALLBACKS);
-    }
 
     return BMRESULT_SUCCEED;
 }
@@ -651,12 +648,12 @@ B3D_APIENTRY SwapChainVk::GetSwapChainBuffers(VkSwapchainCreateInfoKHR& _ci)
 BMRESULT 
 B3D_APIENTRY SwapChainVk::ReleaseSwapChainBuffers()
 {
-    if (is_acquired)
-    {
-        B3D_ADD_DEBUG_MSG2(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_CLEANUP
-                           , __FUNCTION__": スワップチェインを再作成、または破棄する前に、AcquireNextBufferから取得したバックバッファのプレゼントを完了する必要があります。");
-        return BMRESULT_FAILED_INVALID_CALL;
-    }
+    //if (is_acquired)
+    //{
+    //    B3D_ADD_DEBUG_MSG2(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_CLEANUP
+    //                       , __FUNCTION__": スワップチェインを再作成、または破棄する前に、AcquireNextBufferから取得したバックバッファのプレゼントを完了する必要があります。");
+    //    return BMRESULT_FAILED_INVALID_CALL;
+    //}
 
     size_t count = 0;
     BMRESULT bmr = BMRESULT_SUCCEED;
@@ -961,6 +958,8 @@ B3D_APIENTRY SwapChainVk::Present(const SWAP_CHAIN_PRESENT_INFO& _info)
 BMRESULT
 B3D_APIENTRY SwapChainVk::Recreate(const SWAP_CHAIN_DESC& _desc)
 {
+    B3D_RET_IF_FAILED(ReleaseSwapChainBuffers());
+
     current_buffer_index = 0;
     B3D_RET_IF_FAILED(CopyDesc(_desc));
     B3D_RET_IF_FAILED(CreateSwapChainData());

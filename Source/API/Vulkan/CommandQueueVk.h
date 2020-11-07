@@ -57,6 +57,9 @@ public:
         B3D_APIENTRY GetDesc() const override;
 
     BMRESULT
+        B3D_APIENTRY WaitIdle() override;
+
+    BMRESULT
         B3D_APIENTRY SubmitTileBindings(
             const SUBMIT_TILE_BINDINGS_DESC& _desc) override;
 

@@ -252,10 +252,13 @@ B3D_APIENTRY ResourceHeapD3D12::SetName(const char* _name)
         return BMRESULT_FAILED;
     
     if (heap)
-        B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(util::SetName(heap,_name)));
+        B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(util::SetName(heap, _name)));
 
     if (resource_for_map)
-        B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(util::SetName(resource_for_map, hlp::StringConvolution("ResourceHeapD3D12::resource_for_map ", _name))));
+        B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(util::SetName(resource_for_map
+                                                           , _name
+                                                           ? hlp::StringConvolution("ResourceHeapD3D12::resource_for_map ", _name).c_str()
+                                                           : nullptr)));
 
     if (name && !_name)
         name.reset();

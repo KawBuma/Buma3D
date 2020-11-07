@@ -248,7 +248,6 @@ B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
         is_enable_fullscreen = false;
 
         // NOTE: D3D12ではスワップチェーン作成時に渡すpDevice毎に1つ以上のスワップチェインを作成出来ずエラーとなるので予め破棄します。
-        B3D_RET_IF_FAILED(ReleaseSwapChainBuffers());
         auto count = swapchain->Release();
         B3D_ASSERT(count == 0 && __FUNCTION__": swapchain->Release() != 0");
         swapchain = nullptr;
@@ -425,12 +424,12 @@ B3D_APIENTRY SwapChainD3D12::GetSwapChainBuffers()
 BMRESULT 
 B3D_APIENTRY SwapChainD3D12::ReleaseSwapChainBuffers()
 {
-    if (is_acquired)
-    {
-        B3D_ADD_DEBUG_MSG2(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_CLEANUP
-                           , __FUNCTION__": スワップチェインを再作成、または破棄する前に、AcquireNextBufferから取得したバックバッファのプレゼントを完了する必要があります。");
-        return BMRESULT_FAILED_INVALID_CALL;
-    }
+    //if (is_acquired)
+    //{
+    //    B3D_ADD_DEBUG_MSG2(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_CLEANUP
+    //                       , __FUNCTION__": スワップチェインを再作成、または破棄する前に、AcquireNextBufferから取得したバックバッファのプレゼントを完了する必要があります。");
+    //    return BMRESULT_FAILED_INVALID_CALL;
+    //}
 
     size_t count = 0;
     BMRESULT bmr = BMRESULT_SUCCEED;
@@ -676,6 +675,8 @@ B3D_APIENTRY SwapChainD3D12::Present(const SWAP_CHAIN_PRESENT_INFO& _info)
 BMRESULT
 B3D_APIENTRY SwapChainD3D12::Recreate(const SWAP_CHAIN_DESC& _desc)
 {
+    B3D_RET_IF_FAILED(ReleaseSwapChainBuffers());
+
     current_buffer_index = 0;
     if (prev_present_completion_event)
     {

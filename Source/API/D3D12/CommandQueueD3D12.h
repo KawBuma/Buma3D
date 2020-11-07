@@ -46,6 +46,9 @@ public:
         B3D_APIENTRY GetDesc() const override;
 
     BMRESULT
+        B3D_APIENTRY WaitIdle() override;
+
+    BMRESULT
         B3D_APIENTRY SubmitTileBindings(
             const SUBMIT_TILE_BINDINGS_DESC& _desc) override;
 
@@ -93,11 +96,41 @@ public:
         B3D_APIENTRY SubmitWait(const FENCE_SUBMISSION& _wait);
 
 private:
-    std::atomic_uint32_t                  ref_count;
-    util::UniquePtr<util::NameableObjStr> name;
-    DeviceD3D12*                          device;
-    COMMAND_QUEUE_DESC                    desc;
-    ID3D12CommandQueue*                   d3d12_cmd_queue;
+    struct WAIT_IDLE_FENCE
+    {
+        ~WAIT_IDLE_FENCE()
+        {
+            hlp::SafeRelease(fence);
+            fence_values = 0;
+        }
+
+        HRESULT Create(ID3D12Device* _device)
+        {
+            return _device->CreateFence(fence_values, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+        }
+
+        HRESULT Signal(ID3D12CommandQueue* _queue)
+        {
+            return _queue->Signal(fence, ++fence_values);
+        }
+
+        HRESULT Wait()
+        {
+            return fence->SetEventOnCompletion(fence_values, NULL);
+        }
+
+        uint64_t        fence_values;
+        ID3D12Fence*    fence;
+    };
+
+
+private:
+    std::atomic_uint32_t                    ref_count;
+    util::UniquePtr<util::NameableObjStr>   name;
+    DeviceD3D12*                            device;
+    COMMAND_QUEUE_DESC                      desc;
+    ID3D12CommandQueue*                     d3d12_cmd_queue;
+    WAIT_IDLE_FENCE*                        wait_idle_fence;
 
     class SubmitInfoBuffer;
     class BindInfoBuffer;

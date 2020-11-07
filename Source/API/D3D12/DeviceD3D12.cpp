@@ -758,6 +758,16 @@ B3D_APIENTRY DeviceD3D12::GetCommandQueue(COMMAND_TYPE _type, uint32_t _queue_in
 }
 
 BMRESULT
+B3D_APIENTRY DeviceD3D12::WaitIdle()
+{
+    for (auto& i_qt : queue_types)
+        for (auto& i : i_qt)
+            B3D_RET_IF_FAILED(i->WaitIdle());
+
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY DeviceD3D12::CreateCommandAllocator(const COMMAND_ALLOCATOR_DESC& _desc, ICommandAllocator** _dst)
 {
     util::Ptr<CommandAllocatorD3D12> ptr;

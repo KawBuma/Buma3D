@@ -93,7 +93,7 @@ inline constexpr uint32_t MakeHeaderVersion(uint32_t _major, uint32_t _minor, ui
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = MakeHeaderVersion(0, 1, 0);
+inline constexpr uint32_t B3D_HEADER_VERSION = MakeHeaderVersion(0, 1, 1);
 
 }// namespace buma3d
 
@@ -3933,7 +3933,7 @@ public:
         B3D_APIENTRY CreateDevice(
               const DEVICE_DESC& _desc
             , IDevice**          _dst) = 0;
-    
+
 };
 
 B3D_INTERFACE IDebugMessageQueue : public ISharedBase
@@ -4152,6 +4152,13 @@ public:
               COMMAND_TYPE    _queue_type
             , uint32_t        _queue_index
             , ICommandQueue** _dst) const = 0;
+
+    /**
+     * @brief このデバイスで作成されたすべてのコマンドキューで現在実行中のすべての処理が完了するまでCPUで待機します。
+     * @return デバイスが削除された場合、BMRESULT_FAILED_DEVICE_REMOVEDが返ります。
+    */
+    virtual BMRESULT
+        B3D_APIENTRY WaitIdle() = 0;
 
     /**
      * @brief コマンドアロケーターを作成します。
@@ -4840,6 +4847,13 @@ protected:
 public:
     virtual const COMMAND_QUEUE_DESC&
         B3D_APIENTRY GetDesc() const = 0;
+
+    /**
+     * @brief このコマンドキューで現在実行中のすべての処理が完了するまでCPUで待機します。
+     * @return デバイスが削除された場合、BMRESULT_FAILED_DEVICE_REMOVEDが返ります。
+    */
+    virtual BMRESULT
+        B3D_APIENTRY WaitIdle() = 0;
 
     virtual BMRESULT
         B3D_APIENTRY SubmitTileBindings(

@@ -92,6 +92,9 @@ public:
             , ICommandQueue**   _dst) const override;
 
     BMRESULT
+        B3D_APIENTRY WaitIdle() override;
+
+    BMRESULT
         B3D_APIENTRY CreateCommandAllocator(
               const COMMAND_ALLOCATOR_DESC& _desc
             , ICommandAllocator**           _dst) override;
