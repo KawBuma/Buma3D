@@ -142,6 +142,9 @@ B3D_APIENTRY SurfaceD3D12::GetSupportedSurfaceFormats(SURFACE_FORMAT* _dst)
             if (format == RESOURCE_FORMAT_UNKNOWN)
                 continue;
 
+            if (util::IsSrgbFormat(format))
+                continue;
+
             if (_dst)
                 _dst[result] = { util::GetB3DColorSpace(output_desc1.ColorSpace), format };
             result++;
