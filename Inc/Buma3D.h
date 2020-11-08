@@ -2772,7 +2772,7 @@ enum SHADER_REGISTER_TYPE : EnumT
 };
 
 // -fvk-register_type-shift register_shift register_space
-// RegisterSpaceをVkDescriptorSetLayoutBinding::bindingにリマップするために使用する、各レジスタスペースごとの各レジスタのオフセットを指定します。
+// RegisterをVkDescriptorSetLayoutBinding::bindingにリマップするために使用する、各レジスタタイプ、レジスタスペースごとの各Registerのオフセットを指定します。
 struct SHADER_REGISTER_SHIFT
 {
     SHADER_REGISTER_TYPE    register_type;
