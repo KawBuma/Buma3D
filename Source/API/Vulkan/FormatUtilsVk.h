@@ -63,6 +63,7 @@ bool IsDepthOnlyFormat(RESOURCE_FORMAT _format);
 bool IsIntegerFormat(RESOURCE_FORMAT _format);
 bool IsSintFormat(RESOURCE_FORMAT _format);
 bool IsUintFormat(RESOURCE_FORMAT _format);
+bool IsSrgbFormat(RESOURCE_FORMAT _format);
 
 
 
