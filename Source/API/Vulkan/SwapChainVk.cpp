@@ -313,7 +313,10 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
     // 排他フルスクリーンの設定
     VkSurfaceFullScreenExclusiveInfoEXT      fs = sd.full_screen_exclusive_info_ext;
     VkSurfaceFullScreenExclusiveWin32InfoEXT fs32 = sd.full_screen_exclusive_win32_info_ext;
-    last_pnext = util::ConnectPNextChains(last_pnext, fs, fs32);
+    if (desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE)
+    {
+        last_pnext = util::ConnectPNextChains(last_pnext, fs, fs32);
+    }
 #endif
 
     // スワップチェインのプレゼントモードは予め決める必要がある。
@@ -341,7 +344,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
         dgci_khr.modes = scd.device_group_present_mode_flags_khr;
     #endif
 
-        last_pnext = util::ConnectPNextChains(*_ci, dgci_khr);
+        last_pnext = util::ConnectPNextChains(last_pnext, dgci_khr);
     }
 
     // TODO:
