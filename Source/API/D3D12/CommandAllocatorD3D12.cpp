@@ -148,7 +148,9 @@ B3D_APIENTRY CommandAllocatorD3D12::Reset(COMMAND_ALLOCATOR_RESET_FLAGS _flags)
 
     if (_flags & COMMAND_ALLOCATOR_RESET_FLAG_RELEASE_RESOURCES)
     {
-        B3D_ASSERT(hlp::GetRefCount(command_allocator) == 1);
+        // NOTE: PIX等のプロファイラによって参照されるためカウントが1であることを保証出来ませんでした。
+        //B3D_ASSERT(hlp::GetRefCount(command_allocator) == 1);
+
         command_allocator->Release();
         command_allocator = nullptr;
 
