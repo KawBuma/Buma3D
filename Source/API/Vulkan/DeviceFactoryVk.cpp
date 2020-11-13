@@ -1211,11 +1211,12 @@ BMRESULT
 B3D_APIENTRY DeviceFactoryVk::EnumAdapters(uint32_t _adapter_index, IDeviceAdapter** _dst_adapter)
 {
     util::Ptr<DeviceAdapterVk> ptr;
+    // デバイスグループアダプタは、非デバイスグループアダプタ(physical_devices)のインデックスの直後に配置します。
     if (_adapter_index >= physical_devices.size())
     {
         // 物理デバイスグループを列挙
         auto device_group_adapter_index = _adapter_index - physical_devices.size();
-        if (device_group_adapter_index >= physical_device_group_properties.size())
+        if (device_group_adapter_index < physical_device_group_properties.size())
         {
             B3D_RET_IF_FAILED(DeviceAdapterVk::CreateForDeviceGroup(this, physical_device_group_properties.data()[device_group_adapter_index], &ptr));
         }
