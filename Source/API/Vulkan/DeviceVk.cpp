@@ -1100,12 +1100,11 @@ B3D_APIENTRY DeviceVk::GetDescriptorPoolSizesAllocationInfo(uint32_t _num_root_s
 BMRESULT
 B3D_APIENTRY DeviceVk::GetCommandQueue(COMMAND_TYPE _type, uint32_t _queue_index, ICommandQueue** _dst) const
 {
-    auto size = queue_types.size();
-    if (SCAST<size_t>(_type) >= size)
+    if (SCAST<size_t>(_type) >= queue_data.families.size())
         return BMRESULT_FAILED_INVALID_PARAMETER;
 
     auto&& queues = queue_data.families[_type].queues;
-    if (SCAST<size_t>(_queue_index) >= size)
+    if (SCAST<size_t>(_queue_index) >= queues.size())
         return BMRESULT_FAILED_OUT_OF_RANGE;
 
     (*_dst = queues.data()[_queue_index].queue)->AddRef();
