@@ -292,6 +292,27 @@ public:
     const INDIRECT_COMMAND_SIGNATURES*
         B3D_APIENTRY GetIndirectCommandSignatures(NodeMask _node_mask);
 
+    struct SWAPCHAIN_FENCES_DATA;
+    SWAPCHAIN_FENCES_DATA*
+        B3D_APIENTRY GetSwapchainFencesData();
+
+public:
+    struct SWAPCHAIN_FENCES_DATA
+    {
+        ~SWAPCHAIN_FENCES_DATA();
+        void SetForSignal(uint32_t _current_buffer_index);
+        void SetForWait(uint32_t _current_buffer_index);
+        BMRESULT ResizeFences(DeviceD3D12* _device, uint32_t _buffer_count);
+        util::DyArray<BMRESULT>     fence_results;
+        BMRESULT*                   fence_results_head;
+        util::DyArray<FenceD3D12*>  present_fences;
+        FenceD3D12**                present_fences_head;
+        FENCE_SUBMISSION            fence_submit;
+        uint64_t                    dummy_fence_value;
+        util::DyArray<uint64_t>     present_fence_values;
+        uint64_t*                   present_fence_values_head;
+    };
+
 private:
     struct DESC_DATA
     {
@@ -299,28 +320,30 @@ private:
         util::DyArray<util::DyArray<COMMAND_QUEUE_PRIORITY>>    qcdescs_priorities;
         util::DyArray<util::DyArray<NodeMask>>                  qcdescs_node_masks;
     };
-    std::atomic_uint32_t                        ref_count;
-    util::UniquePtr<util::NameableObjStr>       name;
-    DEVICE_DESC                                 desc;
-    DESC_DATA                                   desc_data;
-    DeviceAdapterD3D12*                         adapter;
-    NodeMask                                    node_mask;
-    util::DyArray<RESOURCE_HEAP_PROPERTIES>     heap_props;
-    util::DyArray<D3D12_HEAP_DESC>              heap_descs12;
-    DeviceFactoryD3D12*                         factory;
-    ID3D12Device6*                              device;
+    std::atomic_uint32_t                                                            ref_count;
+    util::UniquePtr<util::NameableObjStr>                                           name;
+    DEVICE_DESC                                                                     desc;
+    DESC_DATA                                                                       desc_data;
+    DeviceAdapterD3D12*                                                             adapter;
+    NodeMask                                                                        node_mask;
+    util::DyArray<RESOURCE_HEAP_PROPERTIES>                                         heap_props;
+    util::DyArray<D3D12_HEAP_DESC>                                                  heap_descs12;
+    DeviceFactoryD3D12*                                                             factory;
+    ID3D12Device6*                                                                  device;
     util::StArray<util::DyArray<CommandQueueD3D12*>, COMMAND_TYPE_VIDEO_ENCODE + 1> queue_types;
 
-    util::UniquePtr<util::FormatPropertiesD3D12>        format_props;
-    util::UniquePtr<util::FormatCompatibilityChecker>   format_comapbility;
+    util::UniquePtr<util::FormatPropertiesD3D12>                                    format_props;
+    util::UniquePtr<util::FormatCompatibilityChecker>                               format_comapbility;
 
     // MakeResourceHeapProperties、GetResourceAllocationInfoで使用します。
     enum HEAP_TYPE { ONLY_BUF, ONLY_NON_RT_DS_TEX, ONLY_RT_DS_TEX, ALL_BUF_TEX };
-    util::StArray<uint32_t, ALL_BUF_TEX + 1>    heap_type_bits;
-    bool                                        is_heap_tear2;
+    util::StArray<uint32_t, ALL_BUF_TEX + 1>                                        heap_type_bits;
+    bool                                                                            is_heap_tear2;
+    util::DyArray<util::UniquePtr<CPUDescriptorAllocator>>                          cpu_descriptor_heap_allocators[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];// [heap_type][node]    
+    util::DyArray<util::UniquePtr<INDIRECT_COMMAND_SIGNATURES>>                     command_signatures;// [node]    
 
-    util::DyArray<util::UniquePtr<CPUDescriptorAllocator>>      cpu_descriptor_heap_allocators[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];// [heap_type][node]    
-    util::DyArray<util::UniquePtr<INDIRECT_COMMAND_SIGNATURES>> command_signatures;// [node]    
+    // SwapChainD3D12で使用します。
+    util::UniquePtr<SWAPCHAIN_FENCES_DATA>                                          swapchain_fences_data;
 
 };
 

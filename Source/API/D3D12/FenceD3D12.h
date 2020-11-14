@@ -67,6 +67,20 @@ public:
     BMRESULT
         B3D_APIENTRY SubmitSignalToCpu(ID3D12CommandQueue* _queue);
 
+    /**
+     * @brief 引数のシグナルフェンスにスワップチェインフェンスとその時のフェンス値を渡します。
+     * @param _src ペイロードとして扱うスワップチェインフェンスです。
+     * @param _wait_value ペイロードとして扱う_srcで待機するフェンス値です。
+     * @return FENCE_TYPE_TIMELINEの場合、BMRESULT_FAILED以下を返します。
+     * @remark SwapChainD3D12::AcquireNextBufferも参照してください。
+    */
+    BMRESULT
+        B3D_APIENTRY SwapPayload(FenceD3D12* _src/*from swapchain*/, uint64_t _wait_value/*from swapchain*/);
+
+private:
+    struct IImpl;
+    IImpl* CreateImplForSwapChain();
+
 private:
     std::atomic_uint32_t                    ref_count;
     util::UniquePtr<util::NameableObjStr>   name;
@@ -78,7 +92,10 @@ private:
     class BinaryGpuToGpuImpl;
     class BinaryGpuToCpuImpl;
     class TimelineImpl;
+    class BinaryGpuToGpuImplForSwapChain;
+    class BinaryGpuToCpuImplForSwapChain;
     IImpl* impl;
+    IImpl* impl_swapchain;
 
 };
 

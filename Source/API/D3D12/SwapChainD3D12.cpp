@@ -94,7 +94,8 @@ BMRESULT
 B3D_APIENTRY SwapChainD3D12::Init(DeviceD3D12* _device, const SWAP_CHAIN_DESC& _desc)
 {
     (device = _device)->AddRef();
-    
+    fences_data = device->GetSwapchainFencesData();
+
     B3D_RET_IF_FAILED(CopyDesc(_desc));
     B3D_RET_IF_FAILED(CheckValidity());
     B3D_RET_IF_FAILED(CreateDXGISwapChain());
@@ -394,10 +395,10 @@ B3D_APIENTRY SwapChainD3D12::PreparePresentInfo()
         present_info.params.pDirtyRects = present_info.dirty_rects.data();
     }
 
-    auto&& fd = fences_data;
+    auto&& fd = *fences_data;
     fd.dummy_fence_value         = 0;
     fd.fence_submit.num_fences   = 1;
-    fd.fence_submit.fence_values = &fences_data.dummy_fence_value;
+    fd.fence_submit.fence_values = &fd.dummy_fence_value;
     B3D_RET_IF_FAILED(fd.ResizeFences(device, desc.buffer.count));
 
     return BMRESULT_SUCCEED;
@@ -461,8 +462,6 @@ B3D_APIENTRY SwapChainD3D12::ReleaseSwapChainBuffers()
 void
 B3D_APIENTRY SwapChainD3D12::Uninit()
 {
-    name.reset();
-
     if (prev_present_completion_event != NULL)
         CloseHandle(prev_present_completion_event);
     prev_present_completion_event = NULL;
@@ -471,7 +470,7 @@ B3D_APIENTRY SwapChainD3D12::Uninit()
     hlp::SwapClear(swapchain_buffers);
 
     present_info = {};
-    fences_data.~FENCES_DATA();
+    fences_data = nullptr;
     hlp::SafeRelease(swapchain);
 
     is_enable_fullscreen = {};
@@ -486,6 +485,7 @@ B3D_APIENTRY SwapChainD3D12::Uninit()
 
     hlp::SafeRelease(surface);
     hlp::SafeRelease(device);
+    name.reset();
 }
 
 BMRESULT
@@ -604,26 +604,41 @@ B3D_APIENTRY SwapChainD3D12::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUF
         }
     }
 
+    /* NOTE: SwapPayloadについて
+             引数のシグナルフェンスにスワップチェインフェンスとその時のフェンス値を渡します。
+             引数のシグナルフェンスのペイロード(impl)をスワップして、自身(スワップチェインのフェンスペイロード)が元のペイロードであるかのように擬態します。この時元のペイロードは保持しておきます。
+             これにより、引数のシグナルフェンスへスワップチェインフェンスのシグナルをクローンすることが可能です。次に、Reset時またはWait時に元のペイロードに再び戻します。
+
+             D3D12フェンスの特徴として、全て値ベース(TIMELINE)であり、スワップチェインのフェンスペイロードを複数のフェンスにクローンしてもWaitまたはResetによる非シグナル化は実際には発生しません。 
+             これにより、クローン時のシグナル値のみ保持しておけば、スワップチェインフェンスのシグナルを複数FenceD3D12に共有し、それぞれが任意のシグナル値で待機できます。
+
+             問題としては、スワップチェインのフェンスを保持したフェンスが存在したままISwapChainが開放されてしまった場合があります。
+             適当に行うならば、ペイロードのスワップ毎に参照カウントを増加させれば良いが、AcquireNextBufferは毎フレーム呼び出される処理のため、このコストは回避すべきです。
+             コストを回避する場合、デバイスが事前にスワップチェイン用のフェンスを保持しておく等があります。
+             あまり綺麗ではないが、スワップチェインのフェンスを最初からデバイスが保持しておけば、追加の参照カウンタ呼び出しも必要ありません(綺麗じゃないけど)。
+             実際は、D3D12ではスワップチェイン作成時に渡すpDevice毎に1つ以上のスワップチェインを作成出来ない(エラーとして扱われる)ため、
+             デバイスがスワップチェイン用フェンスを保持することによる問題(複数スワップチェイン作成時のフェンス割り当てコスト等)は発生しないと考えられます。
+
+             別の問題として、グラフィックスAPIをまたぐフェンスのエクスポート、インポートが困難になります。 これについても追加の調査が必要です。
+    */
+
     auto next_buffer_index = swapchain->GetCurrentBackBufferIndex();
 
     // Presentでシグナルされたフェンス値を待機
-    fences_data.SetForWait(next_buffer_index);
-    auto&& present_complete_fence     = fences_data.present_fences_head[next_buffer_index];
-    auto   present_complete_fence_val = fences_data.present_fence_values_head[next_buffer_index];
+    fences_data->SetForWait(next_buffer_index);
+    auto&& present_complete_fence     = fences_data->present_fences_head[next_buffer_index];
+    auto   present_complete_fence_val = fences_data->present_fence_values_head[next_buffer_index];
     auto bmr = present_complete_fence->Wait(present_complete_fence_val, _info.timeout_millisec);
     B3D_RET_IF_FAILED(bmr);
 
-    if (bmr != BMRESULT_SUCCEED)
-    {
-        // プレゼント完了通知用フェンス待機操作を送信
-        present_queues_head[next_buffer_index]->SubmitWait(fences_data.fence_submit);
-    }
-
+    // 引数のフェンスをプレゼント完了通知用フェンスのペイロードにすり替え
     if (active_fence_count == 2)
     {
-        // ｢プレゼント完了通知用フェンス待機操作｣の完了を通知する引数のフェンスでシグナル操作を送信
-        fences_data.fence_submit.fences = &_info.signal_fence;
-        present_queues_head[next_buffer_index]->SubmitSignal({ { fences_data.fence_submit }, _info.signal_fence_to_cpu });
+        auto res = _info.signal_fence->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
+        B3D_RET_IF_FAILED(res);
+
+        res = _info.signal_fence_to_cpu->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
+        B3D_RET_IF_FAILED(res);
     }
 
     is_acquired = true;
@@ -665,8 +680,8 @@ B3D_APIENTRY SwapChainD3D12::Present(const SWAP_CHAIN_PRESENT_INFO& _info)
     auto bmr = HR_TRACE_IF_FAILED(hr);
 
     // プレゼント完了通知用フェンスのシグナル操作を送信
-    fences_data.SetForSignal(current_buffer_index);
-    present_queues_head[current_buffer_index]->SubmitSignal(fences_data.fence_submit);
+    fences_data->SetForSignal(current_buffer_index);
+    present_queues_head[current_buffer_index]->SubmitSignal(fences_data->fence_submit);
 
     is_acquired = false;
     return bmr;
@@ -695,20 +710,16 @@ B3D_APIENTRY SwapChainD3D12::Recreate(const SWAP_CHAIN_DESC& _desc)
 BMRESULT 
 B3D_APIENTRY SwapChainD3D12::SetHDRMetaData(const SWAP_CHAIN_HDR_METADATA& _metadata)
 {
-    DXGI_HDR_METADATA_HDR10 metadata;
-    metadata.RedPrimary[0]             = SCAST<UINT16>(50000.f * _metadata.primary_red.x);
-    metadata.RedPrimary[1]             = SCAST<UINT16>(50000.f * _metadata.primary_red.y);
-    metadata.GreenPrimary[0]           = SCAST<UINT16>(50000.f * _metadata.primary_green.x);
-    metadata.GreenPrimary[1]           = SCAST<UINT16>(50000.f * _metadata.primary_green.y);
-    metadata.BluePrimary[0]            = SCAST<UINT16>(50000.f * _metadata.primary_blue.x);
-    metadata.BluePrimary[1]            = SCAST<UINT16>(50000.f * _metadata.primary_blue.y);
-    metadata.WhitePoint[0]             = SCAST<UINT16>(50000.f * _metadata.white_point.x);
-    metadata.WhitePoint[1]             = SCAST<UINT16>(50000.f * _metadata.white_point.y);
-    metadata.MaxMasteringLuminance     = SCAST<UINT>  (10000.f * _metadata.max_luminance);
-    metadata.MinMasteringLuminance     = SCAST<UINT>  (10000.f * _metadata.min_luminance);
-    metadata.MaxContentLightLevel      = SCAST<UINT16>(_metadata.max_content_light_level);
-    metadata.MaxFrameAverageLightLevel = SCAST<UINT16>(_metadata.max_frame_average_light_level);
-
+    DXGI_HDR_METADATA_HDR10 metadata = {
+          { SCAST<UINT16>(50000.f * _metadata.primary_red.x)  , SCAST<UINT16>(50000.f * _metadata.primary_red.y)   }    // RedPrimary[2]
+        , { SCAST<UINT16>(50000.f * _metadata.primary_green.x), SCAST<UINT16>(50000.f * _metadata.primary_green.y) }    // GreenPrimary[2]
+        , { SCAST<UINT16>(50000.f * _metadata.primary_blue.x) , SCAST<UINT16>(50000.f * _metadata.primary_blue.y)  }    // BluePrimary[2]
+        , { SCAST<UINT16>(50000.f * _metadata.white_point.x)  , SCAST<UINT16>(50000.f * _metadata.white_point.y)   }    // WhitePoint[2]
+        , SCAST<UINT>  (10000.f * _metadata.max_luminance)                                                            // MaxMasteringLuminance
+        , SCAST<UINT>  (10000.f * _metadata.min_luminance)                                                            // MinMasteringLuminance
+        , SCAST<UINT16>(_metadata.max_content_light_level)                                                            // MaxContentLightLevel
+        , SCAST<UINT16>(_metadata.max_frame_average_light_level)                                                      // MaxFrameAverageLightLevel
+    };
     auto hr = swapchain->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(metadata), &metadata);
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
 
@@ -735,46 +746,6 @@ void SwapChainD3D12::PRESENT_INFO::Set(size_t _num_rects, const SCISSOR_RECT* _r
     {
         util::ConvertNativeScissorRect(_rects[i], &params.pDirtyRects[i]);
     }
-}
-
-void SwapChainD3D12::FENCES_DATA::SetForSignal(uint32_t _current_buffer_index)
-{
-    fence_submit.fences = RCAST<IFence**>(present_fences_head + _current_buffer_index);
-    fence_submit.fence_values = &(++present_fence_values_head[_current_buffer_index]);
-}
-
-void SwapChainD3D12::FENCES_DATA::SetForWait(uint32_t _current_buffer_index)
-{
-    fence_submit.fences = RCAST<IFence**>(present_fences_head + _current_buffer_index);
-    fence_submit.fence_values = &present_fence_values_head[_current_buffer_index];
-}
-
-BMRESULT SwapChainD3D12::FENCES_DATA::ResizeFences(DeviceD3D12* _device, uint32_t _buffer_count)
-{
-    auto prev_size = (uint32_t)present_fences.size();
-    if (_buffer_count > prev_size)
-    {
-        for (auto& i : present_fences)
-            i->Signal(0);
-        for (auto& i : present_fence_values)
-            i = 0;
-
-        fence_results        .resize(_buffer_count, BMRESULT_SUCCEED_NOT_READY);
-        present_fences       .resize(_buffer_count);
-        present_fence_values .resize(_buffer_count);
-        fence_results_head        = fence_results       .data();
-        present_fences_head       = present_fences      .data();
-        present_fence_values_head = present_fence_values.data();
-
-        FENCE_DESC fdesc{ FENCE_TYPE_TIMELINE, 0 ,FENCE_FLAG_NONE };
-        for (size_t i = prev_size; i < _buffer_count; i++)
-        {
-            util::Ptr<IFence> f;
-            B3D_RET_IF_FAILED(_device->CreateFence(fdesc, &f));
-            (present_fences_head[i] = f->As<FenceD3D12>())->AddRef();
-        }
-    }
-    return BMRESULT_SUCCEED;
 }
 
 

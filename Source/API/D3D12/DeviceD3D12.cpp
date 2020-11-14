@@ -218,6 +218,7 @@ B3D_APIENTRY DeviceD3D12::DeviceD3D12()
     , is_heap_tear2                     {}
     , cpu_descriptor_heap_allocators    {}
     , command_signatures                {}
+    , swapchain_fences_data             {}
 {
 
 }
@@ -251,6 +252,8 @@ B3D_APIENTRY DeviceD3D12::Init(DeviceFactoryD3D12* _factory, const DEVICE_DESC& 
     CreateCPUDescriptorAllocator();
 
     B3D_RET_IF_FAILED(CreateIndirectCommandSignatures());
+
+    swapchain_fences_data = B3DMakeUnique(SWAPCHAIN_FENCES_DATA);
 
     return BMRESULT_SUCCEED;
 }
@@ -516,8 +519,7 @@ B3D_APIENTRY DeviceD3D12::CreateIndirectCommandSignatures()
 void
 B3D_APIENTRY DeviceD3D12::Uninit()
 {
-    name.reset();
-
+    swapchain_fences_data.reset();
     format_props.reset();
     format_comapbility.reset();
 
@@ -557,6 +559,7 @@ B3D_APIENTRY DeviceD3D12::Uninit()
     hlp::SafeRelease(device);
     hlp::SafeRelease(adapter);
     hlp::SafeRelease(factory);
+    name.reset();
 }
 
 BMRESULT
@@ -1236,6 +1239,60 @@ const DeviceD3D12::INDIRECT_COMMAND_SIGNATURES*
 B3D_APIENTRY DeviceD3D12::GetIndirectCommandSignatures(NodeMask _node_mask)
 {
     return command_signatures[hlp::GetFirstBitIndex(_node_mask)].get();
+}
+
+DeviceD3D12::SWAPCHAIN_FENCES_DATA*
+B3D_APIENTRY DeviceD3D12::GetSwapchainFencesData()
+{
+    return swapchain_fences_data.get();
+}
+
+
+DeviceD3D12::SWAPCHAIN_FENCES_DATA::~SWAPCHAIN_FENCES_DATA()
+{
+    for (auto& i : present_fences)
+        hlp::SafeRelease(i);
+    present_fences            = {};
+    present_fences_head       = {};
+    fence_submit              = {};
+    dummy_fence_value         = {};
+    present_fence_values      = {};
+    present_fence_values_head = {};
+}
+
+void DeviceD3D12::SWAPCHAIN_FENCES_DATA::SetForSignal(uint32_t _current_buffer_index)
+{
+    fence_submit.fences = RCAST<IFence**>(present_fences_head + _current_buffer_index);
+    fence_submit.fence_values = &(++present_fence_values_head[_current_buffer_index]);
+}
+
+void DeviceD3D12::SWAPCHAIN_FENCES_DATA::SetForWait(uint32_t _current_buffer_index)
+{
+    fence_submit.fences = RCAST<IFence**>(present_fences_head + _current_buffer_index);
+    fence_submit.fence_values = &present_fence_values_head[_current_buffer_index];
+}
+
+BMRESULT DeviceD3D12::SWAPCHAIN_FENCES_DATA::ResizeFences(DeviceD3D12* _device, uint32_t _buffer_count)
+{
+    auto prev_size = (uint32_t)present_fences.size();
+    if (_buffer_count > prev_size)
+    {
+        fence_results        .resize(_buffer_count, BMRESULT_SUCCEED_NOT_READY);
+        present_fences       .resize(_buffer_count);
+        present_fence_values .resize(_buffer_count);
+        fence_results_head        = fence_results       .data();
+        present_fences_head       = present_fences      .data();
+        present_fence_values_head = present_fence_values.data();
+
+        FENCE_DESC fdesc{ FENCE_TYPE_TIMELINE, 0 ,FENCE_FLAG_NONE };
+        for (size_t i = prev_size; i < _buffer_count; i++)
+        {
+            util::Ptr<IFence> f;
+            B3D_RET_IF_FAILED(_device->CreateFence(fdesc, &f));
+            (present_fences_head[i] = f->As<FenceD3D12>())->AddRef();
+        }
+    }
+    return BMRESULT_SUCCEED;
 }
 
 
