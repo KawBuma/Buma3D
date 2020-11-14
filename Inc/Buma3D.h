@@ -4842,7 +4842,7 @@ public:
     /**
      * @brief パイプラインキャッシュを取得します。 
      * @param [out] _dst キャッシュされたパイプラインのデータを保持するblobです。 取得された場合、参照カウントが増加することに注意してください。
-     * @return 成功した場合BMRESULT_SUCCEEDが帰ります。
+     * @return 成功した場合BMRESULT_SUCCEEDが返ります。
     */
     virtual BMRESULT
         B3D_APIENTRY GetCachedBlob(

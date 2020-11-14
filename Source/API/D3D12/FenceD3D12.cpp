@@ -1,9 +1,9 @@
 #include "Buma3DPCH.h"
 #include "FenceD3D12.h"
-#include <iostream>
 
 namespace buma3d
 {
+
 
 namespace /*anonymous*/
 {
@@ -20,6 +20,7 @@ D3D12_FENCE_FLAGS GetNativeFenceFlags(FENCE_FLAGS _flags)
 
     return result;
 }
+
 
 class EventPool
 {
@@ -46,17 +47,28 @@ public:
         }
     }
 
-    HANDLE GetEvent()
+    class ScopedEventHandle
+    {
+    public:
+        ScopedEventHandle(EventPool* _pool, HANDLE _handle) : pool{ _pool }, handle{ _handle } {}
+        ~ScopedEventHandle() { pool->FreeEvent(handle); }
+        operator HANDLE() { return handle; }
+    private:
+        EventPool*  pool;
+        HANDLE      handle;
+    };
+
+    inline ScopedEventHandle GetEvent()
     {
         std::lock_guard lock(free_events_mutex);
         if (free_event_count)
         {
-            return free_events.data()[--free_event_count];
+            return ScopedEventHandle{ this, free_events.data()[--free_event_count] };
         }
         else
         {
             // HANDLEの値が必要なだけなのでイテレータの無効化は考慮しない
-            return free_events.emplace_back(RequestEventHandle());
+            return ScopedEventHandle{ this, free_events.emplace_back(RequestEventHandle()) };
         }
     }
 
@@ -89,7 +101,7 @@ private:
 
 
 
-struct FenceD3D12::IImpl : util::details::NEW_DELETE_OVERRIDE
+struct FenceD3D12::IImpl : public util::details::NEW_DELETE_OVERRIDE
 {
     virtual ~IImpl() {}
 
@@ -108,11 +120,17 @@ struct FenceD3D12::IImpl : util::details::NEW_DELETE_OVERRIDE
     virtual BMRESULT SubmitSignal(ID3D12CommandQueue* _queue, const uint64_t* _value) = 0;
     virtual BMRESULT SubmitSignalToCpu(ID3D12CommandQueue* _queue) = 0;
 
+    // SwapChainD3D12用メソッド
+    virtual BMRESULT SwapPayload(FenceD3D12* _src/*from swapchain*/, uint64_t _wait_value/*from swapchain*/) = 0;
+
+    virtual void SetPayload(FenceD3D12* _src, uint64_t _wait_value) { B3D_UNREFERENCED(_src, _wait_value); B3D_ASSERT(false && __FUNCTION__); }
+
 };
 
 class FenceD3D12::BinaryGpuToCpuImpl : public FenceD3D12::IImpl
 {
-    enum SIGNAL_STATE : uint64_t { UNSIGNALED, SIGNALED, SIGNALING };
+    friend class FenceD3D12::BinaryGpuToCpuImplForSwapChain;
+    enum SIGNAL_STATE : uint64_t { UNSIGNALED, SIGNALED, SIGNALING, SWAPCHAIN_IMPL };
 public:
     BinaryGpuToCpuImpl(FenceD3D12* _owner)
         : owner         { _owner }
@@ -262,6 +280,20 @@ public:
         return BMRESULT_SUCCEED;
     }
 
+    BMRESULT SwapPayload(FenceD3D12* _src/*from swapchain*/, uint64_t _wait_value/*from swapchain*/) override
+    {
+        if (!owner->impl_swapchain)
+            owner->impl_swapchain = owner->CreateImplForSwapChain();
+
+        owner->impl_swapchain->SetPayload(_src, _wait_value);
+
+        // Wait,Reset (cpu to gpu) / SubmitWait (gpu to gpu) が呼び出されるまでimpl_swapchainにセットされたSwapChainD3D12からのフェンスの待機を行えるよう、owner->impl をすり替えます。
+        // Wait,Reset (cpu to gpu) / SubmitWait (gpu to gpu) の呼び出し後に、ペイロードを元に戻します。
+        owner->impl = owner->impl_swapchain;
+        state = SWAPCHAIN_IMPL;
+        return BMRESULT_SUCCEED;
+    }
+
 private:
     BMRESULT SetEvent(HANDLE _event_handle)
     {
@@ -273,7 +305,6 @@ private:
     {
         auto timeout = std::min(_timeout, std::numeric_limits<uint32_t>::max());
         auto result = WaitForSingleObject(_event_handle, timeout);
-        event_pool.FreeEvent(_event_handle);
 
         if (result == WAIT_OBJECT_0)
         {
@@ -292,6 +323,12 @@ private:
         }
     }
 
+    void RestorePayload()
+    {
+        state = UNSIGNALED;
+        owner->impl = this;
+    }
+
 private:
     FenceD3D12*             owner;
     ID3D12Fence1*           fence;
@@ -303,7 +340,8 @@ private:
 
 class FenceD3D12::BinaryGpuToGpuImpl : public FenceD3D12::IImpl
 {
-    enum SIGNAL_STATE : uint64_t { UNSIGNALED, SIGNALED, SIGNALING };
+    friend class FenceD3D12::BinaryGpuToGpuImplForSwapChain;
+    enum SIGNAL_STATE : uint64_t { UNSIGNALED, SIGNALED, SIGNALING, SWAPCHAIN_IMPL };
 public:
     BinaryGpuToGpuImpl(FenceD3D12* _owner)
         : owner         { _owner }
@@ -375,7 +413,7 @@ public:
 
         B3D_ADD_DEBUG_MSG_EX2(owner, DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION
                               , hlp::GetHexString((void*)owner), "Name: ", hlp::GetName(owner)
-                              , __FUNCTION__": (FENCE_TYPE_BINARY_GPU_TO_GPU)で待機操作を実行することは出来ません。");
+                              , __FUNCTION__": (FENCE_TYPE_BINARY_GPU_TO_GPU)でシグナル操作を実行することは出来ません。");
 
         return BMRESULT_FAILED_INVALID_CALL;
     }
@@ -414,12 +452,32 @@ public:
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
 
+    BMRESULT SwapPayload(FenceD3D12* _src/*from swapchain*/, uint64_t _wait_value/*from swapchain*/) override
+    {
+        if (!owner->impl_swapchain)
+            owner->impl_swapchain = owner->CreateImplForSwapChain();
+
+        owner->impl_swapchain->SetPayload(_src, _wait_value);
+
+        // Wait,Reset (cpu to gpu) / SubmitWait (gpu to gpu) が呼び出されるまでimpl_swapchainにセットされたSwapChainD3D12からのフェンスの待機を行えるよう、owner->impl をすり替えます。
+        // Wait,Reset (cpu to gpu) / SubmitWait (gpu to gpu) の呼び出し後に、ペイロードを元に戻します。
+        owner->impl = owner->impl_swapchain;
+        state = SWAPCHAIN_IMPL;
+        return BMRESULT_SUCCEED;
+    }
+
 private:
     BMRESULT CreateFence()
     {
         hlp::SafeRelease(fence);
         auto hr = owner->device12->CreateFence(owner->desc.initial_value, GetNativeFenceFlags(owner->desc.flags), IID_PPV_ARGS(&fence));
         return HR_TRACE_IF_FAILED_EX(owner, hr);
+    }
+
+    void RestorePayload()
+    {
+        state = UNSIGNALED;
+        owner->impl = this;
     }
 
 private:
@@ -608,6 +666,8 @@ public:
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
 
+    BMRESULT SwapPayload(FenceD3D12* _src/*from swapchain*/, uint64_t _wait_value/*from swapchain*/) override { B3D_UNREFERENCED(_src, _wait_value); return BMRESULT_FAILED_INVALID_PARAMETER; }
+
 private:
     BMRESULT SetEvent(HANDLE _event_handle, uint64_t _value)
     {
@@ -619,7 +679,6 @@ private:
     {
         auto timeout = std::min(_timeout, std::numeric_limits<uint32_t>::max());
         auto result = WaitForSingleObject(_event_handle, timeout);
-        event_pool.FreeEvent(_event_handle);
         
         if (result == WAIT_OBJECT_0)
         {
@@ -656,14 +715,289 @@ private:
 
 };
 
+class FenceD3D12::BinaryGpuToCpuImplForSwapChain : public FenceD3D12::IImpl
+{
+    enum SIGNAL_STATE : uint64_t { UNSIGNALED, SIGNALED, SIGNALING };
+public:
+    BinaryGpuToCpuImplForSwapChain(FenceD3D12* _owner, BinaryGpuToCpuImpl* _original_impl)
+        : owner                 { _owner }
+        , original_impl         { _original_impl }
+        , state                 { UNSIGNALED }
+        , src_impl              {}
+        , src_swapchain_fence   {}
+        , src_wait_fence_value  {}
+    {}
+
+    virtual ~BinaryGpuToCpuImplForSwapChain()
+    {
+        if (src_impl)
+            NotifyInvalid();
+    }
+
+    BMRESULT Init() override { return BMRESULT_SUCCEED; }
+
+    ID3D12Fence1* GetD3D12Fence() override { return src_swapchain_fence; }
+    ID3D12Fence1* GetD3D12Fence() const override { return src_swapchain_fence; }
+
+    BMRESULT Reset() override
+    {
+        if (state == UNSIGNALED)
+            return BMRESULT_SUCCEED;
+
+        if (state == SIGNALING)
+        {
+            // SIGNALINGの場合、現在リセット可能かどうかを確認します。
+            auto value = src_swapchain_fence->GetCompletedValue();
+            if (value < src_wait_fence_value)
+            {
+                B3D_ADD_DEBUG_MSG_EX2(owner, DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION
+                                      , hlp::GetHexString((void*)owner), "Name: ", hlp::GetName(owner)
+                                      , " (FENCE_TYPE_BINARY_GPU_TO_CPU)キューで現在使用中のフェンスをリセットすることは出来ません。");
+
+                return BMRESULT_FAILED_INVALID_CALL;
+            }
+        }
+
+        // ペイロードを元に戻します。
+        original_impl->RestorePayload();
+        src_impl             = nullptr;
+        src_swapchain_fence  = nullptr;
+        src_wait_fence_value = 0;
+        state = UNSIGNALED;
+        return BMRESULT_SUCCEED;
+    }
+    BMRESULT GetCompletedValue(uint64_t* _value) const override
+    {
+        B3D_UNREFERENCED(_value);
+
+        if (state == SIGNALED)
+            return BMRESULT_SUCCEED;
+
+        auto result = src_swapchain_fence->GetCompletedValue();
+        if (result == UINT64_MAX)
+            return BMRESULT_FAILED_DEVICE_REMOVED;
+
+        if (result < src_wait_fence_value)
+            return BMRESULT_SUCCEED_NOT_READY;
+
+        state = SIGNALED;
+        return BMRESULT_SUCCEED;
+    }
+    BMRESULT Wait(uint64_t _value, uint32_t _timeout_millisec) override
+    {
+        B3D_UNREFERENCED(_value);
+
+        if (state == SIGNALED)
+            return BMRESULT_SUCCEED;
+
+        // 0の場合排他制御コストを回避するためイベントを使用しない。
+        if (_timeout_millisec == 0)
+        {
+            auto result = src_swapchain_fence->GetCompletedValue();
+            if (result == UINT64_MAX)
+                return BMRESULT_FAILED_DEVICE_REMOVED;
+
+            if (result < src_wait_fence_value)
+                return BMRESULT_SUCCEED_NOT_READY;
+
+            state = SIGNALED;
+            return BMRESULT_SUCCEED;
+        }
+        else if (_timeout_millisec == UINT64_MAX)
+        {
+            return SetEvent(NULL);
+        }
+        else
+        {
+            // 待機イベントを設定
+            auto event_handle = original_impl->event_pool.GetEvent();
+            B3D_RET_IF_FAILED(SetEvent(event_handle));
+        
+            // イベントを待機
+            return WaitEvent(event_handle, _timeout_millisec);
+        }
+    }
+    BMRESULT Signal(uint64_t _value) override { return original_impl->Signal(_value); }
+
+    BMRESULT SubmitWait       (ID3D12CommandQueue* _queue, const uint64_t* _value) override { B3D_UNREFERENCED(_queue, _value); return NotifyInvalid(); }
+    BMRESULT SubmitSignal     (ID3D12CommandQueue* _queue, const uint64_t* _value) override { B3D_UNREFERENCED(_queue, _value); return NotifyInvalid(); }
+    BMRESULT SubmitSignalToCpu(ID3D12CommandQueue* _queue)                         override { B3D_UNREFERENCED(_queue);         return NotifyInvalid(); }
+
+    BMRESULT SwapPayload(FenceD3D12* _src/*from swapchain*/, uint64_t _wait_value/*from swapchain*/) override
+    {
+        B3D_UNREFERENCED(_src, _wait_value);
+        return NotifyInvalid();
+    }
+
+    void SetPayload(FenceD3D12* _src/*from swapchain*/, uint64_t _wait_value/*from swapchain*/) override
+    {
+        src_impl             = _src->impl;
+        src_swapchain_fence  = _src->impl->GetD3D12Fence();
+        src_wait_fence_value = _wait_value; // スワップチェインフェンスはFENCE_TYPE_TIMELINEとして作成されています。
+        state = SIGNALING;
+    }
+
+private:
+    BMRESULT SetEvent(HANDLE _event_handle)
+    {
+        auto hr = src_swapchain_fence->SetEventOnCompletion(src_wait_fence_value, _event_handle);
+        return HR_TRACE_IF_FAILED_EX(owner, hr);
+    }
+    BMRESULT WaitEvent(HANDLE _event_handle, uint32_t _timeout)
+    {
+        auto timeout = std::min(_timeout, std::numeric_limits<uint32_t>::max());
+        auto result = WaitForSingleObject(_event_handle, timeout);
+
+        if (result == WAIT_OBJECT_0)
+        {
+            state = SIGNALED;
+            return BMRESULT_SUCCEED;
+        }
+        else if (result == WAIT_TIMEOUT)
+        {
+            return BMRESULT_SUCCEED_TIMEOUT;
+        }
+        else
+        {
+            B3D_ASSERT(result != WAIT_ABANDONED);
+            auto lerr = HRESULT_FROM_WIN32(GetLastError());
+            return HR_TRACE_IF_FAILED_EX(owner, lerr);
+        }
+    }
+
+    BMRESULT NotifyInvalid()
+    {
+        B3D_ADD_DEBUG_MSG_EX2(owner, DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION
+                              , hlp::GetHexString((void*)owner), "Name: ", hlp::GetName(owner)
+                              , " (FENCE_TYPE_BINARY_GPU_TO_CPU) ISwapChain::AcquireNextBufferに指定さてから、Resetが実行されていません。 ISwapChain::AcquireNextBufferに指定したフェンスはその他の用途に使用する前に正確に待機し、リセットする必要があります。");
+        return BMRESULT_FAILED_INVALID_PARAMETER;
+    }
+
+private:
+    FenceD3D12*             owner;
+    BinaryGpuToCpuImpl*     original_impl;
+    mutable SIGNAL_STATE    state;
+    IImpl*                  src_impl;
+    ID3D12Fence1*           src_swapchain_fence;
+    uint64_t                src_wait_fence_value;
+
+};
+
+class FenceD3D12::BinaryGpuToGpuImplForSwapChain : public FenceD3D12::IImpl
+{
+    enum SIGNAL_STATE : uint64_t { UNSIGNALED, SIGNALED, SIGNALING };
+public:
+    BinaryGpuToGpuImplForSwapChain(FenceD3D12* _owner, BinaryGpuToGpuImpl* _original_impl)
+        : owner                 { _owner }
+        , original_impl         { _original_impl }
+        , state                 { UNSIGNALED }
+        , src_impl              {}
+        , src_swapchain_fence   {}
+        , src_wait_fence_value  {}
+    {}
+
+    virtual ~BinaryGpuToGpuImplForSwapChain()
+    {
+        if (src_impl)
+            NotifyInvalid();
+    }
+
+    BMRESULT Init() override { return BMRESULT_SUCCEED; }
+
+    ID3D12Fence1* GetD3D12Fence() override { return src_swapchain_fence; }
+    ID3D12Fence1* GetD3D12Fence() const override { return src_swapchain_fence; }
+
+    BMRESULT Reset() override
+    {
+        if (state == SIGNALING)
+        {
+            // SIGNALINGの場合、現在リセット可能かどうかを確認します。
+            auto value = src_swapchain_fence->GetCompletedValue();
+            if (value < src_wait_fence_value)
+            {
+                B3D_ADD_DEBUG_MSG_EX2(owner, DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION
+                                      , hlp::GetHexString((void*)owner), "Name: ", hlp::GetName(owner)
+                                      , " (FENCE_TYPE_BINARY_GPU_TO_GPU)キューで現在使用中のフェンスをリセットすることは出来ません。");
+
+                return BMRESULT_FAILED_INVALID_CALL;
+            }
+        }
+
+        // ペイロードを元に戻します。
+        ResetPayload();
+        state = UNSIGNALED;
+        return BMRESULT_SUCCEED;
+    }
+    BMRESULT GetCompletedValue(uint64_t* _value)                            const override { return src_impl->GetCompletedValue(_value); }
+    BMRESULT Wait             (uint64_t _value, uint32_t _timeout_millisec)       override { return src_impl->Wait(_value, _timeout_millisec); }
+    BMRESULT Signal           (uint64_t _value)                                   override { return original_impl->Signal(_value); }
+
+    BMRESULT SubmitWait(ID3D12CommandQueue* _queue, const uint64_t* _value) override
+    {
+        B3D_UNREFERENCED(_value);
+
+        auto hr = _queue->Wait(src_swapchain_fence, src_wait_fence_value);
+        B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED_EX(owner, hr));
+
+        // GPU_TO_GPUフェンスは、キューでの待機が完了次第、すぐにリセット(UNSIGNALED)されます。
+        ResetPayload();
+        state = UNSIGNALED;
+        return BMRESULT_SUCCEED;
+    }
+    BMRESULT SubmitSignal(ID3D12CommandQueue* _queue, const uint64_t* _value) override { B3D_UNREFERENCED(_value, _queue); return NotifyInvalid(); }
+    BMRESULT SubmitSignalToCpu(ID3D12CommandQueue* _queue)                    override { B3D_UNREFERENCED(_queue);         return NotifyInvalid(); }
+
+    BMRESULT SwapPayload(FenceD3D12* _src/*from swapchain*/, uint64_t _wait_value/*from swapchain*/) override
+    {
+        B3D_UNREFERENCED(_src, _wait_value);
+        return NotifyInvalid();
+    }
+
+    void SetPayload(FenceD3D12* _src/*from swapchain*/, uint64_t _wait_value/*from swapchain*/) override
+    {
+        src_impl             = _src->impl;
+        src_swapchain_fence  = _src->impl->GetD3D12Fence();
+        src_wait_fence_value = _wait_value; // スワップチェインフェンスはFENCE_TYPE_TIMELINEとして作成されています。
+        state = SIGNALING;
+    }
+
+private:
+    BMRESULT NotifyInvalid()
+    {
+        B3D_ADD_DEBUG_MSG_EX2(owner, DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION
+                              , hlp::GetHexString((void*)owner), "Name: ", hlp::GetName(owner)
+                              , " (FENCE_TYPE_BINARY_GPU_TO_GPU) ISwapChain::AcquireNextBufferに指定さてから、SubmitWaitが実行されていません。 ISwapChain::AcquireNextBufferに指定したフェンスはその他の用途に使用する前に正確に待機し、リセットされている必要があります。");
+        return BMRESULT_FAILED_INVALID_PARAMETER;
+    }
+
+    void ResetPayload()
+    {
+        original_impl->RestorePayload();
+        src_impl             = nullptr;
+        src_swapchain_fence  = nullptr;
+        src_wait_fence_value = 0;
+    }
+
+private:
+    FenceD3D12*             owner;
+    BinaryGpuToGpuImpl*     original_impl;
+    mutable SIGNAL_STATE    state;
+    IImpl*                  src_impl;
+    ID3D12Fence1*           src_swapchain_fence;
+    uint64_t                src_wait_fence_value;
+
+};
+
 
 
 B3D_APIENTRY FenceD3D12::FenceD3D12()
-    : ref_count { 1 }
-    , name      {}
-    , device    {}
-    , desc      {}
-    , device12  {}
+    : ref_count         { 1 }
+    , name              {}
+    , device            {}
+    , desc              {}
+    , device12          {}
+    , impl              {}
+    , impl_swapchain    {}
 {
 
 }
@@ -708,6 +1042,7 @@ B3D_APIENTRY FenceD3D12::CreateImpl()
 void
 B3D_APIENTRY FenceD3D12::Uninit() 
 {
+    B3DSafeDelete(impl_swapchain);
     B3DSafeDelete(impl);
     name.reset();
     hlp::SafeRelease(device);
@@ -838,6 +1173,25 @@ BMRESULT
 B3D_APIENTRY FenceD3D12::SubmitSignalToCpu(ID3D12CommandQueue* _queue)
 {
     return impl->SubmitSignalToCpu(_queue);
+}
+
+BMRESULT
+B3D_APIENTRY FenceD3D12::SwapPayload(FenceD3D12* _src, uint64_t _wait_value)
+{
+    return impl->SwapPayload(_src, _wait_value);
+}
+
+FenceD3D12::IImpl* FenceD3D12::CreateImplForSwapChain()
+{
+    switch (desc.type)
+    {
+    case buma3d::FENCE_TYPE_BINARY_GPU_TO_CPU: return B3DNewArgs(BinaryGpuToCpuImplForSwapChain, this, SCAST<BinaryGpuToCpuImpl*>(impl));
+    case buma3d::FENCE_TYPE_BINARY_GPU_TO_GPU: return B3DNewArgs(BinaryGpuToGpuImplForSwapChain, this, SCAST<BinaryGpuToGpuImpl*>(impl));
+
+    case buma3d::FENCE_TYPE_TIMELINE:
+    default:
+        return nullptr;
+    }
 }
 
 
