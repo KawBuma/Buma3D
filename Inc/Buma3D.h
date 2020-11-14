@@ -94,12 +94,19 @@ inline constexpr bool PLATFORM_IS_USE_ANDROID = PLATFORM_USING == PLATFORM_TYPE:
 namespace buma3d
 {
 
-inline constexpr uint32_t MakeHeaderVersion(uint32_t _major, uint32_t _minor, uint32_t _patch)
+inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, uint32_t _patch)
 {
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = MakeHeaderVersion(0, 1, 1);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 1, 2);
+
+inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
+{
+    *_major = (B3D_HEADER_VERSION >> 22);
+    *_minor = (B3D_HEADER_VERSION >> 12) & ~(~0 << 10);
+    *_patch =  B3D_HEADER_VERSION        & ~(~0 << 12);
+}
 
 }// namespace buma3d
 
@@ -259,11 +266,11 @@ using Char8T = char8_t;
 using Char8T = char;
 #endif 
 
-using EnumT                 = int32_t;
+using EnumT                 = uint32_t;
 using EnumFlagsT            = EnumT;
-using Enum64T               = int64_t;
+using Enum64T               = uint64_t;
 using EnumFlags64T          = Enum64T;
-using Enum8T                = int8_t;
+using Enum8T                = uint8_t;
 using EnumFlags8T           = Enum8T;
 
 using GpuVirtualAddress     = uint64_t;
@@ -3718,9 +3725,9 @@ struct ALLOCATOR_DESC
 
 
 using PFN_Buma3DInitialize               = BMRESULT (B3D_APIENTRY*)(const ALLOCATOR_DESC& _desc);
-using PFN_Buma3DGetInternalHeaderVersion = BMRESULT (B3D_APIENTRY*)();
+using PFN_Buma3DGetInternalHeaderVersion = uint32_t (B3D_APIENTRY*)();
 using PFN_Buma3DCreateDeviceFactory      = BMRESULT (B3D_APIENTRY*)(const DEVICE_FACTORY_DESC& _desc, IDeviceFactory** _dst);
-using PFN_Buma3DUninitialize             = BMRESULT (B3D_APIENTRY*)();
+using PFN_Buma3DUninitialize             = void     (B3D_APIENTRY*)();
 
 /**
  * @brief ライブラリの初期化処理を実行します。
@@ -3732,7 +3739,7 @@ B3D_APIENTRY Buma3DInitialize(const ALLOCATOR_DESC& _desc);
 
 /**
  * @brief 実装側で利用されている B3D_HEADER_VERSION の値を取得します。
- * @return uint32_t
+ * @return uint32_t 実装側のB3D_HEADER_VERSIONが返ります。
 */
 B3D_DLL_API uint32_t
 B3D_APIENTRY Buma3DGetInternalHeaderVersion();
