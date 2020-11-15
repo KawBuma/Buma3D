@@ -32,8 +32,8 @@ B3D_APIENTRY DeviceAdapterD3D12::Init(DeviceFactoryD3D12* _factory, const util::
     util::ComPtr<ID3D12Device> device;
     hr = D3D12CreateDevice(dxgi_adapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&device));
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
-    B3D_RET_IF_FAILED(InitDesc(device));
     B3D_RET_IF_FAILED(GetFeatureData(device));
+    B3D_RET_IF_FAILED(InitDesc(device));
 
     return BMRESULT_SUCCEED;
 }
@@ -52,6 +52,10 @@ B3D_APIENTRY DeviceAdapterD3D12::InitDesc(const util::ComPtr<ID3D12Device>& _dev
     desc.shared_system_memory          = dxgi_desc.SharedSystemMemory;
 
     desc.node_count = _device->GetNodeCount();
+
+    desc.adapter_type = (feature_data.architecture1.UMA || feature_data.architecture1.CacheCoherentUMA)
+        ? DEVICE_ADAPTER_TYPE_INTEGRATED_GPU
+        : DEVICE_ADAPTER_TYPE_DISCRETE_GPU;
 
     return BMRESULT_SUCCEED;
 }

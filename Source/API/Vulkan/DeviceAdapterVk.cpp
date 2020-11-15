@@ -4,6 +4,30 @@
 namespace buma3d
 {
 
+namespace util
+{
+namespace /*anonymous*/
+{
+
+inline DEVICE_ADAPTER_TYPE GetB3DDeviceAdapterType(VkPhysicalDeviceType _type)
+{
+    switch (_type)
+    {
+    case VK_PHYSICAL_DEVICE_TYPE_OTHER          : return DEVICE_ADAPTER_TYPE_OTHER;
+    case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU : return DEVICE_ADAPTER_TYPE_INTEGRATED_GPU;
+    case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU   : return DEVICE_ADAPTER_TYPE_DISCRETE_GPU;
+    case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU    : return DEVICE_ADAPTER_TYPE_VIRTUAL_GPU;
+    case VK_PHYSICAL_DEVICE_TYPE_CPU            : return DEVICE_ADAPTER_TYPE_CPU;
+
+    default:
+        return DEVICE_ADAPTER_TYPE(-1);
+    }
+}
+
+}// namespace /*anonymous*/
+}// namespace util
+
+
 B3D_APIENTRY DeviceAdapterVk::DeviceAdapterVk()
     : ref_count             { 1 }
     , name                  {}
@@ -346,19 +370,16 @@ B3D_APIENTRY DeviceAdapterVk::InitDesc()
     for (size_t i = 0; i < mp.memoryProperties.memoryHeapCount; i++)
     {
         auto&& i_heap = mp.memoryProperties.memoryHeaps[i];
-        if (desc.dedicated_video_memory < i_heap.size 
-            && (i_heap.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) == VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
-        {
-            desc.dedicated_video_memory = i_heap.size;
-        }
-        else if (desc.shared_system_memory < i_heap.size && i_heap.flags == 0)
-        {
-            desc.shared_system_memory = i_heap.size;
-        }
+        if (i_heap.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT && (pd_props.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
+            desc.dedicated_video_memory += i_heap.size;
+        else
+            desc.shared_system_memory += i_heap.size;
     }
 
     // このデバイスアダプタが所有する、抽象化可能な物理デバイスの数
     desc.node_count = phys_dev_group_props ? phys_dev_group_props->physicalDeviceCount : 1;
+
+    desc.adapter_type = util::GetB3DDeviceAdapterType(props.deviceType);
 }
 
 void 

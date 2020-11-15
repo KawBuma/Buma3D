@@ -99,7 +99,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 1, 2);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 1, 3);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -853,15 +853,25 @@ struct DEVICE_FACTORY_DESC
     DEVICE_FACTORY_DEBUG debug;
 };
 
+enum DEVICE_ADAPTER_TYPE : EnumT
+{
+      DEVICE_ADAPTER_TYPE_OTHER
+    , DEVICE_ADAPTER_TYPE_INTEGRATED_GPU
+    , DEVICE_ADAPTER_TYPE_DISCRETE_GPU
+    , DEVICE_ADAPTER_TYPE_VIRTUAL_GPU
+    , DEVICE_ADAPTER_TYPE_CPU
+};
+
 struct DEVICE_ADAPTER_DESC
 {
-    char        device_name[256];       // デバイス名です。
-    uint32_t    vendor_id;              // デバイスのベンダーIDです。
-    uint32_t    device_id;              // デバイスのIDです。
-    uint8_t     adapter_luid[8];        // アダプターのLUIDです。OSの終了時まで値が固有です。
-    size_t      dedicated_video_memory; // デバイス専用のビデオメモリのサイズです。
-    size_t      shared_system_memory;   // デバイスとホストが共有可能なメモリのサイズです。
-    uint32_t    node_count;             // アダプターが抽象化している物理的なGPUの数です。
+    char                device_name[256];       // デバイス名です。
+    uint32_t            vendor_id;              // デバイスのベンダーIDです。
+    uint32_t            device_id;              // デバイスのIDです。
+    uint8_t             adapter_luid[8];        // アダプターのLUIDです。OSの終了時まで値が固有です。
+    size_t              dedicated_video_memory; // デバイス専用のビデオメモリのサイズです。
+    size_t              shared_system_memory;   // デバイスとホストが共有可能なメモリのサイズです。
+    uint32_t            node_count;             // アダプターが抽象化している物理的なGPUの数です。
+    DEVICE_ADAPTER_TYPE adapter_type;
 };
 
 #pragma endregion factory
@@ -2078,7 +2088,7 @@ struct SUBMIT_WAIT_DESC
 };
 
 
-enum COMMAND_LIST_LEVEL
+enum COMMAND_LIST_LEVEL : EnumT
 {
       COMMAND_LIST_LEVEL_PRIMARY   // プライマリコマンドリストを指定します。
     , COMMAND_LIST_LEVEL_SECONDARY // セカンダリ(バンドル)コマンドリストを割り当てます。 この値で作成されたコマンドリストは単体でキューに送信することは出来ません。 現在、COMMAND_TYPE_DIRECTのコマンドリスト、アロケーター以外で指定することは出来ません。
@@ -2106,7 +2116,7 @@ struct COMMAND_ALLOCATOR_DESC
     COMMAND_ALLOCATOR_FLAGS flags;
 };
 
-enum COMMAND_ALLOCATOR_RESET_FLAG
+enum COMMAND_ALLOCATOR_RESET_FLAG : EnumT
 {
       COMMAND_ALLOCATOR_RESET_FLAG_NONE              = 0x0
     , COMMAND_ALLOCATOR_RESET_FLAG_RELEASE_RESOURCES = 0x1 // 記録されたコマンドのリセットに加えて、そのメモリも解放することを指定します。 このフラグが指定されていない場合、記録された全てのコマンドはリセットされますが、メモリは再利用のために保持されます。
@@ -2134,7 +2144,7 @@ struct COMMAND_LIST_DESC
  *       この列挙の値は、コマンドリストが正常に使用される場合の状態遷移を理論的に表現するためのものです。 
  *       *記録されたリソースの破棄等の、コマンドアロケータ、コマンドリストの範囲外で発生したエラーを確認することはできません。
 */
-enum COMMAND_LIST_STATE
+enum COMMAND_LIST_STATE : EnumT
 {
       COMMAND_LIST_STATE_INITIAL    // コマンドリストが割り当てられた、またはリセットされた状態です。
     , COMMAND_LIST_STATE_RECORDING  // コマンドを記録可能な状態です。
@@ -2157,7 +2167,7 @@ struct COMMAND_LIST_INHERITANCE_DESC
     QUERY_FLAGS     query_flags;
 };
 
-enum COMMAND_LIST_BEGIN_FLAG
+enum COMMAND_LIST_BEGIN_FLAG : EnumT
 {
       COMMAND_LIST_BEGIN_FLAG_NONE                      = 0x0
     , COMMAND_LIST_BEGIN_FLAG_ONE_TIME_SUBMIT           = 0x1 // 一度キューに送信すると無効状態となる事を指定します。
@@ -2172,7 +2182,7 @@ struct COMMAND_LIST_BEGIN_DESC
     const COMMAND_LIST_INHERITANCE_DESC* inheritance_desc; // セカンダリコマンドリストの場合に参照されます。
 };
 
-enum STENCIL_FACE
+enum STENCIL_FACE : EnumT
 {
       STENCIL_FACE_FLAG_FRONT_AND_BACK
     , STENCIL_FACE_FLAG_FRONT     
@@ -3247,7 +3257,7 @@ struct RASTERIZATION_STATE_DESC
     float                   line_width;                     // D3D12では、ライン幅が1に固定されるため、値は無視されます。
 };
 
-enum SHADING_RATE
+enum SHADING_RATE : EnumT
 {
       SHADING_RATE_ONE_INVOCATION_PER_1X1
     , SHADING_RATE_ONE_INVOCATION_PER_1X2

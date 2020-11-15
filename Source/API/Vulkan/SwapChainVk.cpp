@@ -403,19 +403,21 @@ B3D_APIENTRY SwapChainVk::SetPresentMode(VkSwapchainCreateInfoKHR& _ci)
 
 #if B3D_PLATFORM_IS_USE_WINDOWS
     {
-        if (!devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT || !inspfn->vkGetPhysicalDeviceSurfacePresentModesKHR)
-            return BMRESULT_FAILED_NOT_SUPPORTED;
-
-        auto&& si = surface->GetSurfaceData().surface_info2_khr;
-        devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT(pd, &si, &num_modes, nullptr);
-        modes.resize(num_modes);
-        devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT(pd, &si, &num_modes, modes.data());
+        if (!inspfn->vkGetPhysicalDeviceSurfacePresentModesKHR)
+            return BMRESULT_FAILED;
 
         // NOTE: vkGetPhysicalDeviceSurfacePresentModes2EXTを呼んだとしても、vkGetPhysicalDeviceSurfacePresentModesKHRも呼ばないと検証レイヤーが警告を発する。
-        uint32_t num_modes2 = 0;
-        inspfn->vkGetPhysicalDeviceSurfacePresentModesKHR(pd, _ci.surface, &num_modes2, nullptr);
-        util::DyArray<VkPresentModeKHR> modes2(num_modes2);
-        inspfn->vkGetPhysicalDeviceSurfacePresentModesKHR(pd, _ci.surface, &num_modes2, modes2.data());
+        inspfn->vkGetPhysicalDeviceSurfacePresentModesKHR(pd, _ci.surface, &num_modes, nullptr);
+        util::DyArray<VkPresentModeKHR> modes(num_modes);
+        inspfn->vkGetPhysicalDeviceSurfacePresentModesKHR(pd, _ci.surface, &num_modes, modes.data());
+
+        if (devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT)
+        {
+            auto&& si = surface->GetSurfaceData().surface_info2_khr;
+            devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT(pd, &si, &num_modes, nullptr);
+            modes.resize(num_modes);
+            devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT(pd, &si, &num_modes, modes.data());
+        }
     }
 #else
     {

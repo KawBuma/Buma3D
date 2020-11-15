@@ -230,20 +230,33 @@ B3D_APIENTRY SurfaceD3D12::UpdateMostContainedOutput(DXGI_OUTPUT_DESC1* _output_
     auto data = RCAST<const SURFACE_PLATFORM_DATA_WINDOWS*>(desc.platform_data.data);
     HMONITOR current_hm = MonitorFromWindow((HWND)data->hwnd, MONITOR_DEFAULTTONEAREST);
 
-    uint32_t count = 0;
-    util::ComPtr<IDXGIOutput> output;
-    auto&& dxgi_adapter = adapter->GetDXGIAdapter();
-    while (dxgi_adapter->EnumOutputs(count++, &output) != DXGI_ERROR_NOT_FOUND)
+    auto Find = [&](util::ComPtr<IDXGIAdapter1>& _adapter_tmp)
     {
-        util::ComPtr<IDXGIOutput6> output6;
-        output.As(&output6);
-
-        output6->GetDesc1(_output_desc);
-        if (_output_desc->Monitor == current_hm)
+        uint32_t count = 0;
+        util::ComPtr<IDXGIOutput> output;
+        while (_adapter_tmp->EnumOutputs(count++, &output) == S_OK)
         {
-            last_most_contained_output = output6;
-            break;
+            util::ComPtr<IDXGIOutput6> output6;
+            output.As(&output6);
+
+            output6->GetDesc1(_output_desc);
+            if (_output_desc->Monitor == current_hm)
+            {
+                last_most_contained_output = output6;
+                return true;
+            }
         }
+        return false;
+    };
+
+    // OPTIMIZE: SurfaceD3D12::UpdateMostContainedOutput
+    uint32_t                    adapter_count = 0;
+    util::ComPtr<IDXGIAdapter1> adapter_tmp;
+    auto f = adapter->GetDeviceFactory()->GetDXGIFactory();
+    while (f->EnumAdapters1(adapter_count++, &adapter_tmp) == S_OK)
+    {
+        if (Find(adapter_tmp))
+            break;
     }
 }
 
