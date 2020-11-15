@@ -375,7 +375,7 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
     auto Set = [&](const D3D12_HEAP_PROPERTIES& _props, RESOURCE_HEAP_FLAGS _flags)
     {
         // D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS
-        heap_type_bits[ONLY_BUF] = 1 << index;
+        heap_type_bits[ONLY_BUF] |= 1 << index;
         hp  ->heap_index         = index;
         hp  ->flags              = _flags;
         hd12->Flags              = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
@@ -383,7 +383,7 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
         Offset();
                         
         // D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES
-        heap_type_bits[ONLY_NON_RT_DS_TEX] = 1 << index;
+        heap_type_bits[ONLY_NON_RT_DS_TEX] |= 1 << index;
         hp  ->heap_index                   = index;
         hp  ->flags                        = _flags;
         hd12->Flags                        = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
@@ -391,7 +391,7 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
         Offset();
 
         // D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES
-        heap_type_bits[ONLY_RT_DS_TEX] = 1 << index;
+        heap_type_bits[ONLY_RT_DS_TEX] |= 1 << index;
         hp  ->heap_index               = index;
         hp  ->flags                    = _flags;
         hd12->Flags                    = D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES;
@@ -402,7 +402,7 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
         {
             // デバイスの対応するRESOURCE_HEAP_TIERがTIER2の場合全てのバッファ、テクスチャを指定可能なHEAP_TYPEを使用可能。
             // D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES
-            heap_type_bits[ALL_BUF_TEX] = 1 << index;
+            heap_type_bits[ALL_BUF_TEX] |= 1 << index;
             hp  ->heap_index            = index;
             hp  ->flags                 = _flags;
             hd12->Flags                 = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
