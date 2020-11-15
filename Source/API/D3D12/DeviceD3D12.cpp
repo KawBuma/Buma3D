@@ -412,8 +412,8 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
     };
 
     D3D12_HEAP_PROPERTIES d3d12hp{};
-    hp12->CreationNodeMask = ~0x0;// CreateResourceHeap時に指定
-    hp12->VisibleNodeMask = ~0x0; // CreateResourceHeap時に指定
+    d3d12hp.CreationNodeMask = ~0x0;// CreateResourceHeap時に指定
+    d3d12hp.VisibleNodeMask = ~0x0; // CreateResourceHeap時に指定
 
     constexpr RESOURCE_HEAP_PROPERTY_FLAGS DEFAULT_FLAGS = RESOURCE_HEAP_PROPERTY_FLAG_SUBSET_ALLOCATION | RESOURCE_HEAP_PROPERTY_FLAG_VISIBLE_NODE_MASK;
 
