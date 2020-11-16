@@ -414,6 +414,7 @@ B3D_APIENTRY SwapChainVk::SetPresentMode(VkSwapchainCreateInfoKHR& _ci)
         if (devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT)
         {
             auto&& si = surface->GetSurfaceData().surface_info2_khr;
+            modes.clear();
             devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT(pd, &si, &num_modes, nullptr);
             modes.resize(num_modes);
             devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT(pd, &si, &num_modes, modes.data());
