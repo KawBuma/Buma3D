@@ -408,7 +408,7 @@ B3D_APIENTRY SwapChainVk::SetPresentMode(VkSwapchainCreateInfoKHR& _ci)
 
         // NOTE: vkGetPhysicalDeviceSurfacePresentModes2EXTを呼んだとしても、vkGetPhysicalDeviceSurfacePresentModesKHRも呼ばないと検証レイヤーが警告を発する。
         inspfn->vkGetPhysicalDeviceSurfacePresentModesKHR(pd, _ci.surface, &num_modes, nullptr);
-        util::DyArray<VkPresentModeKHR> modes(num_modes);
+        modes.resize(num_modes);
         inspfn->vkGetPhysicalDeviceSurfacePresentModesKHR(pd, _ci.surface, &num_modes, modes.data());
 
         if (devpfn->vkGetPhysicalDeviceSurfacePresentModes2EXT)
