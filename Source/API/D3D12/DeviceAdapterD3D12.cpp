@@ -218,8 +218,8 @@ B3D_APIENTRY DeviceAdapterD3D12::GetDeviceAdapterLimits(DEVICE_ADAPTER_LIMITS* _
         , 4 * D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT * D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENTS_COMPONENTS   // max_vertex_input_binding_stride
         , D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENTS_COMPONENTS                                                       // max_vertex_output_components
         , UINT32_MAX                                                                                                // max_vertex_instance_data_step_rate
-        , D3D12_HS_MAXTESSFACTOR_UPPER_BOUND                                                                        // max_tessellation_generation_level
-        , D3D12_IA_PATCH_MAX_CONTROL_POINT_COUNT                                                                    // max_tessellation_patch_size
+        , SCAST<uint32_t>(D3D12_HS_MAXTESSFACTOR_UPPER_BOUND)                                                       // max_tessellation_generation_level
+        , SCAST<uint32_t>(D3D12_IA_PATCH_MAX_CONTROL_POINT_COUNT)                                                   // max_tessellation_patch_size
         , D3D12_VS_INPUT_REGISTER_COUNT * D3D12_VS_INPUT_REGISTER_COMPONENTS                                        // max_tessellation_control_per_vertex_input_components
         , D3D12_VS_OUTPUT_REGISTER_COUNT * D3D12_VS_OUTPUT_REGISTER_COMPONENTS                                      // max_tessellation_control_per_vertex_output_components
         , D3D12_HS_OUTPUT_PATCH_CONSTANT_REGISTER_SCALAR_COMPONENTS                                                 // max_tessellation_control_per_patch_output_components
@@ -251,7 +251,7 @@ B3D_APIENTRY DeviceAdapterD3D12::GetDeviceAdapterLimits(DEVICE_ADAPTER_LIMITS* _
         , D3D12_MIP_LOD_BIAS_MAX // D3D12_REQ_MIP_LEVELS                                                            // max_sampler_lod_bias
         , D3D12_REQ_MAXANISOTROPY                                                                                   // max_sampler_anisotropy
         , D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE                                                  // max_viewports
-        , { D3D12_VIEWPORT_BOUNDS_MIN, D3D12_VIEWPORT_BOUNDS_MAX }                                                  // max_viewport_dimensions[0,1]
+        , { D3D12_VIEWPORT_BOUNDS_MAX, D3D12_VIEWPORT_BOUNDS_MAX }                                                  // max_viewport_dimensions[0,1]
         , { D3D12_VIEWPORT_BOUNDS_MIN, D3D12_VIEWPORT_BOUNDS_MAX }                                                  // viewport_bounds_range[0,1]
         , D3D12_SUBPIXEL_FRACTIONAL_BIT_COUNT                                                                       // viewport_subpixel_bits
         , 1                                                                                                         // min_memory_map_alignment

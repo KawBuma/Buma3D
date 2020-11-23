@@ -644,17 +644,17 @@ B3D_APIENTRY DeviceFactoryVk::Init(const DEVICE_FACTORY_DESC& _desc)
 {
     CopyDesc(_desc);
 
-    if (desc.debug.is_enable && buma3d::IsEnableAllocatorDebug())
+    if (desc.debug.is_enabled && buma3d::IsEnableAllocatorDebug())
         SetAllocationCallbacks();
 
-    if (desc.debug.is_enable)
+    if (desc.debug.is_enabled)
         B3D_RET_IF_FAILED(CreateDebugMessageQueue());
 
     B3D_RET_IF_FAILED(CreateInstance());
 
     inspfn = B3DMakeUniqueArgs(InstancePFN, this);
 
-    if (desc.debug.is_enable) 
+    if (desc.debug.is_enabled) 
         B3D_RET_IF_FAILED(SetDebugLayer());
     
     B3D_RET_IF_FAILED(EnumPhysicalDevices());
@@ -895,7 +895,7 @@ B3D_APIENTRY DeviceFactoryVk::CreateInstance()
 
     // 有効化するレイヤーのセット
     util::DyArray<const char*> enable_layer_names_ary;
-    if (desc.debug.is_enable)
+    if (desc.debug.is_enabled)
     {
         for (auto& i : DEBUG_LAYERS_TO_ENABLE)
         {
@@ -932,7 +932,7 @@ B3D_APIENTRY DeviceFactoryVk::CreateInstance()
     };
     util::DyArray<const char*> enable_ext_names_ary;
     // 有効化するレイヤーのインスタンス拡張のセット
-    if (desc.debug.is_enable)
+    if (desc.debug.is_enabled)
     {
         for (auto& i : DEBUG_INST_EXT_TO_ENABLE)
         {
@@ -992,12 +992,12 @@ B3D_APIENTRY DeviceFactoryVk::CreateInstance()
 
     // 有効にする検証機能
     util::DyArray<VkValidationFeatureEnableEXT> vfenables;
-    if (desc.debug.is_enable)
+    if (desc.debug.is_enabled)
     {
         vfenables.emplace_back(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT);
 
         // gpu検証
-        if (desc.debug.gpu_based_validation.is_enable)
+        if (desc.debug.gpu_based_validation.is_enabled)
         {
             vfenables.emplace_back(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT);
             vfenables.emplace_back(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT);
@@ -1023,7 +1023,7 @@ B3D_APIENTRY DeviceFactoryVk::CreateInstance()
 
     // pNextを接続
     create_info.pNext = &validation_features;
-    if (desc.debug.is_enable == false)
+    if (desc.debug.is_enabled == false)
         validation_features.pNext = &validation_flags;
 
     vkr = vkCreateInstance(&create_info, B3D_VK_ALLOC_CALLBACKS, &instance);
@@ -1200,7 +1200,7 @@ B3D_APIENTRY DeviceFactoryVk::GetDesc() const
 BMRESULT 
 B3D_APIENTRY DeviceFactoryVk::GetDebugMessageQueue(IDebugMessageQueue** _dst)
 {
-    if (!desc.debug.is_enable || !message_queue)
+    if (!desc.debug.is_enabled || !message_queue)
         return BMRESULT_FAILED;
 
     (*_dst = message_queue.Get())->AddRef();
@@ -1312,7 +1312,7 @@ B3D_APIENTRY DeviceFactoryVk::CheckInstanceExtensionEnabled(const char* _request
 bool 
 B3D_APIENTRY DeviceFactoryVk::IsEnabledDebug()
 {
-    return desc.debug.is_enable;
+    return desc.debug.is_enabled;
 }
 
 void 

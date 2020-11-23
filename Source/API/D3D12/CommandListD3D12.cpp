@@ -265,7 +265,7 @@ B3D_APIENTRY CommandListD3D12::Init(DeviceD3D12* _device, const COMMAND_LIST_DES
 BMRESULT
 B3D_APIENTRY CommandListD3D12::CreateD3D12CommandList()
 {
-    if (device->GetDeviceFactory()->GetDesc().debug.gpu_based_validation.is_enable)
+    if (device->GetDeviceFactory()->GetDesc().debug.gpu_based_validation.is_enabled)
     {
         /* NOTE: GPU検証が有効である場合、CreateCommandList1でコマンドリストを作成しようとすると例外が発生するため、
                  一時的なアロケータを作成し、CreateCommandList関数にフォールバックします。 */

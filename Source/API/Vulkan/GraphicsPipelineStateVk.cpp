@@ -520,7 +520,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyMultisampleState(DESC_DATA* _dd, const
     if (_multisample_state.sample_masks == nullptr)
         util::MemCopyArray(multisample_state.sample_masks.data(), _multisample_state.sample_masks, num_sample_masks);
 
-    if (_multisample_state.sample_position_state.is_enable)
+    if (_multisample_state.sample_position_state.is_enabled)
     {
         auto&& sp = *(multisample_state.sample_positions = B3DMakeUnique(SAMPLE_POSITION_STATE_DESC_DATA)).get();
 
@@ -552,7 +552,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyBlendState(DESC_DATA* _dd, const GRAPH
     auto&& blend_state = *(_dd->blend_state = B3DMakeUnique(BLEND_STATE_DESC_DATA)).get();
     blend_state.desc = _blend_state;
 
-    if (_blend_state.is_enable_independent_blend)
+    if (_blend_state.is_enabled_independent_blend)
     {
         blend_state.attachments.resize(_blend_state.num_attachments);
         util::MemCopyArray(blend_state.attachments.data(), _blend_state.attachments, _blend_state.num_attachments);
@@ -872,7 +872,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareRasterizationState(VkGraphicsPipeli
     rasterization_statevk.ci.polygonMode             = util::GetNativeFillMode(rasterization_state.fill_mode);
     rasterization_statevk.ci.cullMode                = util::GetNativeCullMode(rasterization_state.cull_mode);
     rasterization_statevk.ci.frontFace               = rasterization_state.is_front_counter_clockwise ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
-    rasterization_statevk.ci.depthBiasEnable         = rasterization_state.is_enable_depth_bias;
+    rasterization_statevk.ci.depthBiasEnable         = rasterization_state.is_enabled_depth_bias;
     rasterization_statevk.ci.depthBiasConstantFactor = SCAST<float>(rasterization_state.depth_bias_scale);// TODO: D3D12との使用法の差の確認
     rasterization_statevk.ci.depthBiasClamp          = rasterization_state.depth_bias_clamp;
     rasterization_statevk.ci.depthBiasSlopeFactor    = rasterization_state.depth_bias_slope_scale;
@@ -881,7 +881,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareRasterizationState(VkGraphicsPipeli
     auto last_pnext = &rasterization_statevk.ci.pNext;
 
     rasterization_statevk.depth_clip_ci_ext.flags           = 0;// reserved
-    rasterization_statevk.depth_clip_ci_ext.depthClipEnable = rasterization_state.is_enable_depth_clip;
+    rasterization_statevk.depth_clip_ci_ext.depthClipEnable = rasterization_state.is_enabled_depth_clip;
     last_pnext = util::ConnectPNextChains(last_pnext, rasterization_statevk.depth_clip_ci_ext);
     
     rasterization_statevk.line_ci_ext.lineRasterizationMode = util::GetNativeLineRasterizationMode(rasterization_state.line_rasterization_mode);
@@ -898,7 +898,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareRasterizationState(VkGraphicsPipeli
     }
 
     rasterization_statevk.conservative_ci_ext.flags                            = 0;// reserved
-    rasterization_statevk.conservative_ci_ext.conservativeRasterizationMode    = rasterization_state.is_enable_conservative_raster ? VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT : VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
+    rasterization_statevk.conservative_ci_ext.conservativeRasterizationMode    = rasterization_state.is_enabled_conservative_raster ? VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT : VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
     rasterization_statevk.conservative_ci_ext.extraPrimitiveOverestimationSize = 0.f;// FIXME: GraphicsPipelineStateVk::PrepareRasterizationState(): extraPrimitiveOverestimationSize 
     last_pnext = util::ConnectPNextChains(last_pnext, rasterization_statevk.conservative_ci_ext);
 
@@ -913,10 +913,10 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareMultisampleState(VkGraphicsPipeline
 
     multisample_statevk.ci.flags                 = 0;// reserved
     multisample_statevk.ci.rasterizationSamples  = util::GetNativeSampleCount(multisample_state.rasterization_samples);
-    multisample_statevk.ci.sampleShadingEnable   = multisample_state.is_enable_sample_rate_shading;
-    multisample_statevk.ci.minSampleShading      = multisample_state.is_enable_sample_rate_shading ? 1.f : 0.f;// FIXME: GraphicsPipelineStateVk::PrepareMultisampleState(): minSampleShading
+    multisample_statevk.ci.sampleShadingEnable   = multisample_state.is_enabled_sample_rate_shading;
+    multisample_statevk.ci.minSampleShading      = multisample_state.is_enabled_sample_rate_shading ? 1.f : 0.f;// FIXME: GraphicsPipelineStateVk::PrepareMultisampleState(): minSampleShading
     multisample_statevk.ci.pSampleMask           = multisample_state.sample_masks;
-    multisample_statevk.ci.alphaToCoverageEnable = multisample_state.is_enable_alpha_to_coverage;
+    multisample_statevk.ci.alphaToCoverageEnable = multisample_state.is_enabled_alpha_to_coverage;
     multisample_statevk.ci.alphaToOneEnable      = VK_FALSE;
 
     // TODO: GraphicsPipelineStateVk::PrepareMultisampleState(): pNexts
@@ -927,7 +927,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareMultisampleState(VkGraphicsPipeline
     // multisample_statevk.coverage_reduction_ci_nv;
     // multisample_statevk.coverage_to_color_ci_nv;
 
-    if (multisample_state.sample_position_state.is_enable)
+    if (multisample_state.sample_position_state.is_enabled)
     {
         multisample_statevk.sample_locations_ci_ext.sampleLocationsEnable = VK_TRUE;
 
@@ -960,11 +960,11 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareDepthStencilState(VkGraphicsPipelin
     auto&& depth_stencil_statevk = *(_dd->depth_stencil_state_ci = B3DMakeUniqueArgs(VkPipelineDepthStencilStateCreateInfo, { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO })).get();
 
     depth_stencil_statevk.flags                 = 0;// reserved
-    depth_stencil_statevk.depthTestEnable       = depth_stencil_state.is_enable_depth_test;
-    depth_stencil_statevk.depthWriteEnable      = depth_stencil_state.is_enable_depth_write;
+    depth_stencil_statevk.depthTestEnable       = depth_stencil_state.is_enabled_depth_test;
+    depth_stencil_statevk.depthWriteEnable      = depth_stencil_state.is_enabled_depth_write;
     depth_stencil_statevk.depthCompareOp        = util::GetNativeComparisonFunc(depth_stencil_state.depth_comparison_func);
-    depth_stencil_statevk.depthBoundsTestEnable = depth_stencil_state.is_enable_depth_bounds_test;
-    depth_stencil_statevk.stencilTestEnable     = depth_stencil_state.is_enable_stencil_test;
+    depth_stencil_statevk.depthBoundsTestEnable = depth_stencil_state.is_enabled_depth_bounds_test;
+    depth_stencil_statevk.stencilTestEnable     = depth_stencil_state.is_enabled_stencil_test;
     depth_stencil_statevk.minDepthBounds        = depth_stencil_state.min_depth_bounds;
     depth_stencil_statevk.maxDepthBounds        = depth_stencil_state.max_depth_bounds;
 
@@ -991,7 +991,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareColorBlendState(VkGraphicsPipelineC
     auto&& blend_statevk = *(_dd->blend_state = B3DMakeUnique(BLEND_STATE_DATA_VK)).get();
 
     blend_statevk.ci.flags             = 0;// reserved
-    blend_statevk.ci.logicOpEnable     = blend_state.is_enable_logic_op;
+    blend_statevk.ci.logicOpEnable     = blend_state.is_enabled_logic_op;
     blend_statevk.ci.logicOp           = util::GetNativeLogicOpMode(blend_state.logic_op);
     blend_statevk.ci.attachmentCount   = blend_state.num_attachments;
     util::MemCopyArray(blend_statevk.ci.blendConstants, &blend_state.blend_constants.r, 4);
@@ -1001,7 +1001,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareColorBlendState(VkGraphicsPipelineC
 
     auto ConvertBlendAttachments = [](VkPipelineColorBlendAttachmentState* _dst, const RENDER_TARGET_BLEND_DESC& _src)
     {
-        _dst->blendEnable         = _src.is_enable_blend;
+        _dst->blendEnable         = _src.is_enabled_blend;
         _dst->srcColorBlendFactor = util::GetNativeBlendFactor    (_src.src_blend);
         _dst->dstColorBlendFactor = util::GetNativeBlendFactor    (_src.dst_blend);
         _dst->colorBlendOp        = util::GetNativeBlendOp        (_src.blend_op);
@@ -1011,7 +1011,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareColorBlendState(VkGraphicsPipelineC
         _dst->colorWriteMask      = util::GetNativeColorWriteFlags(_src.color_write_mask);
     };
     for (uint32_t i = 0; i < blend_state.num_attachments; i++)
-        ConvertBlendAttachments(&blend_statevk.attachments[i], blend_state.attachments[blend_state.is_enable_independent_blend ? i : 0]);
+        ConvertBlendAttachments(&blend_statevk.attachments[i], blend_state.attachments[blend_state.is_enabled_independent_blend ? i : 0]);
 
     _ci->pColorBlendState = &blend_statevk.ci;
 }

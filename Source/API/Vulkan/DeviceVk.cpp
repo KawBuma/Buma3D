@@ -643,7 +643,7 @@ B3D_APIENTRY DeviceVk::CreateLogicalDevice()
             }
         }
     };
-    if (factory->GetDesc().debug.is_enable)
+    if (factory->GetDesc().debug.is_enabled)
         SetExts(DEBUG_EXTS_TO_ENABLE);
     SetExts(EXTS_TO_ENABLE);
     device_create_info.enabledExtensionCount = (uint32_t)enable_ext_names_ary.size();

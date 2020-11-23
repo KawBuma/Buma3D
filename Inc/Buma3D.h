@@ -803,9 +803,9 @@ struct DEBUG_MESSAGE_CALLABCK_DESC
 // 有効にするデバッグ情報を設定します。
 struct DEBUG_MESSAGE_DESC
 {
-    DEBUG_MESSAGE_SEVERITY             severity;                  // 有効にするメッセージの重要度です。
-    DEBUG_MESSAGE_CATEGORY_FLAGS       category_flags;            // 有効にするメッセージの重要度における、有効にするメッセージのカテゴリです。
-    bool                               is_enable_debug_break;     // 有効にするメッセージの重要度のメッセージを取得した際にデバッグブレイクを実行するかどうかを指定します。
+    DEBUG_MESSAGE_SEVERITY             severity;                // 有効にするメッセージの重要度です。
+    DEBUG_MESSAGE_CATEGORY_FLAGS       category_flags;          // 有効にするメッセージの重要度における、有効にするメッセージのカテゴリです。
+    bool                               is_enabled_debug_break;  // 有効にするメッセージの重要度のメッセージを取得した際にデバッグブレイクを実行するかどうかを指定します。
 };
 
 enum GPU_BASED_VALIDATION_FLAG : EnumT
@@ -816,13 +816,13 @@ using GPU_BASED_VALIDATION_FLAGS = EnumFlagsT;
 
 struct GPU_BASED_VALIDATION_DESC
 {
-    bool                        is_enable;
+    bool                        is_enabled;
     GPU_BASED_VALIDATION_FLAGS  flags;
 };
 
 struct DEVICE_FACTORY_DEBUG
 {
-    bool                           is_enable;               // デバッグメッセージを有効にするかを指定します。
+    bool                           is_enabled;              // デバッグメッセージを有効にするかを指定します。
     DEBUG_MESSAGE_CALLABCK_DESC    debug_message_callback;  // デバッグメッセージ発行時のコールバック関数を指定します。
     uint32_t                       num_debug_messages;      // デバッグメッセージの重要度の数です [0 ~ DEBUG_MESSAGE_SEVERITY_END)。 この値が0の場合、キューにメッセージは追加されませんが、引き続きdebug_message_callbackに指定されたコールバック関数には全ての重要度、カテゴリのメッセージが通知されます。 
     const DEBUG_MESSAGE_DESC*      debug_messages;          // デバッグメッセージの重要度配列への有効なポインタです。
@@ -3240,15 +3240,15 @@ struct DEPTH_STENCILOP_DESC
 
 struct DEPTH_STENCIL_STATE_DESC
 {
-    bool                    is_enable_depth_test;
-    bool                    is_enable_depth_write;
+    bool                    is_enabled_depth_test;
+    bool                    is_enabled_depth_write;
     COMPARISON_FUNC         depth_comparison_func;
-    bool                    is_enable_depth_bounds_test;
+    bool                    is_enabled_depth_bounds_test;
     float                   min_depth_bounds;
     float                   max_depth_bounds;
-    bool                    is_enable_stencil_test;
-    DEPTH_STENCILOP_DESC    stencil_front_face;     // D3D12の場合、stencil _front/_back _face.compare_mask,write_mask,reference は同一の値である必要がありますが、暗黙的にRASTERIZATION_STATE_DESC::cull_modeに指定されていない面のパラメータを優先します。(CULL_MODE_NONEの場合、背面が優先されます。)
-    DEPTH_STENCILOP_DESC    stencil_back_face;      // D3D12の場合、stencil _front/_back _face.compare_mask,write_mask,reference は同一の値である必要がありますが、暗黙的にRASTERIZATION_STATE_DESC::cull_modeに指定されていない面のパラメータを優先します。(CULL_MODE_NONEの場合、背面が優先されます。)
+    bool                    is_enabled_stencil_test;
+    DEPTH_STENCILOP_DESC    stencil_front_face;             // D3D12の場合、stencil _front/_back _face.compare_mask,write_mask,reference は同一の値である必要がありますが、暗黙的にRASTERIZATION_STATE_DESC::cull_modeに指定されていない面のパラメータを優先します。(CULL_MODE_NONEの場合、背面が優先されます。)
+    DEPTH_STENCILOP_DESC    stencil_back_face;              // D3D12の場合、stencil _front/_back _face.compare_mask,write_mask,reference は同一の値である必要がありますが、暗黙的にRASTERIZATION_STATE_DESC::cull_modeに指定されていない面のパラメータを優先します。(CULL_MODE_NONEの場合、背面が優先されます。)
 };
 
 /**
@@ -3335,7 +3335,7 @@ enum LOGIC_OP : EnumT
 
 struct RENDER_TARGET_BLEND_DESC
 {
-    bool                        is_enable_blend;
+    bool                        is_enabled_blend;
     BLEND_FACTOR                src_blend;
     BLEND_FACTOR                dst_blend;
     BLEND_OP                    blend_op;
@@ -3347,11 +3347,11 @@ struct RENDER_TARGET_BLEND_DESC
 
 struct BLEND_STATE_DESC
 {
-    bool                                is_enable_independent_blend;    // 各attachments毎に異なるブレンドパラメータを指定可能にします。is_enable_logic_opはfalseである必要があります。
-    bool                                is_enable_logic_op;             // 論理演算によって値を操作する場合に指定します。この際、attachments[0].is_enable_blendはfalseである必要があります。
-    LOGIC_OP                            logic_op;                       // is_enable_logic_opがtrueの際に使用する、論理演算の操作です。
-    uint32_t                            num_attachments;                // is_enable_independent_blendがtrueの場合、attachments配列の要素数として扱われますが、is_enable_independent_blendの値に関係なく、サブパスのnum_color_attachmentsと等しい必要があります。
-    const RENDER_TARGET_BLEND_DESC*     attachments;                    // is_enable_independent_blendがfalseの場合、配列の先頭の要素のみが参照され、以降の値が無視されます。従って、is_enable_independent_blendがfalseの場合に限りnum_attachments以下の要素数の配列を指定することは有効です。
+    bool                                is_enabled_independent_blend;   // 各attachments毎に異なるブレンドパラメータを指定可能にします。is_enabled_logic_opはfalseである必要があります。
+    bool                                is_enabled_logic_op;            // 論理演算によって値を操作する場合に指定します。この際、attachments[0].is_enabled_blendはfalseである必要があります。
+    LOGIC_OP                            logic_op;                       // is_enabled_logic_opがtrueの際に使用する、論理演算の操作です。
+    uint32_t                            num_attachments;                // is_enabled_independent_blendがtrueの場合、attachments配列の要素数として扱われますが、is_enabled_independent_blendの値に関係なく、サブパスのnum_color_attachmentsと等しい必要があります。
+    const RENDER_TARGET_BLEND_DESC*     attachments;                    // is_enabled_independent_blendがfalseの場合、配列の先頭の要素のみが参照され、以降の値が無視されます。従って、is_enabled_independent_blendがfalseの場合に限りnum_attachments以下の要素数の配列を指定することは有効です。
     COLOR4                              blend_constants;
 };
 
@@ -3432,12 +3432,12 @@ struct RASTERIZATION_STATE_DESC
     FILL_MODE               fill_mode;
     CULL_MODE               cull_mode;
     bool                    is_front_counter_clockwise;
-    bool                    is_enable_depth_clip;           // VkPipelineRasterizationDepthClipStateCreateInfoEXT::depthClipEnable
-    bool                    is_enable_depth_bias;           // VkPipelineRasterizationStateCreateInfo::depthBiasEnable
-    int32_t                 depth_bias_scale;               // is_enable_depth_biasがfalseの場合、この値は0である必要があります。 VkPipelineRasterizationStateCreateInfo::depthBiasConstantFactor
-    float                   depth_bias_clamp;               // is_enable_depth_biasがfalseの場合、この値は0である必要があります。 VkPipelineRasterizationStateCreateInfo::depthBiasClamp
-    float                   depth_bias_slope_scale;         // is_enable_depth_biasがfalseの場合、この値は0である必要があります。 VkPipelineRasterizationStateCreateInfo::depthBiasSlopeFactor
-    bool                    is_enable_conservative_raster;  // VkPipelineRasterizationConservativeStateCreateInfoEXT 
+    bool                    is_enabled_depth_clip;          // VkPipelineRasterizationDepthClipStateCreateInfoEXT::depthClipEnable
+    bool                    is_enabled_depth_bias;          // VkPipelineRasterizationStateCreateInfo::depthBiasEnable
+    int32_t                 depth_bias_scale;               // is_enabled_depth_biasがfalseの場合、この値は0である必要があります。 VkPipelineRasterizationStateCreateInfo::depthBiasConstantFactor
+    float                   depth_bias_clamp;               // is_enabled_depth_biasがfalseの場合、この値は0である必要があります。 VkPipelineRasterizationStateCreateInfo::depthBiasClamp
+    float                   depth_bias_slope_scale;         // is_enabled_depth_biasがfalseの場合、この値は0である必要があります。 VkPipelineRasterizationStateCreateInfo::depthBiasSlopeFactor
+    bool                    is_enabled_conservative_raster; // VkPipelineRasterizationConservativeStateCreateInfoEXT 
     LINE_RASTERIZATION_MODE line_rasterization_mode;        // ラインレンダリング時に使用されます。
     float                   line_width;                     // D3D12では、ライン幅が1に固定されるため、値は無視されます。
 };
@@ -3510,7 +3510,7 @@ struct SAMPLE_POSITION_DESC
 
 struct SAMPLE_POSITION_STATE_DESC
 {
-    bool                        is_enable;
+    bool                        is_enabled;
     const SAMPLE_POSITION_DESC* desc;
 };
 
@@ -3538,14 +3538,14 @@ struct MULTISAMPLE_STATE_DESC
      * @remark この機能が無効となる特定の場合として、SV_Coverageの出力が存在する場合、SV_Target0では無い場合、または、SV_Target0出力が出力構造のメンバの先頭に存在しない場合が該当します。
      * @note この機能が有効である場合でも、sample_masksの動作は依然として実行されます。
     */
-    bool                is_enable_alpha_to_coverage;
+    bool                is_enabled_alpha_to_coverage;
 
     /**
      * @brief Sample-frequency execution を有効にし、hlsl入力構造体のメンバに sample補間修飾子、また SV_SampleIndexを持つ入力を宣言できるかどうかを指定します。 https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-struct#interpolation-modifiers-introduced-in-shader-model-4
      * @remark D3D12では、rasterization_samplesにアタッチメントと異なるサンプル数が指定されている場合(ForcedSampleCount != 0)、この機能をオフにする必要があります。
      * @note  Direct3DではVkPipelineMultisampleStateCreateInfo::minSampleShadingと同等の機能はありませんでした。(sample補間修飾子の無い入力構造はPixel-frequencyで実行されます。)
     */
-    bool                is_enable_sample_rate_shading;
+    bool                is_enabled_sample_rate_shading;
 
     SAMPLE_POSITION_STATE_DESC sample_position_state;
 };
@@ -3915,7 +3915,7 @@ struct IAllocator
 struct ALLOCATOR_DESC
 {
     IAllocator* custom_allocator;           // アプリケーション定義のアロケーターを指定します。 nullptrの場合、デフォルトのアロケータが使用されます。
-    bool        is_enable_allocator_debug;  // メモリのデバッグを利用するかを指定します。
+    bool        is_enabled_allocator_debug;  // メモリのデバッグを利用するかを指定します。
 };
 
 
@@ -3950,7 +3950,7 @@ B3D_APIENTRY Buma3DCreateDeviceFactory(const DEVICE_FACTORY_DESC& _desc, IDevice
 
 /**
  * @brief ライブラリの終了処理を実行します。
- * @note ALLOCATOR_DESC::is_enable_allocator_debugがtrueで、メモリリークが発生した場合リークしたメモリの情報を出力します。
+ * @note ALLOCATOR_DESC::is_enabled_allocator_debugがtrueで、メモリリークが発生した場合リークしたメモリの情報を出力します。
 */
 B3D_DLL_API void
 B3D_APIENTRY Buma3DUninitialize();
@@ -4118,7 +4118,7 @@ public:
     /**
      * @brief デバッグメッセージオブジェクトが格納されるキューを取得します。
      * @param _dst メッセージオブジェクトキューの取得先。
-     * @return DEVICE_FACTORY_DESC::debug::is_enableがtrueで、処理が正常に終了した場合BMRESULT_SUCCEED、それ以外の場合BMRESULT_FAILEDが返ります。
+     * @return DEVICE_FACTORY_DESC::debug::is_enabledがtrueで、処理が正常に終了した場合BMRESULT_SUCCEED、それ以外の場合BMRESULT_FAILEDが返ります。
     */
     virtual BMRESULT
         B3D_APIENTRY GetDebugMessageQueue(

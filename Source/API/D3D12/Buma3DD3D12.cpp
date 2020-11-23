@@ -7,7 +7,7 @@ B3D_DLL_API BMRESULT
 B3D_APIENTRY Buma3DInitialize(const ALLOCATOR_DESC& _desc)
 {
     InitSystemAllocator(_desc.custom_allocator);
-    SetIsEnableAllocatorDebug(_desc.is_enable_allocator_debug);
+    SetIsEnableAllocatorDebug(_desc.is_enabled_allocator_debug);
 
     return BMRESULT_SUCCEED;
 }

@@ -71,14 +71,14 @@ B3D_APIENTRY DeviceFactoryD3D12::Init(const DEVICE_FACTORY_DESC& _desc)
 {
     CopyDesc(_desc);
 
-    if (desc.debug.is_enable)
+    if (desc.debug.is_enabled)
     {
         B3D_RET_IF_FAILED(SetDebugLayer());
         B3D_RET_IF_FAILED(CreateDebugMessageQueue());
     }
 
     // ファクトリを作成
-    auto hr = CreateDXGIFactory2(desc.debug.is_enable ? DXGI_CREATE_FACTORY_DEBUG : 0, IID_PPV_ARGS(&dxgi_factory));
+    auto hr = CreateDXGIFactory2(desc.debug.is_enabled ? DXGI_CREATE_FACTORY_DEBUG : 0, IID_PPV_ARGS(&dxgi_factory));
     HR_TRACE_IF_FAILED(hr);
     B3D_RET_IF_FAILED(util::GetBMResultFromHR(hr));
 
@@ -126,7 +126,7 @@ B3D_APIENTRY DeviceFactoryD3D12::SetDebugLayer()
         {
             debug_controller->EnableDebugLayer();
 
-            if (desc.debug.gpu_based_validation.is_enable)
+            if (desc.debug.gpu_based_validation.is_enabled)
                 debug_controller->SetEnableGPUBasedValidation(TRUE);
         }
         else
@@ -205,7 +205,7 @@ B3D_APIENTRY DeviceFactoryD3D12::SetDebugLayer()
 
                     // ブレイクポイントを設定
                     auto severity = util::GetNativeMessageSeverity(dm.severity);
-                    dxgi_info_queue->SetBreakOnSeverity(DXGI_DEBUG_ALL, severity, (BOOL)dm.is_enable_debug_break);
+                    dxgi_info_queue->SetBreakOnSeverity(DXGI_DEBUG_ALL, severity, (BOOL)dm.is_enabled_debug_break);
 
                     // 受信するメッセージを設定
                     util::DyArray<DXGI_INFO_QUEUE_MESSAGE_CATEGORY> categories;
@@ -299,7 +299,7 @@ B3D_APIENTRY DeviceFactoryD3D12::GetDesc() const
 BMRESULT 
 B3D_APIENTRY DeviceFactoryD3D12::GetDebugMessageQueue(IDebugMessageQueue** _dst)
 {
-    if (!desc.debug.is_enable || !message_queue)
+    if (!desc.debug.is_enabled || !message_queue)
         return BMRESULT_FAILED;
 
     (*_dst = message_queue.Get())->AddRef();
@@ -340,7 +340,7 @@ B3D_APIENTRY DeviceFactoryD3D12::GetDXGIFactory() const
 bool 
 B3D_APIENTRY DeviceFactoryD3D12::IsEnabledDebug()
 {
-    return desc.debug.is_enable;
+    return desc.debug.is_enabled;
 }
 
 void 

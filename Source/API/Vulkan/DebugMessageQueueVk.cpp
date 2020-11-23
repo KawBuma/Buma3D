@@ -108,7 +108,7 @@ B3D_APIENTRY DebugMessageQueueVk::PrepareMessageFilters(DeviceFactoryVk* _factor
             {
                 filter.is_filtered = false;
                 filter.category_flags = message.category_flags;
-                filter.is_enable_debug_break = message.is_enable_debug_break;
+                filter.is_enable_debug_break = message.is_enabled_debug_break;
             }
 
             // 次の重要度フィルターに移行。

@@ -721,7 +721,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyMultisampleState(DESC_DATA* _dd, co
     if (_multisample_state.sample_masks == nullptr)
         util::MemCopyArray(multisample_state.sample_masks.data(), _multisample_state.sample_masks, num_sample_masks);
 
-    if (_multisample_state.sample_position_state.is_enable)
+    if (_multisample_state.sample_position_state.is_enabled)
     {
         auto&& sp = *(multisample_state.sample_positions = B3DMakeUnique(SAMPLE_POSITION_STATE_DESC_DATA)).get();
 
@@ -753,7 +753,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyBlendState(DESC_DATA* _dd, const GR
     auto&& blend_state = *(_dd->blend_state = B3DMakeUnique(BLEND_STATE_DESC_DATA)).get();
     blend_state.desc = _blend_state;
 
-    if (_blend_state.is_enable_independent_blend)
+    if (_blend_state.is_enabled_independent_blend)
     {
         blend_state.attachments.resize(_blend_state.num_attachments);
         util::MemCopyArray(blend_state.attachments.data(), _blend_state.attachments, _blend_state.num_attachments);
@@ -953,8 +953,8 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
         auto&& bs = *desc.blend_state;
 
         auto&& BlendState = GetRef(stream.BlendState);
-        BlendState.AlphaToCoverageEnable  = desc.multisample_state->is_enable_alpha_to_coverage;
-        BlendState.IndependentBlendEnable = bs.is_enable_independent_blend;
+        BlendState.AlphaToCoverageEnable  = desc.multisample_state->is_enabled_alpha_to_coverage;
+        BlendState.IndependentBlendEnable = bs.is_enabled_independent_blend;
 
         if (bs.num_attachments > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT)
         {
@@ -965,11 +965,11 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
 
         for (uint32_t i = 0; i < bs.num_attachments; i++)
         {
-            auto&& at = bs.attachments[bs.is_enable_independent_blend ? i : 0];
+            auto&& at = bs.attachments[bs.is_enabled_independent_blend ? i : 0];
 
             auto&& rt = BlendState.RenderTarget[i];
-            rt.BlendEnable           = at.is_enable_blend;
-            rt.LogicOpEnable         = bs.is_enable_logic_op;
+            rt.BlendEnable           = at.is_enabled_blend;
+            rt.LogicOpEnable         = bs.is_enabled_logic_op;
             rt.SrcBlend              = util::GetNativeBlendFactor    (at.src_blend);
             rt.DestBlend             = util::GetNativeBlendFactor    (at.dst_blend);
             rt.BlendOp               = util::GetNativeBlendOp        (at.blend_op);
@@ -986,11 +986,11 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
         auto&& ds = *desc.depth_stencil_state;
 
         auto&& DepthStencilState = GetRef(stream.DepthStencilState);
-        DepthStencilState.DepthEnable           = ds.is_enable_depth_test;
-        DepthStencilState.DepthWriteMask        = ds.is_enable_depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+        DepthStencilState.DepthEnable           = ds.is_enabled_depth_test;
+        DepthStencilState.DepthWriteMask        = ds.is_enabled_depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
         DepthStencilState.DepthFunc             = util::GetNativeComparisonFunc(ds.depth_comparison_func);
-        DepthStencilState.StencilEnable         = ds.is_enable_stencil_test;
-        DepthStencilState.DepthBoundsTestEnable = ds.is_enable_depth_bounds_test;
+        DepthStencilState.StencilEnable         = ds.is_enabled_stencil_test;
+        DepthStencilState.DepthBoundsTestEnable = ds.is_enabled_depth_bounds_test;
         // ds.min_depth_bounds;
         // ds.max_depth_bounds;
 
@@ -1054,8 +1054,6 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
     }
 
     // CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC, CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_MASK;
-    bool is_enable_forced_sample_count = false;
-    is_enable_forced_sample_count;
     {
         // FIXME: CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC
         auto&& SampleDesc = GetRef(stream.SampleDesc);
@@ -1080,10 +1078,10 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
         RasterizerState.FillMode                = util::GetNativeFillMode(rs.fill_mode);
         RasterizerState.CullMode                = util::GetNativeCullMode (rs.cull_mode);
         RasterizerState.FrontCounterClockwise   = rs.is_front_counter_clockwise;
-        RasterizerState.DepthClipEnable         = rs.is_enable_depth_clip;
+        RasterizerState.DepthClipEnable         = rs.is_enabled_depth_clip;
 
         // 深度バイアス
-        if (rs.is_enable_depth_bias)
+        if (rs.is_enabled_depth_bias)
         {
             RasterizerState.DepthBias            = rs.depth_bias_scale;
             RasterizerState.DepthBiasClamp       = rs.depth_bias_clamp;
@@ -1094,7 +1092,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
                  rs.depth_bias_slope_scale != 0.f)
         {
             B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
-                              , "RASTERIZATION_STATE_DESC::is_enable_depth_biasがfalseの場合、RASTERIZATION_STATE_DESC::depth_bias_* はすべて0である必要があります。");
+                              , "RASTERIZATION_STATE_DESC::is_enabled_depth_biasがfalseの場合、RASTERIZATION_STATE_DESC::depth_bias_* はすべて0である必要があります。");
             return BMRESULT_FAILED_INVALID_PARAMETER;
         }
 
@@ -1105,7 +1103,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
         RasterizerState.MultisampleEnable      = (flags & 0b01) ? TRUE : FALSE;
         RasterizerState.AntialiasedLineEnable  = (flags & 0b10) ? TRUE : FALSE;
 
-        RasterizerState.ConservativeRaster = rs.is_enable_conservative_raster
+        RasterizerState.ConservativeRaster = rs.is_enabled_conservative_raster
             ? D3D12_CONSERVATIVE_RASTERIZATION_MODE_ON
             : D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
@@ -1200,12 +1198,12 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateNonDynamicStateSetters()
     if (std::find(begin, end, DYNAMIC_STATE_SCISSOR) == end)
         non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterScissor, *this));
 
-    if (!desc_data.blend_state->desc.is_enable_logic_op && std::find(begin, end, DYNAMIC_STATE_DEPTH_BOUNDS) == end)
+    if (!desc_data.blend_state->desc.is_enabled_logic_op && std::find(begin, end, DYNAMIC_STATE_DEPTH_BOUNDS) == end)
     {
         for (auto& i : desc_data.blend_state->attachments)
         {
             // いずれかの1つの要素にでもブレンド係数が使用される場合、コマンド記録時にブレンド係数のセットが必要です。
-            if (i.is_enable_blend &&
+            if (i.is_enabled_blend &&
                 i.src_blend       == BLEND_FACTOR_BLEND_CONSTANT || i.src_blend       == BLEND_FACTOR_BLEND_CONSTANT_INVERTED ||
                 i.dst_blend       == BLEND_FACTOR_BLEND_CONSTANT || i.dst_blend       == BLEND_FACTOR_BLEND_CONSTANT_INVERTED ||
                 i.src_blend_alpha == BLEND_FACTOR_BLEND_CONSTANT || i.src_blend_alpha == BLEND_FACTOR_BLEND_CONSTANT_INVERTED ||
@@ -1217,22 +1215,22 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateNonDynamicStateSetters()
         }
     }
 
-    auto is_enable_depth   = desc_data.depth_stencil_state_desc && desc_data.depth_stencil_state_desc->is_enable_depth_test;
-    auto is_enable_stencil = desc_data.depth_stencil_state_desc && desc_data.depth_stencil_state_desc->is_enable_stencil_test;
-    if (is_enable_depth && std::find(begin, end, DYNAMIC_STATE_DEPTH_BOUNDS) == end)
+    auto is_enabled_depth   = desc_data.depth_stencil_state_desc && desc_data.depth_stencil_state_desc->is_enabled_depth_test;
+    auto is_enabled_stencil = desc_data.depth_stencil_state_desc && desc_data.depth_stencil_state_desc->is_enabled_stencil_test;
+    if (is_enabled_depth && std::find(begin, end, DYNAMIC_STATE_DEPTH_BOUNDS) == end)
     {        
-        if (desc_data.depth_stencil_state_desc->is_enable_depth_bounds_test)
+        if (desc_data.depth_stencil_state_desc->is_enabled_depth_bounds_test)
             non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterDepthBounds, *this));
     }
 
-    if (is_enable_stencil || std::find(begin, end, DYNAMIC_STATE_STENCIL_REFERENCE) == end)
+    if (is_enabled_stencil || std::find(begin, end, DYNAMIC_STATE_STENCIL_REFERENCE) == end)
     {
         if (desc_data.depth_stencil_state_desc->min_depth_bounds != 0.f || desc_data.depth_stencil_state_desc->max_depth_bounds != 1.f)
             non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterStencilReference, *this));
     }
 
     if (desc.multisample_state &&
-        desc.multisample_state->sample_position_state.is_enable &&
+        desc.multisample_state->sample_position_state.is_enabled &&
         std::find(begin, end, DYNAMIC_STATE_SAMPLE_POSITIONS) == end)
     {
         non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterSamplePositions, *this));
