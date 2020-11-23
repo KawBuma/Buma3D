@@ -1248,7 +1248,7 @@ struct PHYSICAL_DEVICE_PROPERTIES_CHAIN
     util::UniquePtr<VkPhysicalDevicePCIBusInfoPropertiesEXT                 > pci_bus_info_props_ext;
     util::UniquePtr<VkPhysicalDevicePerformanceQueryPropertiesKHR           > performance_query_props_khr;
     util::UniquePtr<VkPhysicalDevicePushDescriptorPropertiesKHR             > push_descriptor_props_khr;
-    //util::UniquePtr<VkPhysicalDeviceRayTracingPropertiesKHR               > ray_tracing_props_khr;
+    util::UniquePtr<VkPhysicalDeviceRayTracingPropertiesKHR                 > ray_tracing_props_khr;
     util::UniquePtr<VkPhysicalDeviceRayTracingPropertiesNV                  > ray_tracing_props_nv;
     util::UniquePtr<VkPhysicalDeviceSampleLocationsPropertiesEXT            > sample_locations_props_ext;
     util::UniquePtr<VkPhysicalDeviceShaderCoreProperties2AMD                > shader_core_props2_amd;
@@ -1342,7 +1342,7 @@ struct PHYSICAL_DEVICE_FEATURES_CHAIN
     util::UniquePtr<VkPhysicalDevicePerformanceQueryFeaturesKHR                > performance_query_features_khr;
     util::UniquePtr<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT    > pipeline_creation_cache_control_features_ext;
     util::UniquePtr<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR    > pipeline_executable_properties_features_khr;
-    //util::UniquePtr<VkPhysicalDeviceRayTracingFeaturesKHR                    > ray_tracing_features_khr; 
+    util::UniquePtr<VkPhysicalDeviceRayTracingFeaturesKHR                      > ray_tracing_features_khr;
     util::UniquePtr<VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV       > representative_fragment_test_features_nv;
     util::UniquePtr<VkPhysicalDeviceShaderClockFeaturesKHR                     > shader_clock_features_khr;
     util::UniquePtr<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT  > shader_demote_to_helper_invocation_features_ext;

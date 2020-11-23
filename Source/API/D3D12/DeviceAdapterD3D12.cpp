@@ -195,6 +195,93 @@ B3D_APIENTRY DeviceAdapterD3D12::GetCommandQueueProperties(COMMAND_QUEUE_PROPERT
     return num_props;
 }
 
+void
+B3D_APIENTRY DeviceAdapterD3D12::GetDeviceAdapterLimits(DEVICE_ADAPTER_LIMITS* _dst_limits)
+{
+    *_dst_limits = {
+          D3D12_REQ_TEXTURE1D_U_DIMENSION                                                                           // max_texture_dimension_1d
+        , D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION                                                                      // max_texture_dimension_2d
+        , D3D12_REQ_TEXTURE3D_U_V_OR_W_DIMENSION                                                                    // max_texture_dimension_3d
+        , D3D12_REQ_TEXTURECUBE_DIMENSION                                                                           // max_texture_dimension_cube
+        , D3D12_REQ_TEXTURE2D_ARRAY_AXIS_DIMENSION                                                                  // max_texture_array_size
+        , UINT32_MAX                                                                                                // max_typed_buffer_elements
+        , UINT32_MAX                                                                                                // max_constant_buffer_range
+        , UINT32_MAX                                                                                                // max_unordered_access_buffer_range
+        , D3D12_MAX_ROOT_COST                                                                                       // max_push_32bit_constants_range
+        , UINT32_MAX                                                                                                // max_memory_allocation_count
+        , D3D12_REQ_SAMPLER_OBJECT_COUNT_PER_DEVICE                                                                 // max_sampler_allocation_count
+        , 1                                                                                                         // buffer_texture_granularity
+        , UINT64_MAX                                                                                                // sparse_address_space_size
+        , D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT                                                             // max_vertex_input_attributes
+        , D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT                                                                 // max_vertex_input_bindings
+        , D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENTS_COMPONENTS                                                       // max_vertex_input_attribute_offset
+        , 4 * D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT * D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENTS_COMPONENTS   // max_vertex_input_binding_stride
+        , D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENTS_COMPONENTS                                                       // max_vertex_output_components
+        , UINT32_MAX                                                                                                // max_vertex_instance_data_step_rate
+        , D3D12_HS_MAXTESSFACTOR_UPPER_BOUND                                                                        // max_tessellation_generation_level
+        , D3D12_IA_PATCH_MAX_CONTROL_POINT_COUNT                                                                    // max_tessellation_patch_size
+        , D3D12_VS_INPUT_REGISTER_COUNT * D3D12_VS_INPUT_REGISTER_COMPONENTS                                        // max_tessellation_control_per_vertex_input_components
+        , D3D12_VS_OUTPUT_REGISTER_COUNT * D3D12_VS_OUTPUT_REGISTER_COMPONENTS                                      // max_tessellation_control_per_vertex_output_components
+        , D3D12_HS_OUTPUT_PATCH_CONSTANT_REGISTER_SCALAR_COMPONENTS                                                 // max_tessellation_control_per_patch_output_components
+        , D3D12_HS_OUTPUT_CONTROL_POINTS_MAX_TOTAL_SCALARS                                                          // max_tessellation_control_total_output_components
+        , D3D12_DS_INPUT_CONTROL_POINT_REGISTER_COMPONENTS * D3D12_DS_INPUT_CONTROL_POINT_REGISTER_COUNT            // max_tessellation_evaluation_input_components
+        , D3D12_DS_OUTPUT_REGISTER_COMPONENTS * D3D12_DS_OUTPUT_REGISTER_COMPONENT_BIT_COUNT                        // max_tessellation_evaluation_output_components
+        , D3D12_GS_MAX_INSTANCE_COUNT                                                                               // max_geometry_shader_invocations
+        , D3D12_GS_INPUT_REGISTER_COUNT * D3D12_GS_INPUT_REGISTER_COMPONENTS                                        // max_geometry_input_components
+        , D3D12_GS_OUTPUT_REGISTER_COUNT * D3D12_GS_OUTPUT_REGISTER_COMPONENTS                                      // max_geometry_output_components
+        , D3D12_GS_MAX_OUTPUT_VERTEX_COUNT_ACROSS_INSTANCES                                                         // max_geometry_output_vertices
+        , D3D12_REQ_GS_INVOCATION_32BIT_OUTPUT_COMPONENT_LIMIT                                                      // max_geometry_total_output_components
+        , D3D12_PS_INPUT_REGISTER_COUNT * D3D12_PS_INPUT_REGISTER_COMPONENTS                                        // max_fragment_input_components
+        , D3D12_PS_OUTPUT_REGISTER_COUNT                                                                            // max_fragment_output_attachments
+        , 1                                                                                                         // max_fragment_dual_src_attachments
+        , D3D12_PS_OUTPUT_REGISTER_COUNT + D3D12_PS_CS_UAV_REGISTER_COUNT                                           // max_fragment_combined_output_resources
+        , D3D12_CS_THREADID_REGISTER_COMPONENTS * D3D12_CS_THREAD_LOCAL_TEMP_REGISTER_POOL                          // max_compute_shared_memory_size
+        , { D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION                                                       // max_compute_work_group_count[0]
+          , D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION                                                       // max_compute_work_group_count[1]
+          , D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION }                                                     // max_compute_work_group_count[2]
+        , D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP                                                               // max_compute_work_group_invocations
+        , { D3D12_CS_THREAD_GROUP_MAX_X                                                                             // max_compute_work_group_size[0]
+          , D3D12_CS_THREAD_GROUP_MAX_Y                                                                             // max_compute_work_group_size[1]
+          , D3D12_CS_THREAD_GROUP_MAX_Z }                                                                           // max_compute_work_group_size[2]
+        , D3D12_SUBPIXEL_FRACTIONAL_BIT_COUNT                                                                       // subpixel_precision_bits
+        , D3D12_SUBTEXEL_FRACTIONAL_BIT_COUNT                                                                       // subtexel_precision_bits
+        , D3D12_MIP_LOD_FRACTIONAL_BIT_COUNT                                                                        // mipmap_precision_bits
+        , UINT32_MAX                                                                                                // max_draw_indexed_index_value
+        , UINT32_MAX                                                                                                // max_draw_indirect_count
+        , D3D12_MIP_LOD_BIAS_MAX // D3D12_REQ_MIP_LEVELS                                                            // max_sampler_lod_bias
+        , D3D12_REQ_MAXANISOTROPY                                                                                   // max_sampler_anisotropy
+        , D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE                                                  // max_viewports
+        , { D3D12_VIEWPORT_BOUNDS_MIN, D3D12_VIEWPORT_BOUNDS_MAX }                                                  // max_viewport_dimensions[0,1]
+        , { D3D12_VIEWPORT_BOUNDS_MIN, D3D12_VIEWPORT_BOUNDS_MAX }                                                  // viewport_bounds_range[0,1]
+        , D3D12_SUBPIXEL_FRACTIONAL_BIT_COUNT                                                                       // viewport_subpixel_bits
+        , 1                                                                                                         // min_memory_map_alignment
+        , D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT                                                                          // min_srv_typed_buffer_offset_alignment
+        , D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT                                                                          // min_uav_typed_buffer_offset_alignment
+        , D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT                                                            // min_constant_buffer_offset_alignment
+        , 1                                                                                                         // min_unordered_access_buffer_offset_alignment
+        , D3D12_COMMONSHADER_TEXEL_OFFSET_MAX_NEGATIVE                                                              // min_texel_offset
+        , D3D12_COMMONSHADER_TEXEL_OFFSET_MAX_POSITIVE                                                              // max_texel_offset
+        , -32                                                                                                       // min_texel_gather_offset
+        , 31                                                                                                        // max_texel_gather_offset
+        , -0.5f                                                                                                     // min_interpolation_offset
+        , 0.4375f                                                                                                   // max_interpolation_offset
+        , 4                                                                                                         // subpixel_interpolation_offset_bits
+        , D3D12_VIEWPORT_BOUNDS_MAX                                                                                 // max_framebuffer_width
+        , D3D12_VIEWPORT_BOUNDS_MAX                                                                                 // max_framebuffer_height
+        , D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT                                                                    // max_color_attachments
+        , D3D12_CLIP_OR_CULL_DISTANCE_COUNT                                                                         // max_clip_distances
+        , D3D12_CLIP_OR_CULL_DISTANCE_COUNT                                                                         // max_cull_distances
+        , D3D12_CLIP_OR_CULL_DISTANCE_COUNT                                                                         // max_combined_clip_and_cull_distances
+        , { 1, 1 }                                                                                                  // point_size_range[0,1]
+        , { 1, 1 }                                                                                                  // line_width_range[0,1]
+        , 1                                                                                                         // point_size_granularity
+        , 1                                                                                                         // line_width_granularity
+        , D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT                                                                    // buffer_copy_offset_alignment
+        , D3D12_TEXTURE_DATA_PITCH_ALIGNMENT                                                                        // buffer_copy_row_pitch_alignment
+        , 1                                                                                                         // non_coherent_atom_size
+    };
+}
+
 BMRESULT
 B3D_APIENTRY DeviceAdapterD3D12::CreateSurface(const SURFACE_DESC& _desc, ISurface** _dst)
 {

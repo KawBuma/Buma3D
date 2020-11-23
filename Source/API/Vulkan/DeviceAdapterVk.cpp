@@ -133,7 +133,7 @@ B3D_APIENTRY DeviceAdapterVk::GetFeatures()
         , *(MAKECHAIN(features_chain.performance_query_features_khr                  , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR                  }))
         , *(MAKECHAIN(features_chain.pipeline_creation_cache_control_features_ext    , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT    }))
         , *(MAKECHAIN(features_chain.pipeline_executable_properties_features_khr     , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR     }))
-    //  , *(MAKECHAIN(features_chain.ray_tracing_features_khr                        , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR                        }))
+        , *(MAKECHAIN(features_chain.ray_tracing_features_khr                        , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR                        }))
         , *(MAKECHAIN(features_chain.representative_fragment_test_features_nv        , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV        }))
         , *(MAKECHAIN(features_chain.shader_clock_features_khr                       , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR                       }))
         , *(MAKECHAIN(features_chain.shader_demote_to_helper_invocation_features_ext , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT }))
@@ -225,7 +225,7 @@ B3D_APIENTRY DeviceAdapterVk::GetProperties()
         , *(MAKECHAIN(props_chain.pci_bus_info_props_ext                  , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT                  }))
         , *(MAKECHAIN(props_chain.performance_query_props_khr             , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR             }))
         , *(MAKECHAIN(props_chain.push_descriptor_props_khr               , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR               }))
-    //  , *(MAKECHAIN(props_chain.ray_tracing_props_khr                   , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR                   }))
+        , *(MAKECHAIN(props_chain.ray_tracing_props_khr                   , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR                   }))
         , *(MAKECHAIN(props_chain.ray_tracing_props_nv                    , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV                    }))
         , *(MAKECHAIN(props_chain.sample_locations_props_ext              , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT              }))
         , *(MAKECHAIN(props_chain.shader_core_props2_amd                  , { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD                 }))
@@ -488,6 +488,96 @@ B3D_APIENTRY DeviceAdapterVk::GetCommandQueueProperties(COMMAND_QUEUE_PROPERTIES
     }
 
     return num_qf_props;
+}
+
+void
+B3D_APIENTRY DeviceAdapterVk::GetDeviceAdapterLimits(DEVICE_ADAPTER_LIMITS* _dst_limits)
+{
+    auto&& l = pd_data->properties2.properties.limits;
+    auto&& p = pd_data->properties_chain.vertex_attribute_divisor_props_ext;
+
+    *_dst_limits = {
+          l.maxImageDimension1D                                         // max_texture_dimension_1d
+        , l.maxImageDimension2D                                         // max_texture_dimension_2d
+        , l.maxImageDimension3D                                         // max_texture_dimension_3d
+        , l.maxImageDimensionCube                                       // max_texture_dimension_cube
+        , l.maxImageArrayLayers                                         // max_texture_array_size
+        , l.maxTexelBufferElements                                      // max_typed_buffer_elements
+        , l.maxUniformBufferRange                                       // max_constant_buffer_range
+        , l.maxStorageBufferRange                                       // max_unordered_access_buffer_range
+        , l.maxPushConstantsSize                                        // max_push_32bit_constants_range
+        , l.maxMemoryAllocationCount                                    // max_memory_allocation_count
+        , l.maxSamplerAllocationCount                                   // max_sampler_allocation_count
+        , l.bufferImageGranularity                                      // buffer_texture_granularity
+        , l.sparseAddressSpaceSize                                      // sparse_address_space_size
+        , l.maxVertexInputAttributes                                    // max_vertex_input_attributes
+        , l.maxVertexInputBindings                                      // max_vertex_input_bindings
+        , l.maxVertexInputAttributeOffset                               // max_vertex_input_attribute_offset
+        , l.maxVertexInputBindingStride                                 // max_vertex_input_binding_stride
+        , l.maxVertexOutputComponents                                   // max_vertex_output_components
+        , p ? p->maxVertexAttribDivisor : 0                             // max_vertex_instance_data_step_rate
+        , l.maxTessellationGenerationLevel                              // max_tessellation_generation_level
+        , l.maxTessellationPatchSize                                    // max_tessellation_patch_size
+        , l.maxTessellationControlPerVertexInputComponents              // max_tessellation_control_per_vertex_input_components
+        , l.maxTessellationControlPerVertexOutputComponents             // max_tessellation_control_per_vertex_output_components
+        , l.maxTessellationControlPerPatchOutputComponents              // max_tessellation_control_per_patch_output_components
+        , l.maxTessellationControlTotalOutputComponents                 // max_tessellation_control_total_output_components
+        , l.maxTessellationEvaluationInputComponents                    // max_tessellation_evaluation_input_components
+        , l.maxTessellationEvaluationOutputComponents                   // max_tessellation_evaluation_output_components
+        , l.maxGeometryShaderInvocations                                // max_geometry_shader_invocations
+        , l.maxGeometryInputComponents                                  // max_geometry_input_components
+        , l.maxGeometryOutputComponents                                 // max_geometry_output_components
+        , l.maxGeometryOutputVertices                                   // max_geometry_output_vertices
+        , l.maxGeometryTotalOutputComponents                            // max_geometry_total_output_components
+        , l.maxFragmentInputComponents                                  // max_fragment_input_components
+        , l.maxFragmentOutputAttachments                                // max_fragment_output_attachments
+        , l.maxFragmentDualSrcAttachments                               // max_fragment_dual_src_attachments
+        , l.maxFragmentCombinedOutputResources                          // max_fragment_combined_output_resources
+        , l.maxComputeSharedMemorySize                                  // max_compute_shared_memory_size
+        , { l.maxComputeWorkGroupCount[0]                               // max_compute_work_group_count[0]
+          , l.maxComputeWorkGroupCount[1]                               // max_compute_work_group_count[1]
+          , l.maxComputeWorkGroupCount[2] }                             // max_compute_work_group_count[2]
+        , l.maxComputeWorkGroupInvocations                              // max_compute_work_group_invocations
+        , { l.maxComputeWorkGroupSize[0]                                // max_compute_work_group_size[0]
+          , l.maxComputeWorkGroupSize[1]                                // max_compute_work_group_size[1]
+          , l.maxComputeWorkGroupSize[2] }                              // max_compute_work_group_size[2]
+        , l.subPixelPrecisionBits                                       // subpixel_precision_bits
+        , l.subTexelPrecisionBits                                       // subtexel_precision_bits
+        , l.mipmapPrecisionBits                                         // mipmap_precision_bits
+        , l.maxDrawIndexedIndexValue                                    // max_draw_indexed_index_value
+        , l.maxDrawIndirectCount                                        // max_draw_indirect_count
+        , l.maxSamplerLodBias                                           // max_sampler_lod_bias
+        , l.maxSamplerAnisotropy                                        // max_sampler_anisotropy
+        , l.maxViewports                                                // max_viewports
+        , { l.maxViewportDimensions[0], l.maxViewportDimensions[1] }    // max_viewport_dimensions[0,1]
+        , { l.viewportBoundsRange[0], l.viewportBoundsRange[1] }        // viewport_bounds_range[0,1]
+        , l.viewportSubPixelBits                                        // viewport_subpixel_bits
+        , l.minMemoryMapAlignment                                       // min_memory_map_alignment
+        , l.minTexelBufferOffsetAlignment                               // min_srv_typed_buffer_offset_alignment
+        , l.minTexelBufferOffsetAlignment                               // min_uav_typed_buffer_offset_alignment
+        , l.minUniformBufferOffsetAlignment                             // min_constant_buffer_offset_alignment
+        , l.minStorageBufferOffsetAlignment                             // min_unordered_access_buffer_offset_alignment
+        , l.minTexelOffset                                              // min_texel_offset
+        , l.maxTexelOffset                                              // max_texel_offset
+        , l.minTexelGatherOffset                                        // min_texel_gather_offset
+        , l.maxTexelGatherOffset                                        // max_texel_gather_offset
+        , l.minInterpolationOffset                                      // min_interpolation_offset
+        , l.maxInterpolationOffset                                      // max_interpolation_offset
+        , l.subPixelInterpolationOffsetBits                             // subpixel_interpolation_offset_bits
+        , l.maxFramebufferWidth                                         // max_framebuffer_width
+        , l.maxFramebufferHeight                                        // max_framebuffer_height
+        , l.maxColorAttachments                                         // max_color_attachments
+        , l.maxClipDistances                                            // max_clip_distances
+        , l.maxCullDistances                                            // max_cull_distances
+        , l.maxCombinedClipAndCullDistances                             // max_combined_clip_and_cull_distances
+        , { l.pointSizeRange[0], l.pointSizeRange[1] }                  // point_size_range[0,1]
+        , { l.lineWidthRange[0], l.lineWidthRange[1] }                  // line_width_range[0,1]
+        , l.pointSizeGranularity                                        // point_size_granularity
+        , l.lineWidthGranularity                                        // line_width_granularity
+        , l.optimalBufferCopyOffsetAlignment                            // buffer_copy_offset_alignment
+        , l.optimalBufferCopyRowPitchAlignment                          // buffer_copy_row_pitch_alignment
+        , l.nonCoherentAtomSize                                         // non_coherent_atom_size
+    };
 }
 
 BMRESULT

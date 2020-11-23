@@ -717,18 +717,6 @@ enum RESOURCE_FORMAT : EnumT
 
 };
 
-// TODO: FORMAT_FEATURE_FLAG 
-enum FORMAT_FEATURE_FLAG : EnumT
-{
-      FORMAT_FEATURE_FLAG_NOONE                            = 0x0
-    , FORMAT_FEATURE_FLAG_TEXTURE_3D_AS_2D_ARRAY           = 0x1
-    , FORMAT_FEATURE_FLAG_SHADER_RESOURCE                  = 0x2
-    , FORMAT_FEATURE_FLAG_UNORDERED_ACCESS                 = 0x4
-    , FORMAT_FEATURE_FLAG_TYPED_SHADER_RESOURCE_BUFFER     = 0x8
-    , FORMAT_FEATURE_FLAG_TYPED_UNORDERED_ACCESS_BUFFER    = 0x10
-};
-using FORMAT_FEATURE_FLAGS = EnumFlagsT;
-
 struct TEXTURE_FORMAT_DESC
 {
     RESOURCE_FORMAT        format;              // リソースの基となるフォーマットを指定します。*_TYPELESSを指定した場合、互換性のある追加のフォーマットをmutable_formatsに指定する必要がありますが、デフォルトでnum_mutable_formatsに0を指定し、互換性のあるフォーマットを全て選択できます。
@@ -874,7 +862,241 @@ struct DEVICE_ADAPTER_DESC
     DEVICE_ADAPTER_TYPE adapter_type;
 };
 
+/*
+* NOTE: DXGI_SAMPLE_DESC::Quality(品質レベル)の定義は、ハードウェアベンダーが定義する必要がありますが、この情報を見つけるのに役立つ機能はD3Dによって提供されていません。: https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#19.2.3%20Optional%20Multisample%20Support
+*/
+
+enum SAMPLE_COUNT_FLAG : EnumT
+{
+      SAMPLE_COUNT_FLAG_NOT_SUPPORTED = 0x0
+    , SAMPLE_COUNT_FLAG_1             = 0x1
+    , SAMPLE_COUNT_FLAG_2             = 0x2
+    , SAMPLE_COUNT_FLAG_4             = 0x4
+    , SAMPLE_COUNT_FLAG_8             = 0x8
+    , SAMPLE_COUNT_FLAG_16            = 0x10
+    , SAMPLE_COUNT_FLAG_32            = 0x20
+    , SAMPLE_COUNT_FLAG_64            = 0x40
+};
+using SAMPLE_COUNT_FLAGS = EnumFlagsT;
+
 #pragma endregion factory
+
+#pragma region features
+
+// TODO: FORMAT_FEATURE
+enum FORMAT_FEATURE : EnumT
+{
+      FORMAT_FEATURE_TEXTURE_3D_AS_2D_ARRAY
+    , FORMAT_FEATURE_SHADER_RESOURCE
+    , FORMAT_FEATURE_UNORDERED_ACCESS
+    , FORMAT_FEATURE_TYPED_SHADER_RESOURCE_BUFFER
+    , FORMAT_FEATURE_TYPED_UNORDERED_ACCESS_BUFFER
+};
+
+struct DEVICE_ADAPTER_LIMITS
+{
+    uint32_t                max_texture_dimension_1d;                                   // D3D12_REQ_TEXTURE1D_U_DIMENSION
+    uint32_t                max_texture_dimension_2d;                                   // D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION
+    uint32_t                max_texture_dimension_3d;                                   // D3D12_REQ_TEXTURE3D_U_V_OR_W_DIMENSION
+    uint32_t                max_texture_dimension_cube;                                 // D3D12_REQ_TEXTURECUBE_DIMENSION
+    uint32_t                max_texture_array_size;                                     // D3D12_REQ_TEXTURE*D_ARRAY_AXIS_DIMENSION
+    uint32_t                max_typed_buffer_elements;                                  // UINT32_MAX n/a
+    uint32_t                max_constant_buffer_range;                                  // UINT32_MAX n/a
+    uint32_t                max_unordered_access_buffer_range;                          // UINT32_MAX n/a
+    uint32_t                max_push_32bit_constants_range;                             // D3D12_MAX_ROOT_COST(64) ルートシグネチャ内全てをプッシュ定数にした場合の最大値です。 
+    uint32_t                max_memory_allocation_count;                                // UINT32_MAX n/a
+    uint32_t                max_sampler_allocation_count;                               // D3D12_REQ_SAMPLER_OBJECT_COUNT_PER_DEVICE
+
+    /**
+     * @brief 1 (D3D12_ * _RESOURCE_PLACEMENT_ALIGNMENTで決定) 
+     *        ヒープ内に線形リソースと非線形リソースが順序を問わず隣接する場合に、エイリアスを発生させない割り当てに必要なアライメントです。 
+     *        この要求が満たされない場合、隣接するリソースはエイリアスします。 
+    */
+    uint64_t                buffer_texture_granularity;
+    uint64_t                sparse_address_space_size;                                  // UINT64_MAX n/a
+
+    //uint32_t              max_bound_register_spaces;                                  // ｍaxBoundDescriptorSets
+    //uint32_t              max_per_stage_descriptor_samplers;                          // tier1:16 tier2:full-heap tier3:full-heap
+    //uint32_t              max_per_stage_descriptor_constant_buffers;                  // 
+    //uint32_t              max_per_stage_descriptor_unordered_access_buffers;          // 
+    //uint32_t              max_per_stage_descriptor_srv_textures;                      // 
+    //uint32_t              max_per_stage_descriptor_uav_textures;                      // 
+    //uint32_t              max_per_stage_descriptor_input_attachments;                 // 
+    //uint32_t              max_per_stage_resources;                                    // 
+    //uint32_t              max_descriptor_set_samplers;                                // 
+    //uint32_t              max_descriptor_set_constant_buffers;                        // 
+    //uint32_t              max_descriptor_set_constant_buffers_dynamic;                // 
+    //uint32_t              max_descriptor_set_unordered_access_buffers;                // 
+    //uint32_t              max_descriptor_set_unordered_access_buffers_dynamic;        // 
+    //uint32_t              max_descriptor_set_srv_textures;                            // 
+    //uint32_t              max_descriptor_set_uav_textures;                            // 
+    //uint32_t              max_descriptor_set_input_attachments;                       // 
+
+    uint32_t                max_vertex_input_attributes;                                // D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT
+    uint32_t                max_vertex_input_bindings;                                  // D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT
+    uint32_t                max_vertex_input_attribute_offset;                          // D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENTS_COMPONENTS
+    uint32_t                max_vertex_input_binding_stride;                            // 4 * D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT * D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENTS_COMPONENTS
+    uint32_t                max_vertex_output_components;                               // D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENTS_COMPONENTS
+    uint32_t                max_vertex_instance_data_step_rate;                         // UINT32_MAX
+
+    uint32_t                max_tessellation_generation_level;                          // D3D12_HS_MAXTESSFACTOR_UPPER_BOUND
+    uint32_t                max_tessellation_patch_size;                                // D3D12_IA_PATCH_MAX_CONTROL_POINT_COUNT
+    uint32_t                max_tessellation_control_per_vertex_input_components;       // D3D12_VS_INPUT_REGISTER_COUNT * D3D12_VS_INPUT_REGISTER_COMPONENTS
+    uint32_t                max_tessellation_control_per_vertex_output_components;      // D3D12_VS_OUTPUT_REGISTER_COUNT * D3D12_VS_OUTPUT_REGISTER_COMPONENTS
+    uint32_t                max_tessellation_control_per_patch_output_components;       // D3D12_HS_OUTPUT_PATCH_CONSTANT_REGISTER_SCALAR_COMPONENTS
+    uint32_t                max_tessellation_control_total_output_components;           // D3D12_HS_OUTPUT_CONTROL_POINTS_MAX_TOTAL_SCALARS
+    uint32_t                max_tessellation_evaluation_input_components;               // D3D12_DS_INPUT_CONTROL_POINT_REGISTER_COMPONENTS * D3D12_DS_INPUT_CONTROL_POINT_REGISTER_COUNT
+    uint32_t                max_tessellation_evaluation_output_components;              // D3D12_DS_OUTPUT_CONTROL_POINT_REGISTER_COMPONENTS * D3D12_DS_OUTPUT_CONTROL_POINT_REGISTER_COUNT
+
+    uint32_t                max_geometry_shader_invocations;                            // D3D12_GS_MAX_INSTANCE_COUNT
+    uint32_t                max_geometry_input_components;                              // D3D12_GS_INPUT_REGISTER_COUNT * D3D12_GS_INPUT_REGISTER_COMPONENTS
+    uint32_t                max_geometry_output_components;                             // D3D12_GS_OUTPUT_REGISTER_COUNT * D3D12_GS_OUTPUT_REGISTER_COMPONENTS
+    uint32_t                max_geometry_output_vertices;                               // D3D12_GS_MAX_OUTPUT_VERTEX_COUNT_ACROSS_INSTANCES
+    uint32_t                max_geometry_total_output_components;                       // D3D12_REQ_GS_INVOCATION_32BIT_OUTPUT_COMPONENT_LIMIT
+
+    uint32_t                max_fragment_input_components;                              // D3D12_PS_INPUT_REGISTER_COUNT * D3D12_PS_INPUT_REGISTER_COMPONENTS
+    uint32_t                max_fragment_output_attachments;                            // D3D12_PS_OUTPUT_REGISTER_COUNT
+    uint32_t                max_fragment_dual_src_attachments;                          // 1 : https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#17.6%20Dual%20Source%20Color%20Blending
+    uint32_t                max_fragment_combined_output_resources;                     // D3D12_PS_OUTPUT_REGISTER_COUNT + D3D12_PS_CS_UAV_REGISTER_COUNT
+
+    uint32_t                max_compute_shared_memory_size;                             // D3D12_CS_THREADID_REGISTER_COMPONENTS * D3D12_CS_THREAD_LOCAL_TEMP_REGISTER_POOL
+    uint32_t                max_compute_work_group_count[3];                            // D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION
+    uint32_t                max_compute_work_group_invocations;                         // D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP
+    uint32_t                max_compute_work_group_size[3];                             // D3D12_CS_THREAD_GROUP_MAX_{X,Y,Z}
+
+    uint32_t                subpixel_precision_bits;                                    // D3D12_SUBPIXEL_FRACTIONAL_BIT_COUNT
+    uint32_t                subtexel_precision_bits;                                    // D3D12_SUBTEXEL_FRACTIONAL_BIT_COUNT
+    uint32_t                mipmap_precision_bits;                                      // D3D12_MIP_LOD_FRACTIONAL_BIT_COUNT
+
+    uint32_t                max_draw_indexed_index_value;                               // UINT32_MAX (n/a)
+    uint32_t                max_draw_indirect_count;                                    // UINT32_MAX (n/a)
+    float                   max_sampler_lod_bias;                                       // D3D12_MIP_LOD_BIAS_MAX (D3D12_REQ_MIP_LEVELS ?)
+    float                   max_sampler_anisotropy;                                     // D3D12_REQ_MAXANISOTROPY
+
+    uint32_t                max_viewports;                                              // D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE
+    uint32_t                max_viewport_dimensions[2];                                 // D3D12_VIEWPORT_BOUNDS_MAX
+    float                   viewport_bounds_range[2];                                   // D3D12_VIEWPORT_BOUNDS_{ MIN,MAX }
+    uint32_t                viewport_subpixel_bits;                                     // D3D12_SUBPIXEL_FRACTIONAL_BIT_COUNT
+
+    size_t                  min_memory_map_alignment;                                   // 1 (n/a)
+    uint64_t                min_srv_typed_buffer_offset_alignment;                      // D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT uniformTexelBufferOffsetAlignmentBytes
+    uint64_t                min_uav_typed_buffer_offset_alignment;                      // D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT storageTexelBufferOffsetAlignmentBytes
+    uint64_t                min_constant_buffer_offset_alignment;                       // D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT
+    uint64_t                min_unordered_access_buffer_offset_alignment;               // 1 (n/a)
+    int32_t                 min_texel_offset;                                           // D3D12_COMMONSHADER_TEXEL_OFFSET_MAX_NEGATIVE
+    uint32_t                max_texel_offset;                                           // D3D12_COMMONSHADER_TEXEL_OFFSET_MAX_POSITIVE
+    int32_t                 min_texel_gather_offset;                                    // -32 : https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#22.4.5%20gather4_po_c
+    uint32_t                max_texel_gather_offset;                                    // 31  : https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#22.4.5%20gather4_po_c
+    float                   min_interpolation_offset;                                   // -0.5f   : https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#16.5.3%20Pull%20Model:%20Mapping%20Fixed%20Point%20Coordinates%20to%20Float%20Offsets%20on%20Sample%20Grid
+    float                   max_interpolation_offset;                                   // 0.4375f : https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#16.5.3%20Pull%20Model:%20Mapping%20Fixed%20Point%20Coordinates%20to%20Float%20Offsets%20on%20Sample%20Grid
+    uint32_t                subpixel_interpolation_offset_bits;                         // 4       : https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#16.5.3%20Pull%20Model:%20Mapping%20Fixed%20Point%20Coordinates%20to%20Float%20Offsets%20on%20Sample%20Grid
+
+    uint32_t                max_framebuffer_width;                                      // D3D12_VIEWPORT_BOUNDS_MAX
+    uint32_t                max_framebuffer_height;                                     // D3D12_VIEWPORT_BOUNDS_MAX
+    //SAMPLE_COUNT_FLAG     framebuffer_color_sample_counts;                            
+    //SAMPLE_COUNT_FLAG     framebuffer_depth_sample_counts;                            
+    //SAMPLE_COUNT_FLAG     framebuffer_stencil_sample_counts;                          
+    //SAMPLE_COUNT_FLAG     framebuffer_no_attachments_sample_counts;                   
+
+    uint32_t                max_color_attachments;                                      // D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT
+    //SAMPLE_COUNT_FLAG     sampled_texture_color_sample_counts;                        // 
+    //SAMPLE_COUNT_FLAG     sampled_texture_integer_sample_counts;                      // 
+    //SAMPLE_COUNT_FLAG     sampled_texture_depth_sample_counts;                        // 
+    //SAMPLE_COUNT_FLAG     sampled_texture_stencil_sample_counts;                      // 
+    //SAMPLE_COUNT_FLAG     storage_texture_sample_counts;                              // 
+    //uint32_t              max_sample_mask_words;                                      // 
+    //bool                  timestamp_compute_and_graphics;                             // 
+    //float                 timestamp_period;                                           // 
+
+    uint32_t                max_clip_distances;                                         // D3D12_CLIP_OR_CULL_DISTANCE_COUNT
+    uint32_t                max_cull_distances;                                         // D3D12_CLIP_OR_CULL_DISTANCE_COUNT
+    uint32_t                max_combined_clip_and_cull_distances;                       // D3D12_CLIP_OR_CULL_DISTANCE_COUNT
+
+    //uint32_t              discrete_queue_priorities;
+
+    float                   point_size_range[2];                                        // {1,1} 3.4.6 Point Rasterization Rules: https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#3.4.6%20Point%20Rasterization%20Rules
+    float                   line_width_range[2];                                        // {1,1} 3.4.3 Aliased Line Rasterization Rules : https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#3.4.3%20Aliased%20Line%20Rasterization%20Rules
+    float                   point_size_granularity;                                     // 1
+    float                   line_width_granularity;                                     // 1
+    //bool                  strict_lines;
+
+    //bool                  standard_sample_locations;
+
+    uint64_t                buffer_copy_offset_alignment;                               // D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT
+    uint64_t                buffer_copy_row_pitch_alignment;                            // D3D12_TEXTURE_DATA_PITCH_ALIGNMENT
+    uint64_t                non_coherent_atom_size;                                     // 1 
+};
+
+enum SHADER_STAGE_FLAG : EnumT
+{
+      SHADER_STAGE_FLAG_UNKNOWN      = 0x0
+    , SHADER_STAGE_FLAG_VERTEX       = 0x1
+    , SHADER_STAGE_FLAG_HULL         = 0x2
+    , SHADER_STAGE_FLAG_DOMAIN       = 0x4
+    , SHADER_STAGE_FLAG_GEOMETRY     = 0x8
+    , SHADER_STAGE_FLAG_PIXEL        = 0x10
+    , SHADER_STAGE_FLAG_COMPUTE      = 0x20
+    , SHADER_STAGE_FLAG_TASK         = 0x40// AMPLIFICATION
+    , SHADER_STAGE_FLAG_MESH         = 0x80
+    , SHADER_STAGE_FLAG_RAYGEN       = 0x100
+    , SHADER_STAGE_FLAG_ANY_HIT      = 0x200
+    , SHADER_STAGE_FLAG_CLOSEST_HIT  = 0x400
+    , SHADER_STAGE_FLAG_MISS         = 0x800
+    , SHADER_STAGE_FLAG_INTERSECTION = 0x1000
+    , SHADER_STAGE_FLAG_CALLABLE     = 0x2000
+};
+using SHADER_STAGE_FLAGS = EnumFlagsT;
+
+// TODO: DEVICE_FEATURE
+
+enum SUBGROUP_FEATURE_FLAG : EnumT
+{
+      WAVE_INTRINSICS_FEATURE_FLAG_NOT_SUPPORTED       = 0x0
+    , WAVE_INTRINSICS_FEATURE_FLAG_BASIC               = 0x1
+    , WAVE_INTRINSICS_FEATURE_FLAG_VOTE                = 0x2
+    , WAVE_INTRINSICS_FEATURE_FLAG_ARITHMETIC          = 0x4
+    , WAVE_INTRINSICS_FEATURE_FLAG_BALLOT              = 0x8
+    , WAVE_INTRINSICS_FEATURE_FLAG_SHUFFLE             = 0x10
+    , WAVE_INTRINSICS_FEATURE_FLAG_SHUFFLE_RELATIVE    = 0x20
+    , WAVE_INTRINSICS_FEATURE_FLAG_CLUSTERED           = 0x40
+    , WAVE_INTRINSICS_FEATURE_FLAG_QUAD                = 0x80
+    , WAVE_INTRINSICS_FEATURE_FLAG_PARTITIONED         = 0x100
+};
+using WAVE_INTRINSICS_FEATURE_FLAGS = EnumFlagsT;
+
+struct DEVICE_FEATURE_WAVE_INTRINSICS_PROPERTIES
+{
+    uint32_t                        wave_lane_count;
+    SHADER_STAGE_FLAGS              supported_stages;
+    WAVE_INTRINSICS_FEATURE_FLAGS   supported_operations;
+    bool                            is_enabled_quad_operations_in_all_stages;
+};
+
+struct DEVICE_FEATURE_WAVE_LANE_COUNT_CONTROL_PROPERTIES
+{
+    bool                is_enabled_wave_lane_count_control;
+    bool                is_enabled_compute_full_wave_lane_count;
+    uint32_t            min_wave_lane_count;
+    uint32_t            max_wave_lane_count;
+    uint32_t            max_compute_workgroup_lane_count;
+    SHADER_STAGE_FLAGS  required_lane_count_stages;
+};
+
+struct DEVICE_FEATURE_STREAM_OUTPUT_PROPERTIES
+{
+    bool                is_enabled_stream_output;
+    uint32_t            max_stream_output_streams;                              // D3D12_SO_STREAM_COUNT
+    uint32_t            max_stream_output_buffers;                              // D3D12_SO_BUFFER_SLOT_COUNT
+    uint64_t            max_stream_output_buffer_size;                          // UINT64_MAX
+    uint32_t            max_stream_output_stream_data_size;                     // D3D12_SO_BUFFER_MAX_STRIDE_IN_BYTES
+    uint32_t            max_stream_output_buffer_data_size;                     // D3D12_SO_BUFFER_MAX_WRITE_WINDOW_IN_BYTES
+    uint32_t            max_stream_output_buffer_data_stride;                   // D3D12_SO_BUFFER_MAX_STRIDE_IN_BYTES
+    bool                is_enabled_stream_output_queries;                       // true
+    bool                is_enabled_stream_output_streams_lines_triangles;       // false (When multiple GS output streams are used they must be pointlists)
+    bool                is_enabled_stream_output_rasterization_stream_select;   // true 
+};
+
+#pragma endregion features
 
 #pragma region swapchain
 
@@ -1469,23 +1691,6 @@ enum RESOURCE_FLAG : EnumT
     , RESOURCE_FLAG_ACCESS_COPY_DST_FIXED            = 0x10 // このリソースのアクセスマスクが不変であることを指定します。
 };
 using RESOURCE_FLAGS = EnumFlagsT;
-
-/*
-* NOTE: DXGI_SAMPLE_DESC::Quality(品質レベル)の定義は、ハードウェアベンダーが定義する必要がありますが、この情報を見つけるのに役立つ機能はD3Dによって提供されていません。: https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#19.2.3%20Optional%20Multisample%20Support
-*/
-
-enum SAMPLE_COUNT_FLAG : EnumT
-{
-      SAMPLE_COUNT_FLAG_NOT_SUPPORTED = 0x0
-    , SAMPLE_COUNT_FLAG_1             = 0x1
-    , SAMPLE_COUNT_FLAG_2             = 0x2
-    , SAMPLE_COUNT_FLAG_4             = 0x4
-    , SAMPLE_COUNT_FLAG_8             = 0x8
-    , SAMPLE_COUNT_FLAG_16            = 0x10
-    , SAMPLE_COUNT_FLAG_32            = 0x20
-    , SAMPLE_COUNT_FLAG_64            = 0x40
-};
-using SAMPLE_COUNT_FLAGS = EnumFlagsT;
 
 struct CLEAR_DEPTH_STENCIL_VALUE
 {
@@ -2626,26 +2831,6 @@ enum RAY_TRACING_SHADER_VISIBILITY_FLAG : EnumT
     , RAY_TRACING_SHADER_VISIBILITY_FLAG_CALLABLE     = 0x20
 };
 using RAY_TRACING_SHADER_VISIBILITY_FLAGS = EnumFlagsT;
-
-enum SHADER_STAGE_FLAG : EnumT
-{
-      SHADER_STAGE_FLAG_UNKNOWN      = 0x0
-    , SHADER_STAGE_FLAG_VERTEX       = 0x1
-    , SHADER_STAGE_FLAG_HULL         = 0x2
-    , SHADER_STAGE_FLAG_DOMAIN       = 0x4
-    , SHADER_STAGE_FLAG_GEOMETRY     = 0x8
-    , SHADER_STAGE_FLAG_PIXEL        = 0x10
-    , SHADER_STAGE_FLAG_COMPUTE      = 0x20
-    , SHADER_STAGE_FLAG_TASK         = 0x40// AMPLIFICATION
-    , SHADER_STAGE_FLAG_MESH         = 0x80
-    , SHADER_STAGE_FLAG_RAYGEN       = 0x100
-    , SHADER_STAGE_FLAG_ANY_HIT      = 0x200
-    , SHADER_STAGE_FLAG_CLOSEST_HIT  = 0x400
-    , SHADER_STAGE_FLAG_MISS         = 0x800
-    , SHADER_STAGE_FLAG_INTERSECTION = 0x1000
-    , SHADER_STAGE_FLAG_CALLABLE     = 0x2000
-};
-using SHADER_STAGE_FLAGS = EnumFlagsT;
 
 enum DESCRIPTOR_FLAG : EnumT
 {
@@ -4045,6 +4230,14 @@ public:
             COMMAND_QUEUE_PROPERTIES* _properties) = 0;
 
     /**
+     * @brief リソースやパイプライン作成時に利用可能なパラメータの最大または最小値、または考慮する必要がある制限値を取得します。
+     * @param[out] _dst_limits DEVICE_ADAPTER_LIMITS構造へのポインターです。 値はnullptrであってはなりません。
+    */
+    virtual void
+        B3D_APIENTRY GetDeviceAdapterLimits(
+            DEVICE_ADAPTER_LIMITS* _dst_limits) = 0;
+
+    /**
      * @brief 画像を出力する機構を抽象化するサーフェスオブジェクトを作成します。
      * @param _desc サーフェス作成情報。
      * @param _dst 作成された実体を受け取るインターフェースのポインタのポインタ。
@@ -4082,7 +4275,7 @@ public:
 
     /**
      * @brief スワップチェインの作成時に利用可能なサポートされている色空間とフォーマットのペアを取得します。
-     * @param _dst サポートされる色空間とフォーマットのペアの情報を書き込むSURFACE_FORMAT構造の配列です。nullptrの場合値は書き込まれません。
+     * @param[out] _dst サポートされる色空間とフォーマットのペアの情報を書き込むSURFACE_FORMAT構造の配列です。nullptrの場合値は書き込まれません。
      * @return _dst配列の要素数を返します。
     */
     virtual uint32_t
@@ -4174,7 +4367,7 @@ public:
      * @param _dst 要求されたコマンドキューを受け取ります。 参照カウントが増加することに注意してください。
      * @return 成功した場合、BMRESULT_SUCCEEDが返ります。指定された_queue_typeのコマンドキューが存在しない場合、BMRESULT_FAILEDが返ります。
      *         _queue_indexに領域外インデックスが指定された場合、BMRESULT_FAILED_OUT_OF_RANGEを返します。
-     */
+    */
     virtual BMRESULT
         B3D_APIENTRY GetCommandQueue(
               COMMAND_TYPE    _queue_type

@@ -51,8 +51,10 @@ public:
         B3D_APIENTRY GetDesc() const override;
 
     uint32_t
-        B3D_APIENTRY GetCommandQueueProperties(
-            COMMAND_QUEUE_PROPERTIES* _properties) override;
+        B3D_APIENTRY GetCommandQueueProperties(COMMAND_QUEUE_PROPERTIES* _properties) override;
+
+    void
+        B3D_APIENTRY GetDeviceAdapterLimits(DEVICE_ADAPTER_LIMITS* _dst_limits) override;
 
     BMRESULT
         B3D_APIENTRY CreateSurface(const SURFACE_DESC& _desc, ISurface** _dst) override;
