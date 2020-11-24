@@ -24,6 +24,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\TLSFMemoryAllocator.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DCommonHelper.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DStringHelper.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\Buma3DMemory.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\TLSFMemoryAllocator.cpp">

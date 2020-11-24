@@ -184,35 +184,40 @@ inline constexpr RetT Get32BitValues()
     return AlignUp(sizeof(T), 4) / 4;
 }
 
+uint8_t Buma3DBitScanForward(unsigned long* _result_index, uint32_t _bitmask);
+uint8_t Buma3DBitScanForward(unsigned long* _result_index, uint64_t _bitmask);
+uint8_t Buma3DBitScanReverse(unsigned long* _result_index, uint32_t _bitmask);
+uint8_t Buma3DBitScanReverse(unsigned long* _result_index, uint64_t _bitmask);
+
 template <typename T, std::enable_if_t<sizeof(T) == sizeof(uint32_t), int> = 0>
 inline int GetFirstBitIndex(T _bits)
 {
-    DWORD index = 0;
-    auto res = BitScanForward(&index, static_cast<unsigned long>(_bits));
+    unsigned long index = 0;
+    auto res = Buma3DBitScanForward(&index, static_cast<uint32_t>(_bits));
     return res ? static_cast<int>(index) : -1;
 }
 
 template <typename T, std::enable_if_t<sizeof(T) == sizeof(uint64_t), int> = 0>
 inline int GetFirstBitIndex(T _bits)
 {
-    DWORD index = 0;
-    auto res = BitScanForward64(&index, static_cast<unsigned long long>(_bits));
+    unsigned long index = 0;
+    auto res = Buma3DBitScanForward(&index, static_cast<uint64_t>(_bits));
     return res ? static_cast<int>(index) : -1;
 }
 
 template <typename T, std::enable_if_t<sizeof(T) == sizeof(uint32_t), int> = 0>
 inline int GetLastBitIndex(T _bits)
 {
-    DWORD index = 0;
-    auto res = BitScanReverse(&index, static_cast<unsigned long>(_bits));
+    unsigned long index = 0;
+    auto res = Buma3DBitScanReverse(&index, static_cast<uint32_t>(_bits));
     return res ? static_cast<int>(index) : -1;
 }
 
 template <typename T, std::enable_if_t<sizeof(T) == sizeof(uint64_t), int> = 0>
 inline int GetLastBitIndex(T _bits)
 {
-    DWORD index = 0;
-    auto res = BitScanReverse64(&index, static_cast<unsigned long long>(_bits));
+    unsigned long index = 0;
+    auto res = Buma3DBitScanReverse(&index, static_cast<uint64_t>(_bits));
     return res ? static_cast<int>(index) : -1;
 }
 

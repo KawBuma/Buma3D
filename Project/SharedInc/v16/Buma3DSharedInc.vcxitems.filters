@@ -48,5 +48,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\TLSFMemoryAllocator.cpp">
       <Filter>Common\Util</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DCommonHelper.cpp">
+      <Filter>Common\Helper</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
