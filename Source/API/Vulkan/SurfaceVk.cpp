@@ -64,7 +64,7 @@ B3D_APIENTRY SurfaceVk::CopyDesc(const SURFACE_DESC& _desc)
 BMRESULT
 B3D_APIENTRY SurfaceVk::CreateVkSurface()
 {
-#if B3D_PLATFORM_IS_USE_WINDOWS
+#if B3D_PLATFORM_IS_USED_WINDOWS
     if (desc.platform_data.type != SURFACE_PLATFORM_DATA_TYPE_WINDOWS)
         return BMRESULT_FAILED_INVALID_PARAMETER;
 
@@ -80,7 +80,7 @@ B3D_APIENTRY SurfaceVk::CreateVkSurface()
     VKR_TRACE_IF_FAILED(vkr);
     B3D_RET_IF_FAILED(util::GetBMResultFromVk(vkr));
 
-#elif B3D_PLATFORM_IS_USE_ANDROID
+#elif B3D_PLATFORM_IS_USED_ANDROID
 // TODO: implement CreateVkSurface for android.
     static_assert(false, "TODO: implement CreateVkSurface for android.");
 #endif
@@ -209,7 +209,7 @@ B3D_APIENTRY SurfaceVk::GetState()
 {
     SURFACE_STATE result{};
 
-#if B3D_PLATFORM_IS_USE_WINDOWS 
+#if B3D_PLATFORM_IS_USED_WINDOWS 
 
     auto data = reinterpret_cast<const SURFACE_PLATFORM_DATA_WINDOWS*>(desc.platform_data.data);
     auto hwnd = (HWND)data->hwnd;
@@ -262,7 +262,7 @@ B3D_APIENTRY SurfaceVk::GetState()
     inspfn->vkGetPhysicalDeviceSurfaceFormats2KHR(physical_device, &srf_info, &format_count, formats.data());
     result.most_contained_display.color_space = util::GetB3DColorSpace(/*TODO:*/formats.data()[0].surfaceFormat.colorSpace);
 
-#elif B3D_PLATFORM_IS_USE_ANDROID
+#elif B3D_PLATFORM_IS_USED_ANDROID
     // TODO: implement SurfaceVk::GetState() for android.
     static_assert(false, "TODO: implement SurfaceVk::GetState() for android.");
 #endif

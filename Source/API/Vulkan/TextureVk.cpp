@@ -437,11 +437,11 @@ B3D_APIENTRY TextureVk::InitAsPlaced()
     VkExternalMemoryImageCreateInfoNV external_ci_nv { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV };
     B3D_RET_IF_FAILED(PrepareExternalMemoryCI(last_pnext, desc, ci, &external_ci, &external_ci_nv));
 
-#if B3D_PLATFORM_IS_USE_ANDROID
+#if B3D_PLATFORM_IS_USED_ANDROID
     // TDOO: VkExternalFormatANDROID 
     VkExternalFormatANDROID external_format_adr{ VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID };
     static_assert(false, "TODO: VkExternalFormatANDROID");
-#endif // B3D_PLATFORM_IS_USE_ANDROID
+#endif // B3D_PLATFORM_IS_USED_ANDROID
 
     auto vkr = vkCreateImage(vkdevice, &ci, B3D_VK_ALLOC_CALLBACKS, &image);
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
@@ -479,11 +479,11 @@ B3D_APIENTRY TextureVk::InitAsReserved()
     VkExternalMemoryImageCreateInfoNV external_ci_nv { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV };
     B3D_RET_IF_FAILED(PrepareExternalMemoryCI(last_pnext, desc, ci, &external_ci, &external_ci_nv));
 
-#if B3D_PLATFORM_IS_USE_ANDROID
+#if B3D_PLATFORM_IS_USED_ANDROID
     // TDOO: VkExternalFormatANDROID 
     VkExternalFormatANDROID external_format_adr{ VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID };
     static_assert(false, "TODO: VkExternalFormatANDROID");
-#endif // B3D_PLATFORM_IS_USE_ANDROID
+#endif // B3D_PLATFORM_IS_USED_ANDROID
 
     auto vkr = vkCreateImage(vkdevice, &ci, B3D_VK_ALLOC_CALLBACKS, &image);
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
@@ -538,11 +538,11 @@ B3D_APIENTRY TextureVk::InitAsCommitted(DeviceVk* _device, const COMMITTED_RESOU
     VkExternalMemoryImageCreateInfoNV external_ci_nv { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV };
     B3D_RET_IF_FAILED(PrepareExternalMemoryCI(last_pnext, desc, ci, &external_ci, &external_ci_nv));
 
-#if B3D_PLATFORM_IS_USE_ANDROID
+#if B3D_PLATFORM_IS_USED_ANDROID
     // TDOO: VkExternalFormatANDROID 
     VkExternalFormatANDROID external_format_adr{ VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID };
     static_assert(false, "TODO: VkExternalFormatANDROID");
-#endif // B3D_PLATFORM_IS_USE_ANDROID
+#endif // B3D_PLATFORM_IS_USED_ANDROID
 
     auto vkr = vkCreateImage(vkdevice, &ci, B3D_VK_ALLOC_CALLBACKS, &image);
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));

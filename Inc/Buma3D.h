@@ -20,13 +20,13 @@
 
 // プラットフォーム識別定数
 #if B3D_PLATFORM_USING == B3D_PLATFORM_WINDOWS
-#define B3D_PLATFORM_IS_USE_WINDOWS (1)
-#define B3D_PLATFORM_IS_USE_ANDROID (0)
+#define B3D_PLATFORM_IS_USED_WINDOWS (1)
+#define B3D_PLATFORM_IS_USED_ANDROID (0)
 #endif // B3D_PLATFORM_USING == B3D_PLATFORM_WINDOWS
 
 #if B3D_PLATFORM_USING == B3D_PLATFORM_ANDROID
-#define B3D_PLATFORM_IS_USE_WINDOWS (0)
-#define B3D_PLATFORM_IS_USE_ANDROID (1)
+#define B3D_PLATFORM_IS_USED_WINDOWS (0)
+#define B3D_PLATFORM_IS_USED_ANDROID (1)
 #endif // B3D_PLATFORM_USING == B3D_PLATFORM_ANDROID
 
 
@@ -61,11 +61,11 @@ novtableでマークされたクラスをインスタンス化してからクラ
 #endif
 
 // 呼び出し規約
-#if B3D_PLATFORM_IS_USE_WINDOWS
+#if B3D_PLATFORM_IS_USED_WINDOWS
 #define B3D_APIENTRY __stdcall
 #else
 #define B3D_APIENTRY
-#endif // B3D_PLATFORM_IS_USE_WINDOWS
+#endif // B3D_PLATFORM_IS_USED_WINDOWS
 
 
 // 1度も参照されない場合を防ぐ
@@ -84,8 +84,8 @@ enum class PLATFORM_TYPE : uint32_t
 
 inline constexpr PLATFORM_TYPE PLATFORM_USING = static_cast<PLATFORM_TYPE>(B3D_PLATFORM_USING);
 
-inline constexpr bool PLATFORM_IS_USE_WINDOWS = PLATFORM_USING == PLATFORM_TYPE::WINDOWS;
-inline constexpr bool PLATFORM_IS_USE_ANDROID = PLATFORM_USING == PLATFORM_TYPE::ANDROID;
+inline constexpr bool PLATFORM_IS_USED_WINDOWS = PLATFORM_USING == PLATFORM_TYPE::WINDOWS;
+inline constexpr bool PLATFORM_IS_USED_ANDROID = PLATFORM_USING == PLATFORM_TYPE::ANDROID;
 
 }// namespace buma3d
 
@@ -4318,6 +4318,9 @@ public:
      * @return 正常に終了した場合、BMRESULT_SUCCEEDが返ります。_resources配列の要素の全てに対応可能なヒープタイプ見つからなかった場合、BMRESULT_FAILEDが返ります。
      * @remark _resources配列内のリソースオブジェクトの順序によってヒープの合計サイズが変動します。
      *         これは各リソースのアライメント要求が異なる場合に発生する可能性があります。(C++における、構造体の変数アライメントによるサイズの変動と同様です。)
+     * 
+     *         DEVICE_ADAPTER_LIMITS::buffer_texture_granularityはRESOURCE_ALLOCATION_INFO::alignmentに対して考慮されないことに注意してください。
+     *         buffer_texture_granularityはエイリアスを発生させないための要件であり、リソース作成の要件ではないためです。
      */
     virtual BMRESULT
         B3D_APIENTRY GetResourceAllocationInfo(

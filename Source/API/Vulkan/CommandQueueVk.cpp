@@ -737,12 +737,12 @@ B3D_APIENTRY CommandQueueVk::CopyDesc(VkPipelineStageFlags _checkpoint_execution
 bool B3D_APIENTRY 
 CommandQueueVk::CheckPresentSupport()
 {
-#if B3D_PLATFORM_IS_USE_WINDOWS
+#if B3D_PLATFORM_IS_USED_WINDOWS
 
     if (inspfn->vkGetPhysicalDeviceWin32PresentationSupportKHR)
         return inspfn->vkGetPhysicalDeviceWin32PresentationSupportKHR(device->GetPrimaryVkPhysicalDevice(), desc.queue_index) == VK_TRUE;
 
-#else B3D_PLATFORM_IS_USE_ANDROID
+#else B3D_PLATFORM_IS_USED_ANDROID
     static_assert("TODO: CommandQueueVk: Check presentation support for ANDROID.");
 #endif
 

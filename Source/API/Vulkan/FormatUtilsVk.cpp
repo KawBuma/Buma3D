@@ -1550,14 +1550,14 @@ VulkanFormatProperties::VulkanFormatProperties()
     //    last_props_pnext = util::ConnectPNextChains(last_props_pnext, external_image_format_props);
     //   }
     //
-    //#if B3D_PLATFORM_IS_USE_ANDROID
+    //#if B3D_PLATFORM_IS_USED_ANDROID
     // // 特定のイメージ作成パラメーターに対して最適なAndroidハードウェアバッファー使用フラグを取得する
     // VkAndroidHardwareBufferUsageANDROID android_hardware_buffer_usage{ VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID };
     //   if (false)
     //   {
     //    last_props_pnext = util::ConnectPNextChains(last_props_pnext, android_hardware_buffer_usage);
     //   }
-    //#endif // B3D_PLATFORM_IS_USE_ANDROID
+    //#endif // B3D_PLATFORM_IS_USED_ANDROID
     //  
     //     // vkGetPhysicalDeviceImageFormatProperties2へのパラメータの組み合わせがvkCreateImageで使用するための実装でサポートされていない場合、imageFormatPropertiesのすべてのメンバーがゼロで埋められます。
     //     auto vkr = vkGetPhysicalDeviceImageFormatProperties2(physical_device, &info, &props);

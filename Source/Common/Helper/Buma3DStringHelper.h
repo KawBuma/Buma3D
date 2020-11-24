@@ -15,7 +15,7 @@ inline void OutDebugStr(const char* _str)
 {
     if constexpr (IS_ENABLE_DEBUG_STRING)
     {
-    #if B3D_PLATFORM_IS_USE_WINDOWS
+    #if B3D_PLATFORM_IS_USED_WINDOWS
         //OutputDebugStringA("Buma3D: ");
         OutputDebugStringA(_str);
     #else
@@ -27,7 +27,7 @@ inline void OutDebugStr(const wchar_t* _str)
 {
     if constexpr (IS_ENABLE_DEBUG_STRING)
     {
-    #if B3D_PLATFORM_IS_USE_WINDOWS
+    #if B3D_PLATFORM_IS_USED_WINDOWS
         //OutputDebugStringW(L"Buma3D: ");
         OutputDebugStringW(_str);
     #else
@@ -39,7 +39,7 @@ inline void OutDebugStr(const util::String& _str)
 {
     if constexpr (IS_ENABLE_DEBUG_STRING)
     {
-    #if B3D_PLATFORM_IS_USE_WINDOWS
+    #if B3D_PLATFORM_IS_USED_WINDOWS
         //OutputDebugStringA("Buma3D: ");
         OutputDebugStringA(_str.c_str());
     #else
@@ -51,7 +51,7 @@ inline void OutDebugStr(const util::WString& _str)
 {
     if constexpr (IS_ENABLE_DEBUG_STRING)
     {
-    #if B3D_PLATFORM_IS_USE_WINDOWS
+    #if B3D_PLATFORM_IS_USED_WINDOWS
         //OutputDebugStringW(L"Buma3D: ");
         OutputDebugStringW(_str.c_str());
     #else

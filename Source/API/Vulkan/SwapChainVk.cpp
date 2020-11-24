@@ -175,7 +175,7 @@ B3D_APIENTRY SwapChainVk::CreateSwapChainData()
         auto suf = surface->GetVkSurface();
         auto suf_pd = surface->GetVkPhysicalDevice();
 
-    #if B3D_PLATFORM_IS_USE_WINDOWS
+    #if B3D_PLATFORM_IS_USED_WINDOWS
         vkr = devpfn->vkGetDeviceGroupSurfacePresentModes2EXT(vkdevice, &sd.surface_info2_khr, &dg_pmflags);
         B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
     #else
@@ -242,7 +242,7 @@ B3D_APIENTRY SwapChainVk::CheckValidity()
     }
 
     // 排他フルスクリーンのサポートを確認
-#if B3D_PLATFORM_IS_USE_WINDOWS
+#if B3D_PLATFORM_IS_USED_WINDOWS
     if (desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE && !devpfn->vkAcquireFullScreenExclusiveModeEXT)
 #else
     if (desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE)
@@ -260,7 +260,7 @@ BMRESULT
 B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwapchainCreateInfoKHR* _ci, VkSwapchainKHR _old_swapchain)
 {
 
-#if B3D_PLATFORM_IS_USE_WINDOWS
+#if B3D_PLATFORM_IS_USED_WINDOWS
     if (_old_swapchain)
     {
         // 以前フルスクリーンで、解除する場合
@@ -309,7 +309,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
 
     auto&& scd = *swapchain_data;
 
-#if B3D_PLATFORM_IS_USE_WINDOWS
+#if B3D_PLATFORM_IS_USED_WINDOWS
     // 排他フルスクリーンの設定
     VkSurfaceFullScreenExclusiveInfoEXT      fs = sd.full_screen_exclusive_info_ext;
     VkSurfaceFullScreenExclusiveWin32InfoEXT fs32 = sd.full_screen_exclusive_win32_info_ext;
@@ -332,7 +332,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
     {
         // Presentの際に使用することが出来るデバイスグループプレゼントモードを指定。
 
-    #if B3D_PLATFORM_IS_USE_WINDOWS
+    #if B3D_PLATFORM_IS_USED_WINDOWS
         if (desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE)
         {
             auto vkr = devpfn->vkGetDeviceGroupSurfacePresentModes2EXT(vkdevice, &surface->GetSurfaceData().surface_info2_khr, &dgci_khr.modes);
@@ -377,7 +377,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
     auto vkr = devpfn->vkCreateSwapchainKHR(vkdevice, _ci, B3D_VK_ALLOC_CALLBACKS, &swapchain);
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
 
-#if B3D_PLATFORM_IS_USE_WINDOWS
+#if B3D_PLATFORM_IS_USED_WINDOWS
     // 排他フルスクリーン
     if (desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE)
     {
@@ -401,7 +401,7 @@ B3D_APIENTRY SwapChainVk::SetPresentMode(VkSwapchainCreateInfoKHR& _ci)
     uint32_t num_modes = 0;
     util::DyArray<VkPresentModeKHR> modes;
 
-#if B3D_PLATFORM_IS_USE_WINDOWS
+#if B3D_PLATFORM_IS_USED_WINDOWS
     {
         if (!inspfn->vkGetPhysicalDeviceSurfacePresentModesKHR)
             return BMRESULT_FAILED;
