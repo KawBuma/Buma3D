@@ -693,6 +693,8 @@ B3D_APIENTRY CommandListVk::CopyBufferToTexture(const CMD_COPY_BUFFER_TO_TEXTURE
     auto dst_tex = _args.dst_texture->As<TextureVk>();
 
     auto&& tex_desc = dst_tex->GetDesc();
+    auto block_size = util::GetFormatBlockSize(tex_desc.texture.format_desc.format);
+    auto format_size = util::GetFormatSize(tex_desc.texture.format_desc.format);
 
     util::TempDyArray<VkBufferImageCopy> regionsvk(_args.num_regions, allocator->GetTemporaryHeapAllocator<VkBufferImageCopy>());
     auto regionsvk_data = regionsvk.data();
@@ -701,9 +703,10 @@ B3D_APIENTRY CommandListVk::CopyBufferToTexture(const CMD_COPY_BUFFER_TO_TEXTURE
         auto&& region = _args.regions[i];
         auto&& regionvk = regionsvk_data[i];
 
-        regionvk.bufferOffset      = region.buffer_layout.offset;
-        regionvk.bufferRowLength  = SCAST<uint32_t>(region.buffer_layout.row_pitch / util::GetFormatSize(tex_desc.texture.format_desc.format));
-        regionvk.bufferImageHeight = region.buffer_layout.texture_height;
+        regionvk.bufferOffset       = region.buffer_layout.offset;
+        regionvk.bufferRowLength    = block_size.x * SCAST<uint32_t>(region.buffer_layout.row_pitch / format_size);
+        regionvk.bufferImageHeight  = region.buffer_layout.texture_height;
+        util::ConvertNativeSubresourceOffsetWithArraySize(region.texture_subresource.array_count, region.texture_subresource.offset, &regionvk.imageSubresource);
 
         if (region.texture_offset)
             util::MemCopy(&regionvk.imageOffset, RCAST<const VkOffset3D*>(region.texture_offset));
@@ -729,6 +732,8 @@ B3D_APIENTRY CommandListVk::CopyTextureToBuffer(const CMD_COPY_TEXTURE_TO_BUFFER
     auto dst_buf = _args.dst_buffer->As<BufferVk>();
 
     auto&& tex_desc = src_tex->GetDesc();
+    auto block_size = util::GetFormatBlockSize(tex_desc.texture.format_desc.format);
+    auto format_size = util::GetFormatSize(tex_desc.texture.format_desc.format);
 
     util::TempDyArray<VkBufferImageCopy> regionsvk(_args.num_regions, allocator->GetTemporaryHeapAllocator<VkBufferImageCopy>());
     auto regionsvk_data = regionsvk.data();
@@ -737,9 +742,10 @@ B3D_APIENTRY CommandListVk::CopyTextureToBuffer(const CMD_COPY_TEXTURE_TO_BUFFER
         auto&& region = _args.regions[i];
         auto&& regionvk = regionsvk_data[i];
 
-        regionvk.bufferOffset      = region.buffer_layout.offset;
-        regionvk.bufferRowLength   = SCAST<uint32_t>(region.buffer_layout.row_pitch / util::GetFormatSize(tex_desc.texture.format_desc.format));
-        regionvk.bufferImageHeight = region.buffer_layout.texture_height;
+        regionvk.bufferOffset       = region.buffer_layout.offset;
+        regionvk.bufferRowLength    = block_size.x * SCAST<uint32_t>(region.buffer_layout.row_pitch / format_size);
+        regionvk.bufferImageHeight  = region.buffer_layout.texture_height;
+        util::ConvertNativeSubresourceOffsetWithArraySize(region.texture_subresource.array_count, region.texture_subresource.offset, &regionvk.imageSubresource);
 
         if (region.texture_offset)
             util::MemCopy(&regionvk.imageOffset, RCAST<const VkOffset3D*>(region.texture_offset));

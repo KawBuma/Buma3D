@@ -430,20 +430,13 @@ B3D_APIENTRY ResourceHeapVk::Map(const MAPPED_RANGE* _range_to_map)
         return BMRESULT_FAILED_INVALID_CALL;
 
     // WARNING: マルチインスタンスメモリではMap不可
-
-    /* 範囲の先頭をVkPhysicalDeviceLimits::nonCoherentAtomSizeの最も近い倍数に切り捨てる必要があります。
-       範囲の終了をVkPhysicalDeviceLimits::nonCoherentAtomSizeの最も近い倍数に切り上げます。*/
-    // NOTE: Mapに限ったことではないがVulkan APIの有効性チェックはベンダーによって異なり、厳格に行われない可能性があるので、実際に遭遇した場合は対策を考える必要がある。
+    // Mapに限ったことではないがVulkan APIの有効性チェックはベンダーによって異なり、厳格に行われない可能性があるので、実際に遭遇した場合は対策を考える必要がある。
     if (_range_to_map)
     {
-        auto alignment = device->GetDeviceAdapter()->GetPhysicalDeviceData().properties2.properties.limits.nonCoherentAtomSize;
-        VkDeviceSize offset = hlp::AlignDown(_range_to_map->offset, alignment);
-        VkDeviceSize size = std::clamp(hlp::AlignUp(_range_to_map->size, alignment), 0ull, desc.size_in_bytes);
-        
-        auto vkr = vkMapMemory(vkdevice, device_memory, offset, size, /*reserved*/0, &mapped_data);
+        auto vkr = vkMapMemory(vkdevice, device_memory, _range_to_map->offset, _range_to_map->size, /*reserved*/0, &mapped_data);
         B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
 
-        mapped_range = { offset ,size };// 成功後に設定
+        mapped_range = { _range_to_map->offset, _range_to_map->size };// 成功後に設定
     }
     else
     {

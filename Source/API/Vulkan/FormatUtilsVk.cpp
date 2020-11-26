@@ -433,6 +433,9 @@ RESOURCE_FORMAT GetB3DFormat(VkFormat _format)
 
 size_t GetFormatSize(RESOURCE_FORMAT _format)
 {
+    // NOTE: 返されるサイズはそのフォーマットで割当可能な解像度の最小値を適用した際のサイズです。
+    // フォーマットサイズが2でブロックサイズが2x2の場合8が返ります。
+
     switch (_format)
     {
     case RESOURCE_FORMAT_R8_TYPELESS:

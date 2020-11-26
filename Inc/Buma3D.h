@@ -341,8 +341,8 @@ struct VIEWPORT
 
 struct MAPPED_RANGE
 {
-    uint64_t offset;
-    uint64_t size;
+    uint64_t offset;    // マップを開始するメモリオフセットです。 値はDEVICE_ADAPTER_LIMITS::non_coherent_atom_sizeの倍数で切り下げる必要があります。
+    uint64_t size;      // マップする範囲を指定する、offsetからのサイズです。 値はDEVICE_ADAPTER_LIMITS::non_coherent_atom_sizeの倍数で切り上げる必要があります。
 };
 
 
@@ -1024,7 +1024,12 @@ struct DEVICE_ADAPTER_LIMITS
 
     uint64_t                buffer_copy_offset_alignment;                               // D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT
     uint64_t                buffer_copy_row_pitch_alignment;                            // D3D12_TEXTURE_DATA_PITCH_ALIGNMENT
-    uint64_t                non_coherent_atom_size;                                     // 1 
+
+    /**
+     * @brief 1 (n/a)
+     *        RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENT フラグが指定されていないヒープでマップ操作を行う際に必要なアライメントです。
+    */
+    uint64_t                non_coherent_atom_size;
 
     /**
      * @brief D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT 
@@ -3786,12 +3791,25 @@ struct CMD_COPY_TEXTURE_REGION
 
 struct BUFFER_SUBRESOURCE_LAYOUT
 {
-    uint64_t                    offset;          // 画像データのコピー元またはコピー先のバッファオブジェクトの先頭からのバイト単位のオフセットです。
+    /**
+     * @brief 画像データのコピー元またはコピー先の、バッファの先頭からのバイト単位のオフセットです。
+     *        値はDEVICE_ADAPTER_LIMITS::buffer_copy_offset_alignmentにアラインされている必要があります。
+    */
+    uint64_t                    offset;
 
-    // buffer_row_lengthとbuffer_image_heightは、バッファメモリ内のより大きな2次元または3次元画像のサブ領域(subregion)をテクセルで指定し、アドレッシング計算を制御します。
-    // これらの値のいずれかがゼロの場合、バッファメモリのそのアスペクトは、imageExtentに従って密にパックされていると見なされます。
-    uint64_t                    row_pitch;      // バッファに配置されている画像データのレイアウトを指定します。 
-    uint32_t                    texture_height; // D3D12の場合、この値は0です。(texture_extent.heightに固定されます。)
+    /**
+     * @brief バッファに配置されている画像データのレイアウトを指定します。 
+     *        値はDEVICE_ADAPTER_LIMITS::buffer_copy_row_pitch_alignmentにアラインされている必要があります。
+    */
+    uint64_t                    row_pitch;
+
+    /**
+     * @brief バッファ内のレイアウトにおける、テクスチャの配列要素毎の画像の高さの値です。
+     * 
+     * @remark 次の配列要素へのオフセットは次のように計算されます: (offset + ((row_pitch * texture_height) * i))  iは配列インデックスです。
+     *         この際、オフセットはDEVICE_ADAPTER_LIMITS::buffer_copy_offset_alignmentにアラインされている必要があります。
+    */
+    uint32_t                    texture_height;
 };
 
 struct BUFFER_TEXTURE_COPY_REGION
@@ -4719,7 +4737,6 @@ public:
     /**
      * @brief このヒープが所有するメモリへのマッピングを開始します。
      * @param[in] _range_to_map マップする領域を指定します。デフォルトの場合、全ての領域をマップします。
-     *                          一部の内部APIによってはアライメントの制約があり、指定された領域がオフセットされ実際にマップされる領域は拡張される可能性があります。
      * @return HOST_READABLE、HOST_WRITABLEでない場合、または既にマップされている場合この関数呼び出しは失敗します。
     */
     virtual BMRESULT
@@ -4727,7 +4744,7 @@ public:
             const MAPPED_RANGE* _range_to_map = nullptr) = 0;
 
     /**
-     * @brief Map()によってマップされた実際の領域と、その実際の領域のデータへのポインタを取得します。
+     * @brief Map()によってマップされた領域と、データへのポインタを取得します。
      * @param[out] _mapped_range マップされている領域を取得します。
      * @param[out] _dst_mapped_data マップれされているデータへのポインタを取得します。
      * @return マップされていない場合この関数呼び出しは失敗します。

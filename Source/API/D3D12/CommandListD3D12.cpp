@@ -892,24 +892,14 @@ void
 B3D_APIENTRY CommandListD3D12::PrepareCopyBufferTextureRegionData(void* _data, const BUFFER_TEXTURE_COPY_REGION& _r)
 {
     auto&& data = *(buma3d::COPY_TEXTURE_BUFFER_DATA*)(_data);
-    data.texture_offset = _r.texture_offset ? *_r.texture_offset : OFFSET3D{};
-    data.texture_extent = _r.texture_extent ? *_r.texture_extent : util::CalcMipExtents<EXTENT3D>(_r.texture_subresource.offset.mip_slice, data.texture_desc->texture.extent);
-    data.psrc_box = util::ConvertToBox(data.texture_offset, data.texture_extent, &data.src_box);
+    data.texture_offset         = _r.texture_offset ? *_r.texture_offset : OFFSET3D{};
+    data.texture_extent         = _r.texture_extent ? *_r.texture_extent : util::CalcMipExtents<EXTENT3D>(_r.texture_subresource.offset.mip_slice, data.texture_desc->texture.extent);
+    data.psrc_box               = util::ConvertToBox(data.texture_offset, data.texture_extent, &data.src_box);
+    data.buffer_row_pitch       = _r.buffer_layout.row_pitch;
+    data.buffer_texture_height  = _r.buffer_layout.texture_height;
 
-    bool is_depth_or_stencil = _r.texture_subresource.offset.aspect & (TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL);
-
-    auto texel_block_size = SCAST<uint32_t>(GetTexelBlockSizeForCopyBufferTexture(data.texture_desc->texture.format_desc.format, _r.texture_subresource.offset.aspect));
     auto&& buffer_pfp = data.buffer_location.PlacedFootprint;
-
-    if (data.buffer_row_pitch == 0)
-        data.buffer_row_pitch = hlp::AlignUp(uint64_t(data.texture_extent.width) * uint64_t(texel_block_size), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);// FIXME: data.buffer_row_pitch
-    else
-        data.buffer_row_pitch = _r.buffer_layout.row_pitch;
-
-    if (data.buffer_texture_height == 0)
-        data.buffer_texture_height = data.texture_extent.height;
-    else
-        data.buffer_texture_height = _r.buffer_layout.texture_height;
+    bool is_depth_or_stencil = _r.texture_subresource.offset.aspect & (TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL);
 
     if (is_depth_or_stencil)
         buffer_pfp.Footprint.Format = ConvertDepthStencilFormatForCopyBufferTexture(data.texture_desc->texture.format_desc.format, TEXTURE_ASPECT_FLAG(_r.texture_subresource.offset.aspect));
