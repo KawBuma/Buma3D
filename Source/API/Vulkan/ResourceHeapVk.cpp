@@ -477,7 +477,6 @@ B3D_APIENTRY ResourceHeapVk::FlushMappedRanges(uint32_t _num_ranges, const MAPPE
     if (mapped_ranges.size() < _num_ranges)
         mapped_ranges.resize(_num_ranges, { VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, nullptr, device_memory });
 
-    auto alignment = device->GetDeviceAdapter()->GetPhysicalDeviceData().properties2.properties.limits.nonCoherentAtomSize;
     auto mapped_ranges_data = mapped_ranges.data();
     if (_num_ranges == 1 && _ranges == nullptr)
     {
@@ -488,8 +487,8 @@ B3D_APIENTRY ResourceHeapVk::FlushMappedRanges(uint32_t _num_ranges, const MAPPE
     {
         for (uint32_t i = 0; i < _num_ranges; i++)
         {
-            mapped_ranges_data[i].offset = hlp::AlignDown(_ranges[i].offset, alignment);
-            mapped_ranges_data[i].size = std::clamp(hlp::AlignUp(_ranges[i].size, alignment), 0ull, desc.size_in_bytes);
+            mapped_ranges_data[i].offset = _ranges[i].offset;
+            mapped_ranges_data[i].size = _ranges[i].size;
         }
     }
 
@@ -508,7 +507,6 @@ B3D_APIENTRY ResourceHeapVk::InvalidateMappedRanges(uint32_t _num_ranges, const 
     if (mapped_ranges.size() < _num_ranges)
         mapped_ranges.resize(_num_ranges, { VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, nullptr, device_memory });
 
-    auto alignment = device->GetDeviceAdapter()->GetPhysicalDeviceData().properties2.properties.limits.nonCoherentAtomSize;
     auto mapped_ranges_data = mapped_ranges.data();
     if (_num_ranges == 1 && _ranges == nullptr)
     {
@@ -519,8 +517,8 @@ B3D_APIENTRY ResourceHeapVk::InvalidateMappedRanges(uint32_t _num_ranges, const 
     {
         for (uint32_t i = 0; i < _num_ranges; i++)
         {
-            mapped_ranges_data[i].offset = hlp::AlignDown(_ranges[i].offset, alignment);
-            mapped_ranges_data[i].size = std::clamp(hlp::AlignUp(_ranges[i].size, alignment), 0ull, desc.size_in_bytes);
+            mapped_ranges_data[i].offset = _ranges[i].offset;
+            mapped_ranges_data[i].size = _ranges[i].size;
         }
     }
 
