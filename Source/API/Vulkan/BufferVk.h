@@ -88,19 +88,20 @@ public:
         B3D_APIENTRY GetVkBuffer() const;
 
 private:
-    std::atomic_int32_t                      ref_count;
-    util::UniquePtr<util::NameableObjStr>    name;
-    DeviceVk*                                device;
-    RESOURCE_DESC                            desc;
-    util::UniquePtr<util::DyArray<NodeMask>> bind_node_masks;
-    RESOURCE_CREATE_TYPE                     create_type;
-    bool                                     is_bound;
-    GpuVirtualAddress                        gpu_virtual_address;
-    VkDevice                                 vkdevice;
-    const InstancePFN*                       inspfn;
-    const DevicePFN*                         devpfn;
-    ResourceHeapVk*                          heap;
-    VkBuffer                                 buffer;
+    std::atomic_int32_t                         ref_count;
+    util::UniquePtr<util::NameableObjStr>       name;
+    DeviceVk*                                   device;
+    RESOURCE_DESC                               desc;
+    util::UniquePtr<util::DyArray<NodeMask>>    bind_node_masks;
+    RESOURCE_CREATE_TYPE                        create_type;
+    bool                                        is_bound;
+    GpuVirtualAddress                           gpu_virtual_address;
+    VkDevice                                    vkdevice;
+    const InstancePFN*                          inspfn;
+    const DevicePFN*                            devpfn;
+    ResourceHeapVk*                             heap;
+    VkBuffer                                    buffer;
+    VkDeviceSize                                sparse_block_size; // RESOURCE_CREATE_TYPE_RESERVEDの際に使用します。
 
 };
 

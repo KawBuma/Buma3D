@@ -111,6 +111,11 @@ private:
     {
         // スパースバッファーと完全常駐イメージのスパースブロックサイズ（バイト単位）は、VkMemoryRequirements::alignmentとして報告されます。
         // alignmentは、メモリアラインメント要件とスパースリソースのバインディング粒度（バイト単位）の両方を表します。
+        // 部分的に常駐するイメージには、メモリをバインドするための異なる方法があります。 バッファーおよび完全に常駐するイメージと同様に、VkMemoryRequirements::alignmentフィールドは、イメージのバインド可能なスパースブロックサイズをバイト単位で指定します。
+        VkDeviceSize block_size;
+
+        // vkGetImageSparseMemoryRequirementsを使用してVkImageオブジェクトのスパースメモリ要件を要求すると、1つ以上のVkSparseImageMemoryRequirements構造体の配列が返されます。
+        // 有効なスパースイメージのメモリ要件を取得するには、VK_IMAGE_CREATE_SPARSE_RESIDENCY_BITフラグを使用してスパースイメージを作成する必要があります。
         util::DyArray<VkSparseImageMemoryRequirements2> memory_requirements;
         //util::DyArray<VkSparseImageFormatProperties2> format_properties;
     };

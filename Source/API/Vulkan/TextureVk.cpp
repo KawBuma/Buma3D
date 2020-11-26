@@ -65,6 +65,122 @@ TEXTURE_USAGE_FLAGS SwapchainFlagsToUsageFlags(SWAP_CHAIN_BUFFER_FLAGS _flags)
     return result;
 }
 
+enum BLOCK_TEXEL_SIZE
+{
+      BTS_8
+    , BTS_16
+    , BTS_32
+    , BTS_64
+    , BTS_128
+    , BTS_CNT
+};
+
+/**
+ * @brief Standard Sparse Image Block Shapes 
+ *        https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/chap33.html#sparsememory-sparseblockshapesmsaa
+*/
+struct STANDARD_BLOCK_SHAPES
+{
+    VkExtent3D shape_2d    [BTS_CNT];   // Block Shape (2D)
+    VkExtent3D shape_3d    [BTS_CNT];   // Block Shape (3D)
+    VkExtent3D shape_2d_x2 [BTS_CNT];   // Block Shape (sample 2X)
+    VkExtent3D shape_2d_x4 [BTS_CNT];   // Block Shape (sample 4X)
+    VkExtent3D shape_2d_x8 [BTS_CNT];   // Block Shape (sample 8X)
+    VkExtent3D shape_2d_x16[BTS_CNT];   // Block Shape (sample 16X)
+
+    const VkExtent3D* Get(RESOURCE_DIMENSION _dimension, BLOCK_TEXEL_SIZE _texel_size, uint32_t _sample_count)
+    {
+        switch (_dimension)
+        {
+        case buma3d::RESOURCE_DIMENSION_TEX2D: return ByTexelSize(_texel_size, BySampleCount(_sample_count));
+        case buma3d::RESOURCE_DIMENSION_TEX3D: return ByTexelSize(_texel_size, shape_3d);
+
+        default:
+            return nullptr;
+        }
+    }
+
+private:
+    const VkExtent3D* BySampleCount(uint32_t _sample_count) const
+    {
+        switch (_sample_count)
+        {
+        case 1  : return shape_2d;
+        case 2  : return shape_2d_x2;
+        case 4  : return shape_2d_x4;
+        case 8  : return shape_2d_x8;
+        case 16 : return shape_2d_x16;
+
+        default:
+            return nullptr;
+        }
+    }
+    const VkExtent3D* ByTexelSize(size_t _size, const VkExtent3D* _shapes) const
+    {
+        if (!_shapes)
+            return nullptr;
+
+        switch (_size)
+        {
+        case 8   : return &_shapes[BTS_8   ];
+        case 16  : return &_shapes[BTS_16  ];
+        case 32  : return &_shapes[BTS_32  ];
+        case 64  : return &_shapes[BTS_64  ];
+        case 128 : return &_shapes[BTS_128 ];
+
+        default:
+            return nullptr;
+        }
+    }
+
+};
+
+static constexpr STANDARD_BLOCK_SHAPES standard_block_shapes =
+{
+    // Block Shape (2D)
+    { { 256, 256,  1 }   // BTS_8
+    , { 256, 128,  1 }   // BTS_16
+    , { 128, 128,  1 }   // BTS_32
+    , { 128,  64,  1 }   // BTS_64
+    , {  64,  64,  1 } } // BTS_128
+    
+    // Block Shape (3D)
+    , { { 64, 32, 32 }
+      , { 32, 32, 32 }
+      , { 32, 32, 16 }
+      , { 32, 16, 16 }
+      , { 16, 16, 16 } }
+
+    // Block Shape (2X)
+    , { { 128, 256, 1 }
+      , { 128, 128, 1 }
+      , {  64, 128, 1 }
+      , {  64,  64, 1 }
+      , {  32,  64, 1 } }
+    
+    // Block Shape (4X)
+    , { { 128, 128, 1 }
+      , { 128,  64, 1 }
+      , {  64,  64, 1 }
+      , {  64,  32, 1 }
+      , {  32,  32, 1 } }
+    
+    // Block Shape (8X)
+    , { { 64, 128, 1 }
+      , { 64,  64, 1 }
+      , { 32,  64, 1 }
+      , { 32,  32, 1 }
+      , { 16,  32, 1 } }
+
+    // Block Shape (16X)
+    , { { 64, 64, 1 }
+      , { 64, 32, 1 }
+      , { 32, 32, 1 }
+      , { 32, 16, 1 }
+      , { 16, 16, 1 } }
+};
+
+
 }// namespace /*anonymous*/
 
 
@@ -402,12 +518,19 @@ void
 B3D_APIENTRY TextureVk::CreateSparseResourceData()
 {
     sparse_data = B3DMakeUnique(SPARSE_RESOURCE_DATA);
+    VkMemoryRequirements2 reqs{ VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
+    GetMemoryRequirements(&reqs);
+    sparse_data->block_size = reqs.memoryRequirements.alignment;
 
     VkImageSparseMemoryRequirementsInfo2 mr_info{ VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2, nullptr, image };
     uint32_t mem_reqs_count = 0;
     vkGetImageSparseMemoryRequirements2(vkdevice, &mr_info, &mem_reqs_count, nullptr);
-    sparse_data->memory_requirements.resize(mem_reqs_count, { VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2 });
-    vkGetImageSparseMemoryRequirements2(vkdevice, &mr_info, &mem_reqs_count, sparse_data->memory_requirements.data());
+
+    if (mem_reqs_count)
+    {
+        sparse_data->memory_requirements.resize(mem_reqs_count, { VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2 });
+        vkGetImageSparseMemoryRequirements2(vkdevice, &mr_info, &mem_reqs_count, sparse_data->memory_requirements.data());
+    }
 }
 
 BMRESULT
@@ -832,11 +955,11 @@ B3D_APIENTRY TextureVk::SetupBindRegions(IResourceHeap* _dst_heap, uint32_t _num
 {
     auto dst_heap  = _dst_heap->As<ResourceHeapVk>();
     auto dst_mem   = dst_heap->GetVkDeviceMemory();
-    auto alignment = dst_heap->GetDesc().alignment;
     // Vulkan側の構造の各要素はCommandQueueVk::BindInfoBufferが必ず所有し、VkBindSparseInfoに予めセットされています。引数をシンプルにすることを目的としてconstを外して使用します。
     auto&& bi = *_dst_info;
 
     auto&& memory_requirements_data = sparse_data->memory_requirements.data();
+    auto block_size = sparse_data->block_size;
     auto BindImage = [&](const TILED_RESOURCE_BIND_REGION& _region) 
     {
         // 有効性の検証
@@ -859,7 +982,7 @@ B3D_APIENTRY TextureVk::SetupBindRegions(IResourceHeap* _dst_heap, uint32_t _num
             bind.extent.height = _region.dst_region.tile_size.height * granularity.height;
             bind.extent.depth  = _region.dst_region.tile_size.depth  * granularity.depth ;
             bind.memory        = _region.flags & TILED_RESOURCE_BIND_REGION_FLAG_BIND_TO_NULL ? VK_NULL_HANDLE : dst_mem;
-            bind.memoryOffset  = _region.heap_tile_offset * alignment;
+            bind.memoryOffset  = _region.heap_tile_offset * block_size;
             bind.flags         = 0;
 
             ib.bindCount++;
@@ -889,7 +1012,7 @@ B3D_APIENTRY TextureVk::SetupBindRegions(IResourceHeap* _dst_heap, uint32_t _num
             bind.resourceOffset = _region.dst_miptail_region.offset_in_bytes;
             bind.size           = _region.dst_miptail_region.size_in_bytes;
             bind.memory         = _region.flags & TILED_RESOURCE_BIND_REGION_FLAG_BIND_TO_NULL ? VK_NULL_HANDLE : dst_mem;
-            bind.memoryOffset   = _region.heap_tile_offset * alignment;
+            bind.memoryOffset   = _region.heap_tile_offset * block_size;
 
             /*NOTE: Vulkan実装は、同じ画像に対して標準のスパース画像ブロック形状とカスタムスパース画像ブロック形状の両方をサポートしてはなりません。
                     サポートされている場合は、標準のスパース画像ブロック形状を(優先して)使用する必要があります。

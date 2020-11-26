@@ -5,19 +5,20 @@ namespace buma3d
 {
 
 B3D_APIENTRY BufferVk::BufferVk()
-    : ref_count           { 1 }
-    , name                {}
-    , device              {}
-    , desc                {}
-    , bind_node_masks     {}
-    , create_type         {}
-    , is_bound            {}
-    , gpu_virtual_address {}
-    , vkdevice            {}
-    , inspfn              {}
-    , devpfn              {}
-    , heap                {}
-    , buffer              {}
+    : ref_count             { 1 }
+    , name                  {}
+    , device                {}
+    , desc                  {}
+    , bind_node_masks       {}
+    , create_type           {}
+    , is_bound              {}
+    , gpu_virtual_address   {}
+    , vkdevice              {}
+    , inspfn                {}
+    , devpfn                {}
+    , heap                  {}
+    , buffer                {}
+    , sparse_block_size     {}
 {
 
 }
@@ -197,6 +198,11 @@ B3D_APIENTRY BufferVk::InitAsReserved()
     auto vkr = vkCreateBuffer(vkdevice, &ci, B3D_VK_ALLOC_CALLBACKS, &buffer);
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
 
+    // SetupBindRegionsで使用します。
+    VkMemoryRequirements2 reqs{ VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
+    GetMemoryRequirements(&reqs);
+    sparse_block_size = reqs.memoryRequirements.alignment;
+
     // Reservedの場合ヒープが存在していなくてもViewを作成可能なのでバインド済みとする。
     MarkAsBound();
 
@@ -362,7 +368,7 @@ B3D_APIENTRY BufferVk::SetupBindRegions(IResourceHeap* _dst_heap, uint32_t _num_
 {
     auto dst_heap = _dst_heap->As<ResourceHeapVk>();
     auto dst_mem  = dst_heap->GetVkDeviceMemory();
-    auto al       = dst_heap->GetDesc().alignment;
+    auto al       = sparse_block_size;
     // Vulkan側の構造の各要素はCommandQueueVk::BindInfoBufferが必ず所有し、VkBindSparseInfoに予めセットされています。引数をシンプルにすることを目的としてconstを外して使用します。
     auto&& bi = *_dst_info;
     auto&& bb = CCAST<VkSparseBufferMemoryBindInfo*>(bi.pBufferBinds)[bi.bufferBindCount];

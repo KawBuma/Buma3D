@@ -12,6 +12,7 @@ protected:
 
 private:
     BMRESULT B3D_APIENTRY Init(DeviceD3D12* _device, const RESOURCE_HEAP_DESC& _desc);
+    void B3D_APIENTRY CopyDesc(const buma3d::RESOURCE_HEAP_DESC& _desc);
     BMRESULT B3D_APIENTRY InitForCommitted(DeviceD3D12* _device, const COMMITTED_RESOURCE_DESC& _desc, IResource* _resource);
     BMRESULT B3D_APIENTRY CreateD3D12Heap();
     void  B3D_APIENTRY ConfigMappingUsage();

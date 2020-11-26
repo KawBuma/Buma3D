@@ -279,6 +279,9 @@ B3D_APIENTRY DeviceAdapterD3D12::GetDeviceAdapterLimits(DEVICE_ADAPTER_LIMITS* _
         , D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT                                                                    // buffer_copy_offset_alignment
         , D3D12_TEXTURE_DATA_PITCH_ALIGNMENT                                                                        // buffer_copy_row_pitch_alignment
         , 1                                                                                                         // non_coherent_atom_size
+        , D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT                                                                // default_resource_heap_alignment
+        , D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT                                                                  // min_resource_heap_alignment
+        , D3D12_DEFAULT_MSAA_RESOURCE_PLACEMENT_ALIGNMENT                                                           // max_resource_heap_alignment
     };
 }
 

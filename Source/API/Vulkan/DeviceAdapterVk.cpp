@@ -577,6 +577,9 @@ B3D_APIENTRY DeviceAdapterVk::GetDeviceAdapterLimits(DEVICE_ADAPTER_LIMITS* _dst
         , l.optimalBufferCopyOffsetAlignment                            // buffer_copy_offset_alignment
         , l.optimalBufferCopyRowPitchAlignment                          // buffer_copy_row_pitch_alignment
         , l.nonCoherentAtomSize                                         // non_coherent_atom_size
+        , 1                                                             // default_resource_heap_alignment
+        , 1                                                             // min_resource_heap_alignment
+        , 1                                                             // max_resource_heap_alignment
     };
 }
 

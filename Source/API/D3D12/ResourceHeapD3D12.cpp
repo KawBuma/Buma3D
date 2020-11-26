@@ -33,7 +33,8 @@ B3D_APIENTRY ResourceHeapD3D12::Init(DeviceD3D12* _device, const RESOURCE_HEAP_D
 {
     (device = _device)->AddRef();
     device12 = device->GetD3D12Device();
-    desc = _desc;
+
+    CopyDesc(_desc);
 
     B3D_RET_IF_FAILED(CreateD3D12Heap());
 
@@ -42,6 +43,14 @@ B3D_APIENTRY ResourceHeapD3D12::Init(DeviceD3D12* _device, const RESOURCE_HEAP_D
         B3D_RET_IF_FAILED(CreateD3D12ResourceForMap());
 
     return BMRESULT_SUCCEED;
+}
+
+void
+B3D_APIENTRY ResourceHeapD3D12::CopyDesc(const buma3d::RESOURCE_HEAP_DESC& _desc)
+{
+    desc = _desc;
+    if (desc.alignment == 0)
+        desc.alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 }
 
 BMRESULT 
@@ -289,7 +298,6 @@ B3D_APIENTRY ResourceHeapD3D12::Map(const MAPPED_RANGE* _range_to_map)
     const D3D12_RANGE* range;
     if (_range_to_map)
     {
-        //auto alignment = device->GetDeviceAdapter()->GetPhysicalDeviceData().properties2.properties.limits.nonCoherentAtomSize;
         mapped_range = { _range_to_map->offset, _range_to_map->size };
         mapped_range12 = { mapped_range.offset, mapped_range.offset + mapped_range.size };
         range = &mapped_range12;

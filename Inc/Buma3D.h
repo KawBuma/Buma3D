@@ -1025,6 +1025,14 @@ struct DEVICE_ADAPTER_LIMITS
     uint64_t                buffer_copy_offset_alignment;                               // D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT
     uint64_t                buffer_copy_row_pitch_alignment;                            // D3D12_TEXTURE_DATA_PITCH_ALIGNMENT
     uint64_t                non_coherent_atom_size;                                     // 1 
+
+    /**
+     * @brief D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT 
+     *        RESOURCE_HEAP_DESC::alignment を参照してください。
+    */
+    uint64_t                default_resource_heap_alignment;
+    uint64_t                min_resource_heap_alignment;                                // D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT 
+    uint64_t                max_resource_heap_alignment;                                // D3D12_DEFAULT_MSAA_RESOURCE_PLACEMENT_ALIGNMENT 
 };
 
 enum SHADER_STAGE_FLAG : EnumT
@@ -1094,6 +1102,12 @@ struct DEVICE_FEATURE_STREAM_OUTPUT_PROPERTIES
     bool                is_enabled_stream_output_queries;                       // true
     bool                is_enabled_stream_output_streams_lines_triangles;       // false (When multiple GS output streams are used they must be pointlists)
     bool                is_enabled_stream_output_rasterization_stream_select;   // true 
+};
+
+// TODO: DEVICE_FEATURE_TILED_RESOURCE_PROPERTIES
+struct DEVICE_FEATURE_TILED_RESOURCE_PROPERTIES
+{
+
 };
 
 #pragma endregion features
@@ -1344,10 +1358,25 @@ struct RESOURCE_HEAP_DESC
 {
     uint32_t             heap_index;
     uint64_t             size_in_bytes;
-    uint64_t             alignment;
+
+    /**
+     * @brief ヒープのアライメントを指定します。 作成時に0を指定して、内部APIのデフォルトアライメントを設定可能です。 
+     * 
+     * @remark ヒープのオフセットがゼロの位置に配置されるビデオメモリアドレスのアライメントはこの値によって保証されます。 
+     *         例外として、デフォルトのアライメントが存在しない、またはヒープアライメントがドライバ側で管理されている場合、強制的に1が設定され、アライメントの指定が存在しないことを示します。 
+     *         ヒープのデフォルトアライメントは DEVICE_ADAPTER_LIMITS::default_resource_heap_alignment を介して提供されます(上記の例外も適用されています)。 
+     * 
+     *         これはヒープの開始アドレスのアライメントを保証するものです;マルチサンプルテクスチャ等をバインドするケースでは、バインドオフセットにデフォルトアライメント以上の値が必要な場合があります。 
+     *         この場合、IDevice::GetResourceAllocationInfoから返されるアライメントを使用してヒープ自体のアライメントを明示的に指定する必要があります。 
+     *         これらの複雑な要件を回避するには、DEVICE_ADAPTER_LIMITS::max_resource_heap_alignment アライメントを使用する、巨大なヒープを作成し、リソースへのヒープメモリのサブ割当を管理します。 
+     * 
+     * @note リソースをバインドする際のヒープオフセットにIDevice::GetResourceAllocationInfoから返されるアライメントを使用することは引き続き必要です。 
+    */
+    uint64_t             alignment; 
+
     RESOURCE_HEAP_FLAGS  flags;
-    NodeMask             creation_node_mask;// ヒープのインスタンスを作成するノードのインデックスビットです。RESOURCE_HEAP_TYPE_MULTI_INSTANCEヒープの場合この複数のノードにメモリインスタンスを作成します。それ以外の場合単一のビットのみを指定する必要があります。
-    NodeMask             visible_node_mask;// このヒープのインスタンスを使用できるデバイス内のノードです。RESOURCE_HEAP_PROPERTY_FLAG_VISIBLE_NODE_MASKヒープではない場合、この値はアプリケーションによって制御できず、creation_node_maskの全てのビットが指定されます。
+    NodeMask             creation_node_mask;    // ヒープのインスタンスを作成するノードのインデックスビットです。RESOURCE_HEAP_TYPE_MULTI_INSTANCEヒープの場合この複数のノードにメモリインスタンスを作成します。それ以外の場合単一のビットのみを指定する必要があります。
+    NodeMask             visible_node_mask;     // このヒープのインスタンスを使用できるデバイス内のノードです。RESOURCE_HEAP_PROPERTY_FLAG_VISIBLE_NODE_MASKヒープではない場合、この値はアプリケーションによって制御できず、creation_node_maskの全てのビットが指定されます。
 };
 
 struct BIND_RESOURCE_HEAP_INFO
@@ -1808,6 +1837,10 @@ enum TILED_RESOURCE_FORMAT_FLAG : EnumT
 };
 using TILED_RESOURCE_FORMAT_FLAGS = EnumFlagsT;
 
+/**
+ * @brief 指定のリソースを割り当てる際に要求されるタイルの形状が指定されます。
+ *        1タイル辺りのサイズは width_in_texels * height_in_texels * depth_in_texels によって決定されます。
+*/
 struct TILE_SHAPE
 {
     uint32_t width_in_texels;
@@ -1817,7 +1850,7 @@ struct TILE_SHAPE
 
 struct TILED_RESOURCE_FORMAT_PROPERTIES
 {
-    TEXTURE_ASPECT_FLAGS           aspect;
+    TEXTURE_ASPECT_FLAGS           aspect;      // 深度とステンシルアスペクトがインターリーブされる場合、 TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL が指定されます。
     TILE_SHAPE                     tile_shape;
     TILED_RESOURCE_FORMAT_FLAGS    flags;
 };
@@ -3823,10 +3856,10 @@ enum RESOURCE_BARRIER_FLAG : EnumT
       RESOURCE_BARRIER_FLAG_NONE               = 0x0
 
       /*
-      * @brief 異なるキュータイプ間でリソースを共有する場合、ソースのキューから宛先のキューへのリソースの所有権の転送が必要です。 
-      *        このフラグを指定する場合、キューファミリの所有権転送が定義され、異種キュー間でのリソースの値が保持されます。 
-      *        この際、バリアは2回の操作に分けて実行する必要があり、初めにソースキューでの「解放」操作のバリアを実行し、宛先キューで「取得」操作のバリアを実行する必要があります。 
-      *        src_state と dst_state は取得操作と解放操作で同一である必要があります。 
+       * @brief 異なるキュータイプ間でリソースを共有する場合、ソースのキューから宛先のキューへのリソースの所有権の転送が必要です。 
+       *        このフラグを指定する場合、キューファミリの所有権転送が定義され、異種キュー間でのリソースの値が保持されます。 
+       *        この際、バリアは2回の操作に分けて実行する必要があり、初めにソースキューでの「解放」操作のバリアを実行し、宛先キューで「取得」操作のバリアを実行する必要があります。 
+       *        src_state と dst_state は取得操作と解放操作で同一である必要があります。 
       */
     , RESOURCE_BARRIER_FLAG_OWNERSHIP_TRANSFER = 0x1 
 };
@@ -4321,7 +4354,7 @@ public:
      * 
      *         DEVICE_ADAPTER_LIMITS::buffer_texture_granularityはRESOURCE_ALLOCATION_INFO::alignmentに対して考慮されないことに注意してください。
      *         buffer_texture_granularityはエイリアスを発生させないための要件であり、リソース作成の要件ではないためです。
-     */
+    */
     virtual BMRESULT
         B3D_APIENTRY GetResourceAllocationInfo(
               uint32_t                       _num_resources

@@ -216,7 +216,7 @@ B3D_APIENTRY TextureD3D12::InitAsPlaced()
     util::GetNativeResourceDesc(desc, &rd);
 
     // このリソースが作成可能か確認。(BufferD3D12.cppを参照)
-    auto ai = device12->GetResourceAllocationInfo(0x1, 1, &rd);
+    auto ai = device12->GetResourceAllocationInfo(B3D_DEFAULT_NODE_MASK, 1, &rd);
     if (ai.SizeInBytes == -1)
     {
         if (util::IsEnabledDebug(this))
@@ -263,6 +263,22 @@ B3D_APIENTRY TextureD3D12::InitAsCommitted(DeviceD3D12* _device, const COMMITTED
 
     D3D12_RESOURCE_DESC desc12{};
     util::GetNativeResourceDesc(_desc.resource_desc, &desc12);
+
+    // AlignmentをD3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENTに設定したデスクをGetResourceAllocationInfoに渡すことで、スモールリソースアライメントに対応しているかを照会できます。
+    // 対応していない場合エラーとして扱われてしまうため、現状無効にしています。
+    if constexpr (false)
+    {
+        desc12.Alignment = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+        auto ai = device12->GetResourceAllocationInfo(B3D_DEFAULT_NODE_MASK, 1, &desc12);
+        if (ai.Alignment == D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT)
+            desc12.Alignment = ai.Alignment;
+        else
+        {
+            desc12.Alignment = 0;
+            ai = device12->GetResourceAllocationInfo(B3D_DEFAULT_NODE_MASK, 1, &desc12);
+            desc12.Alignment = ai.Alignment;
+        }
+    }
 
     D3D12_CLEAR_VALUE cv12{};
     D3D12_CLEAR_VALUE* cv12_ptr = nullptr;
