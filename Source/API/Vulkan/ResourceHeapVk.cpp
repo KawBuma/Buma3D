@@ -52,15 +52,22 @@ B3D_APIENTRY ResourceHeapVk::~ResourceHeapVk()
 BMRESULT
 B3D_APIENTRY ResourceHeapVk::Init(DeviceVk* _device, const RESOURCE_HEAP_DESC& _desc)
 {
-    desc = _desc;
     (device = _device)->AddRef();
     vkdevice = device->GetVkDevice();
     inspfn = &device->GetInstancePFN();
     devpfn = &device->GetDevicePFN();
+    CopyDesc(_desc);
 
     B3D_RET_IF_FAILED(AllocateMemory(nullptr));
 
     return BMRESULT_SUCCEED;
+}
+
+void
+B3D_APIENTRY ResourceHeapVk::CopyDesc(const buma3d::RESOURCE_HEAP_DESC& _desc)
+{
+    desc = _desc;
+    desc.alignment = 1; // Vulkanにヒープレベルでのアライメント指定はありません。
 }
 
 BMRESULT 
@@ -77,7 +84,7 @@ B3D_APIENTRY ResourceHeapVk::InitForCommitted(DeviceVk* _device, const COMMITTED
     _dedicated_resource->GetMemoryRequirements(&reqs);
 
     desc.size_in_bytes      = reqs.memoryRequirements.size;
-    desc.alignment          = reqs.memoryRequirements.alignment;
+    desc.alignment          = 1;
     desc.heap_index         = _desc.heap_index;
     desc.flags              = _desc.heap_flags;
     desc.creation_node_mask = _desc.creation_node_mask;

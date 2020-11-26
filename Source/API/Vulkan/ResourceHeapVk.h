@@ -14,6 +14,7 @@ protected:
 
 private:
     BMRESULT B3D_APIENTRY Init(DeviceVk* _device, const RESOURCE_HEAP_DESC& _desc);
+    void B3D_APIENTRY CopyDesc(const buma3d::RESOURCE_HEAP_DESC& _desc);
     BMRESULT B3D_APIENTRY InitForCommitted(DeviceVk* _device, const COMMITTED_RESOURCE_DESC& _desc, IResourceVk* _dedicated_resource);
     BMRESULT B3D_APIENTRY AllocateMemory(IResourceVk* _dedicated_resource);
     BMRESULT B3D_APIENTRY PrepareVkMemoryAllocateFlagsInfo(const void**& _last_pnext, VkMemoryAllocateFlagsInfo* _info);
