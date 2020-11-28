@@ -1327,19 +1327,19 @@ struct DEVICE_DESC
 
 enum RESOURCE_HEAP_PROPERTY_FLAG : EnumT
 {
-      RESOURCE_HEAP_PROPERTY_FLAG_NONE                             = 0x0      // CPU_NOT_AVAILABLE
-    , RESOURCE_HEAP_PROPERTY_FLAG_DEVICE_LOCAL                     = 0x1      // CPU_NOT_AVAILABLE
-    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_READABLE                    = 0x2      // CPU_WRITE_BACK   , HEAP_TYPE_READBACK
-    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_WRITABLE                    = 0x4      // CPU_WRITE_COMBINE, HEAP_TYPE_UPLOAD   HOST_VISIBLE = (READABLE | WRITABLE)
-    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_CACHED                      = 0x8      // CPU_WRITE_BACK   , HEAP_TYPE_READBACK (要:Flush,Invalidate)
-    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENT                    = 0x10     // CPU_WRITE_COMBINE, HEAP_TYPE_UPLOAD
-    , RESOURCE_HEAP_PROPERTY_FLAG_MULTI_INSTANCE                   = 0x20     // creation_node_maskで複数のノードを指定可能です。このフラグが指定されていない場合は有効なノードを示す単一のビットのみ指定する必要があります。
-    , RESOURCE_HEAP_PROPERTY_FLAG_SUBSET_ALLOCATION                = 0x40     // 各ノードへの割り当てがcreation_node_maskによって制限可能。それ以外は全てのノードで割り当てられる(依然として、任意のビットを指定することは有効です)。RESOURCE_HEAP_PROPERTY_FLAG_MULTI_INSTANCEが指定されていない場合依然としてビットは1つのみ指定可能。
-    , RESOURCE_HEAP_PROPERTY_FLAG_VISIBLE_NODE_MASK                = 0x80     // ヒープの可視性をvisible_node_maskによって制限可能、それ以外は全てのビットで可視。
-    , RESOURCE_HEAP_PROPERTY_FLAG_LAZILY_ALLOCATED                 = 0x100    // 
-    , RESOURCE_HEAP_PROPERTY_FLAG_PROTECTED                        = 0x200    // 
-    , RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_GENERIC_MEMORY_READ_FIXED = 0x400    // このヒープから割り当てられたメモリへのアクセスマスクは変更出来ません。
-    , RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_COPY_DST_FIXED            = 0x800    // このヒープから割り当てられたメモリへのアクセスマスクは変更出来ません。
+      RESOURCE_HEAP_PROPERTY_FLAG_NONE                             = 0x0
+    , RESOURCE_HEAP_PROPERTY_FLAG_DEVICE_LOCAL                     = 0x1      // デバイスのビデオメモリであることを示します。 通常、このフラグが含まれているヒープには、高いパフォーマンスがあります。 
+    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_READABLE                    = 0x2      // デバイスとホストで共有可能なメモリであり、ホストはメモリを読み取り可能であることを示します。
+    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_WRITABLE                    = 0x4      // デバイスとホストで共有可能なメモリであり、ホストはメモリを書き込み可能であることを示します。
+    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_CACHED                      = 0x8      // メモリの内容がホストにキャッシュされることを示します。 RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENTがフラグに含まれていない場合、Flush,Invalidateを使用する必要があります。 
+    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENT                    = 0x10     // Flush,Invalidateによって、デバイスへのホスト書き込みをフラッシュしたり、デバイスの書き込みをホストへ可視にする操作が不要であることを示します。
+    , RESOURCE_HEAP_PROPERTY_FLAG_MULTI_INSTANCE                   = 0x20     // TODO: creation_node_maskで複数のノードを指定可能です。このフラグが指定されていない場合は有効なノードを示す単一のビットのみ指定する必要があります。
+    , RESOURCE_HEAP_PROPERTY_FLAG_SUBSET_ALLOCATION                = 0x40     // TODO: 各ノードへの割り当てがcreation_node_maskによって制限可能。それ以外は全てのノードで割り当てられる(依然として、任意のビットを指定することは有効です)。RESOURCE_HEAP_PROPERTY_FLAG_MULTI_INSTANCEが指定されていない場合依然としてビットは1つのみ指定可能。
+    , RESOURCE_HEAP_PROPERTY_FLAG_VISIBLE_NODE_MASK                = 0x80     // TODO: ヒープの可視性をvisible_node_maskによって制限可能、それ以外は全てのビットで可視。
+    , RESOURCE_HEAP_PROPERTY_FLAG_LAZILY_ALLOCATED                 = 0x100    // TODO: RESOURCE_HEAP_PROPERTY_FLAG_LAZILY_ALLOCATED
+    , RESOURCE_HEAP_PROPERTY_FLAG_PROTECTED                        = 0x200    // TODO: RESOURCE_HEAP_PROPERTY_FLAG_PROTECTED
+    , RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_GENERIC_MEMORY_READ_FIXED = 0x400    // TODO: RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_GENERIC_MEMORY_READ_FIXED このヒープから割り当てられたメモリへのアクセスマスクは変更出来ません。
+    , RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_COPY_DST_FIXED            = 0x800    // TODO: RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_COPY_DST_FIXED            このヒープから割り当てられたメモリへのアクセスマスクは変更出来ません。
 };
 using RESOURCE_HEAP_PROPERTY_FLAGS = EnumFlagsT;
 
