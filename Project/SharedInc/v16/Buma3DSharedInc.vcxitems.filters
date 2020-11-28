@@ -23,6 +23,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\TLSFMemoryAllocator.h">
       <Filter>Common\Util</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\FormatUtils.h">
+      <Filter>Common\Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Internal">
@@ -50,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DCommonHelper.cpp">
       <Filter>Common\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\FormatUtils.cpp">
+      <Filter>Common\Util</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

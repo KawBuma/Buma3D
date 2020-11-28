@@ -154,6 +154,7 @@ DECLARE_VK_SHARED_PTR(AccelerationStructureVk);
 #include "Common/Helper/Buma3DCommonHelper.h"
 #include "Common/Helper/Buma3DStringHelper.h"
 #include "Common/Util/Buma3DMemory.h"
+#include "Common/Util/FormatUtils.h"
 
 #include "FormatUtilsVk.h"
 #include "UtilsVk.h"

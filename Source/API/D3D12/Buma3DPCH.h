@@ -148,7 +148,7 @@ DECLARE_D3D12_SHARED_PTR(AccelerationStructureD3D12);
 #include "Common/Helper/Buma3DCommonHelper.h"
 #include "Common/Helper/Buma3DStringHelper.h"
 #include "Common/Util/Buma3DMemory.h"
-
+#include "Common/Util/FormatUtils.h"
 
 #include "FormatUtilsD3D12.h"
 #include "UtilsD3D12.h"
