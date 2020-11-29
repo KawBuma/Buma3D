@@ -4273,7 +4273,7 @@ public:
 
     /**
      * @brief 作成可能なコマンドキューのプロパティを取得します。
-     * @param [out] _properties 値が設定されるCOMMAND_QUEUE_PROPERTIES構造の配列。nullptrの場合値は設定されません。
+     * @param[out] _properties 値が設定されるCOMMAND_QUEUE_PROPERTIES構造の配列。nullptrの場合値は設定されません。
      * @return _propertiesに必要なCOMMAND_QUEUE_PROPERTIES構造の配列要素数を返します。
     */
     virtual uint32_t
@@ -4353,7 +4353,7 @@ public:
 
     /**
      * @brief 存在するヒープのプロパティを取得します。
-     * @param [out] _dst_properties 値が書き込まれるRESOURCE_HEAP_PROPERTIES構造の配列。nullptrの場合値は書き込まれません。
+     * @param[out] _dst_properties 値が書き込まれるRESOURCE_HEAP_PROPERTIES構造の配列。nullptrの場合値は書き込まれません。
      * @return _dst_propertiesに必要なRESOURCE_HEAP_PROPERTIES構造の配列要素数を返します。
     */
     virtual uint32_t
@@ -4362,10 +4362,10 @@ public:
 
     /**
      * @brief ヒープの作成、リソースの作成に必要なメモリの割り当て情報を取得します。
-     * @param [in] _num_resources _resources配列の要素数です。
-     * @param [in] _resources 1つのヒープに割り当てるリソースオブジェクトの配列です。
-     * @param [out] _dst_infos 1つのヒープに割り当てるための情報を取得する配列です。
-     * @param [out] _dst_heap_info _resourcesの全てのリソースを作成するために必要なヒープの情報を取得します。
+     * @param[in] _num_resources _resources配列の要素数です。
+     * @param[in] _resources 1つのヒープに割り当てるリソースオブジェクトの配列です。
+     * @param[out] _dst_infos 1つのヒープに割り当てるための情報を取得する配列です。
+     * @param[out] _dst_heap_info _resourcesの全てのリソースを作成するために必要なヒープの情報を取得します。
      * @return 正常に終了した場合、BMRESULT_SUCCEEDが返ります。_resources配列の要素の全てに対応可能なヒープタイプ見つからなかった場合、BMRESULT_FAILEDが返ります。
      * @remark _resources配列内のリソースオブジェクトの順序によってヒープの合計サイズが変動します。
      *         これは各リソースのアライメント要求が異なる場合に発生する可能性があります。(C++における、構造体の変数アライメントによるサイズの変動と同様です。)
@@ -4384,8 +4384,8 @@ public:
 
     /**
      * @brief CreateReservedResourceから作成されたリソースをバインドする際に必要な情報を取得します。
-     * @param [in] _reserved_resource 情報を取得するCreateReservedResourceから作成されたリソース。
-     * @param [out] _dst_infos バインドする際に必要な情報を取得します。nullptrの場合値は書き込まれません。
+     * @param[in] _reserved_resource 情報を取得するCreateReservedResourceから作成されたリソース。
+     * @param[out] _dst_infos バインドする際に必要な情報を取得します。nullptrの場合値は書き込まれません。
      * @return _dst_infosに必要なTILED_RESOURCE_ALLOCATION_INFO構造の配列要素数を返します。タイルリソースに対応しない、またはエラーの場合0が返ります。
      * @remark 内部APIの実装上の仕様により、_dst_infosで取得する情報が複数必要な場合があります。
      *         この場合、この関数の戻り値は1以上になり、_dst_infosの各要素のパラメータが示す情報(アスペクト、ミップテイル)を使用してバインドする必要があります。
@@ -4397,11 +4397,11 @@ public:
 
     /**
      * @brief 指定された複数のルートシグネチャに対応するディスクリプタプール、セットを作成する際に必要なDESCRIPTOR_POOL_SIZE配列を取得します。
-     * @param [in] _num_root_signatures _root_signatures、_num_descriptor_sets 配列の要素数です。
-     * @param [in] _root_signatures ルートシグネチャの配列です。 配列の要素順に従って、必要なプールサイズが_dst_sizesの各要素に加算されます。
-     * @param [in] _num_descriptor_sets _root_signaturesの各要素に対応する、uint32_t配列です。 割り当てるディスクリプタセットの数を指定します。
-     * @param [out] _dst_max_num_register_space 各ルートシグネチャで最大のregister_spaceの数を取得します。(register_space番号自体の最大値ではありません。) nullptrの場合値は書き込まれません。
-     * @param [out] _dst_sizes 必要なプールサイズを取得します。nullptrの場合値は書き込まれません。
+     * @param[in] _num_root_signatures _root_signatures、_num_descriptor_sets 配列の要素数です。
+     * @param[in] _root_signatures ルートシグネチャの配列です。 配列の要素順に従って、必要なプールサイズが_dst_sizesの各要素に加算されます。
+     * @param[in] _num_descriptor_sets _root_signaturesの各要素に対応する、uint32_t配列です。 割り当てるディスクリプタセットの数を指定します。
+     * @param[out] _dst_max_num_register_space 各ルートシグネチャで最大のregister_spaceの数を取得します。(register_space番号自体の最大値ではありません。) nullptrの場合値は書き込まれません。
+     * @param[out] _dst_sizes 必要なプールサイズを取得します。nullptrの場合値は書き込まれません。
      * @return _dst_sizesに必要なDESCRIPTOR_POOL_SIZE構造の配列要素数を返します。
      * @note _dst_sizes配列に書き込まれるDESCRIPTOR_TYPEの順序は不定です。必要な割り当てが存在しないDESCRIPTOR_TYPEはスキップされます。
      * @remark ディスクリプタセットの解放により断片化が生じた場合、引数に指定された要件のディスクリプタセットの数を完全には割り当てられなくなる可能性があります。
@@ -4998,8 +4998,8 @@ public:
 
     /**
      * @brief 指定のシグネチャに必要なディスクリプタを割り当てたディスクリプタセットを作成します。成功した場合、割り当てカウントが増加します。
-     * @param [in] _root_signature _dstのシグネチャを指定します。
-     * @param [out] _dst 作成されたIDescriptorSetを取得します。 DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SETを使用して作成されたプールの場合、IDescriptorSetが解放される時、割り当てられていたディスクリプタはプールに返還されます。
+     * @param[in] _root_signature _dstのシグネチャを指定します。
+     * @param[out] _dst 作成されたIDescriptorSetを取得します。 DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SETを使用して作成されたプールの場合、IDescriptorSetが解放される時、割り当てられていたディスクリプタはプールに返還されます。
      *                   そうでない場合返還はされず、ResetPoolAndInvalidateAllocatedSets()を介してのみ割り当てカウントを減少させることができます。
      * @return 断片化、またはディスクリプタセットの割り当て回数の上限を超える場合、BMRESULT_FAILED以下を返します。
      * @remark プールの作成時または最後にリセットされてからプールから割り当てられたすべてのセットが、(各タイプの)同じ数のディスクリプタを使用し、要求された割り当ても同じ数の(各タイプの)ディスクリプタを使用する場合、断片化によって割り当てが失敗することはありません。 
@@ -5104,7 +5104,7 @@ public:
 
     /**
      * @brief パイプラインキャッシュを取得します。 
-     * @param [out] _dst キャッシュされたパイプラインのデータを保持するblobです。 取得された場合、参照カウントが増加することに注意してください。
+     * @param[out] _dst キャッシュされたパイプラインのデータを保持するblobです。 取得された場合、参照カウントが増加することに注意してください。
      * @return 成功した場合BMRESULT_SUCCEEDが返ります。
     */
     virtual BMRESULT
@@ -5510,7 +5510,7 @@ public:
 
     /**
      * @brief 現在のフェンスの状態、値を取得します。FENCE_TYPE_BINARY_GPU_TO_GPUの場合この関数呼び出しは無効です。
-     * @param [out] _value 完了したフェンス値が代入されます。FENCE_TYPE_BINARY_GPU_TO_CPUの場合この値は操作されません。
+     * @param[out] _value 完了したフェンス値が代入されます。FENCE_TYPE_BINARY_GPU_TO_CPUの場合この値は操作されません。
      * @return 以前に設定されたシグナル値の最大値まで完了している場合BMRESULT_SUCCEED、完了していない場合BMRESULT_SUCCEED_NOT_READYが返ります。
      *         FENCE_TYPE_BINARY_GPU_TO_CPUの場合、シグナルされていた場合BMRESULT_SUCCEED、それ以外の場合BMRESULT_SUCCEED_NOT_READYが返ります。
      * @remark デバイスが削除された場合、BMRESULT_FAILED_DEVICE_REMOVEDが返ります。
