@@ -230,7 +230,13 @@ struct MA_DEBUG_INFO
         _ss << "\tfile         : " <<                                    file                                  << "\n";
         _ss << "\tline         : " << std::dec <<                        line                                  << "\n";
         _ss << "\talloc_state  : " <<                                    ALLOC_STATE_NAMES[alloc_state]        << "\n";
-        _ss << "\tmemory_type  : " <<                                    MEMORY_TYPE_NAMES[(int)memory_type]   << "\n\n";
+        _ss << "\tmemory_type  : " <<                                    MEMORY_TYPE_NAMES[(int)memory_type]   << "\n";
+        if (memory_type == util::details::MEMORY_TYPE::B3D_IMPLEMENTATION)
+        {
+            if (auto n = ((buma3d::ISharedBase*)address)->DynamicCastFromThis<INameableObject>())
+                _ss << "\t\t(name: " << hlp::GetName(n) << ")\n";
+        }
+        _ss << std::endl;
     }
     bool IsCorrupted()
     {
