@@ -385,12 +385,22 @@ private:
             , subpass_contents      {}
         {}
 
+        void Reset()
+        {
+            is_render_pass_scope    = false;
+            render_pass             = nullptr;
+            framebuffer             = nullptr;
+            current_subpass         = ~0ul;
+            end_subpass_index       = ~0ul;
+            subpass_contents        = {};
+        }
+
         void BeginRecord()
         {
             barrier_buffers.BeginRecord();
         }
 
-        WeakSimpleArray<NativeSubpassBarrierBuffer>     barrier_buffers; // サブパス毎のバリアバッファ
+        WeakSimpleArray<NativeSubpassBarrierBuffer>     barrier_buffers;        // サブパス毎のバリアバッファ
         bool                                            is_render_pass_scope;
         RenderPassD3D12*                                render_pass;
         FramebufferD3D12*                               framebuffer;
@@ -402,6 +412,13 @@ private:
 
     struct PREDICATION_STATE_DATA
     {
+        void Reset()
+        {
+            buffer                  = nullptr;
+            buffer12                = nullptr;
+            aligned_buffer_offset   = 0;
+            operation               = {};
+        }
         BufferD3D12*            buffer;
         ID3D12Resource*         buffer12;
         uint64_t                aligned_buffer_offset;
@@ -410,6 +427,12 @@ private:
 
     struct PIPELINE_STATE_DATA
     {
+        void Reset()
+        {
+            current_pso                 = nullptr;
+            current_primitive_topology  = {};
+            std::fill(current_root_signatures, current_root_signatures + (PIPELINE_BIND_POINT_RAY_TRACING + 1), nullptr);
+        }
         IPipelineStateD3D12*        current_pso;
         D3D12_PRIMITIVE_TOPOLOGY    current_primitive_topology;
         RootSignatureD3D12*         current_root_signatures[PIPELINE_BIND_POINT_RAY_TRACING + 1];
@@ -417,6 +440,11 @@ private:
 
     struct DESCRIPTOR_STATE_DATA
     {
+        void Reset()
+        {
+            current_pool    = nullptr;
+            current_set     = nullptr;
+        }
         DescriptorPoolD3D12*    current_pool;
         DescriptorSetD3D12*     current_set;
     };
@@ -431,6 +459,12 @@ private:
             , null_views        (_allocator)
             , null_views_data   {}
         {
+        }
+
+        void Reset()
+        {
+            is_active   = false;
+            max_size    = 0;
         }
 
         void BeginRecord()
@@ -700,8 +734,20 @@ private:
             
         }
 
+        BMRESULT Reset()
+        {
+            render_pass     .Reset();
+            predication     .Reset();
+            pipeline        .Reset();
+            descriptor      .Reset();
+            stream_output   .Reset();
+
+            return BMRESULT_SUCCEED;
+        }
+
         void BeginRecord()
         {
+            Reset();
             barriers.BeginRecord();
             render_pass.BeginRecord();
             stream_output.BeginRecord();

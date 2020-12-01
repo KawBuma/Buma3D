@@ -277,6 +277,8 @@ B3D_APIENTRY CommandListVk::Reset(COMMAND_LIST_RESET_FLAGS _flags)
     auto vkr = vkResetCommandBuffer(command_buffer, 0);
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
 
+    B3D_RET_IF_FAILED(cmd_states->Reset());
+
     state = COMMAND_LIST_STATE_INITIAL;
     return BMRESULT_SUCCEED;
 }

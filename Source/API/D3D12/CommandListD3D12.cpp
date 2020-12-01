@@ -412,6 +412,8 @@ B3D_APIENTRY CommandListD3D12::Reset(COMMAND_LIST_RESET_FLAGS _flags)
     hr = command_list->Close();
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
 
+    B3D_RET_IF_FAILED(cmd_states->Reset());
+
     state = COMMAND_LIST_STATE_INITIAL;
     return BMRESULT_SUCCEED;
 }

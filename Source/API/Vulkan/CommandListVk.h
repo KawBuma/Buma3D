@@ -363,6 +363,16 @@ private:
             , subpass_contents      {}
         {}
 
+        void Reset()
+        {
+            is_render_pass_scope    = false;
+            render_pass             = nullptr;
+            framebuffer             = nullptr;
+            current_subpass         = ~0ul;
+            end_subpass_index       = ~0ul;
+            subpass_contents        = {};
+        }
+
         bool                    is_render_pass_scope;
         RenderPassVk*           render_pass;
         FramebufferVk*          framebuffer;
@@ -374,6 +384,13 @@ private:
 
     struct PREDICATION_STATE_DATA
     {
+        void Reset()
+        {
+            buffer                = nullptr;
+            vkbuffer              = VK_NULL_HANDLE;
+            aligned_buffer_offset = 0;
+            operation             = {};
+        }
         BufferVk*                       buffer;
         VkBuffer                        vkbuffer;
         uint64_t                        aligned_buffer_offset;
@@ -382,6 +399,12 @@ private:
 
     struct PIPELINE_STATE_DATA
     {
+        void Reset()
+        {
+            current_pso = nullptr;
+            std::fill(current_root_signatures, current_root_signatures + (PIPELINE_BIND_POINT_RAY_TRACING + 1), nullptr);
+            std::fill(pipiline_layouts       , pipiline_layouts        + (PIPELINE_BIND_POINT_RAY_TRACING + 1), nullptr);
+        }
         IPipelineStateVk*   current_pso;
         RootSignatureVk*    current_root_signatures[PIPELINE_BIND_POINT_RAY_TRACING + 1];
         VkPipelineLayout    pipiline_layouts[PIPELINE_BIND_POINT_RAY_TRACING + 1];
@@ -395,6 +418,12 @@ private:
             , dynamic_descriptor_offsets        (_allocator)
             , mapped_dynamic_descriptor_offsets (_allocator)
         {
+        }
+
+        void Reset()
+        {
+            current_pool    = nullptr;
+            current_set     = nullptr;
         }
 
         void BeginRecord()
@@ -419,6 +448,12 @@ private:
             , counter_buffers_data          {}
             , counter_buffer_offsets_data   {}
         {
+        }
+
+        void Reset()
+        {
+            is_active   = false;
+            max_size    = 0;
         }
 
         void BeginRecord()
@@ -700,8 +735,20 @@ private:
 
         }
 
+        BMRESULT Reset()
+        {
+            render_pass   .Reset();
+            predication   .Reset();
+            pipeline      .Reset();
+            descriptor    .Reset();
+            stream_output .Reset();
+
+            return BMRESULT_SUCCEED;
+        }
+
         void BeginRecord()
         {
+            Reset();
             barriers.BeginRecord();
             descriptor.BeginRecord();
             stream_output.BeginRecord();
