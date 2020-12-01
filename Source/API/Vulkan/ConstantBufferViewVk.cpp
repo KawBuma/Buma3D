@@ -36,8 +36,8 @@ B3D_APIENTRY ConstantBufferViewVk::Init(DeviceVk* _device, IBuffer* _buffer, con
     CopyDesc(_desc);
 
     auto buffer_size = buffer->GetDesc().buffer.size_in_bytes;
-    if (buffer_size >= desc.buffer_offset ||
-        buffer_size > (desc.buffer_offset + (uint64_t)desc.size_in_bytes))
+    if (buffer_size <  desc.buffer_offset ||
+        buffer_size < (desc.buffer_offset + (uint64_t)desc.size_in_bytes))
     {
         return BMRESULT_FAILED_RESOURCE_SIZE_EXCEEDED;
     }

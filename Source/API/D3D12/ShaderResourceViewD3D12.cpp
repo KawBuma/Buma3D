@@ -167,7 +167,7 @@ B3D_APIENTRY ShaderResourceViewD3D12::InitAsBufferSRV()
     if (hlp::IsFailed(result))
         return result;
 
-    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 0x1).Allocate();
+    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, B3D_DEFAULT_NODE_MASK).Allocate();
     device12->CreateShaderResourceView(buffer->GetD3D12Resource(), &srvdesc, descriptor.handle);
 
     return BMRESULT_SUCCEED;
@@ -389,16 +389,16 @@ B3D_APIENTRY ShaderResourceViewD3D12::CopyDesc(const SHADER_RESOURCE_VIEW_DESC& 
 void
 B3D_APIENTRY ShaderResourceViewD3D12::Uninit()
 {
-    name.reset();
-    desc = {};
-
     if (descriptor.handle)
-        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 0x1).Free(descriptor);
+        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, B3D_DEFAULT_NODE_MASK).Free(descriptor);
     descriptor = {};
     virtual_address = {};
 
     hlp::SafeRelease(resource);
     hlp::SafeRelease(device);
+
+    desc = {};
+    name.reset();
 }
 
 

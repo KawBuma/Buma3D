@@ -250,7 +250,8 @@ B3D_APIENTRY RootSignatureD3D12::ConvertDescriptorTable(uint32_t i_rp, DESC_DATA
 {
     auto&& rp12_data = dd12.parameters_data[i_rp];
     rp12_data.descriptor_ranges.resize(rp.descriptor_table.num_descriptor_ranges);
-    rp12.DescriptorTable.pDescriptorRanges = rp12_data.descriptor_ranges.data();
+    rp12.DescriptorTable.NumDescriptorRanges = rp.descriptor_table.num_descriptor_ranges;
+    rp12.DescriptorTable.pDescriptorRanges   = rp12_data.descriptor_ranges.data();
     for (uint32_t i = 0; i < rp.descriptor_table.num_descriptor_ranges; i++)
     {
         auto&& dr = rp.descriptor_table.descriptor_ranges[i];

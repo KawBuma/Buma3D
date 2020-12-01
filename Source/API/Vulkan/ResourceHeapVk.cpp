@@ -318,17 +318,17 @@ B3D_APIENTRY ResourceHeapVk::PrepareExportInfos(const void**& _last_pnext, EXPOR
 void
 B3D_APIENTRY ResourceHeapVk::Uninit()
 {
-    name.reset();
-    desc = {};
-
     if (device_memory)
         vkFreeMemory(device->GetVkDevice(), device_memory, B3D_VK_ALLOC_CALLBACKS);
     device_memory = VK_NULL_HANDLE;
 
+    hlp::SafeRelease(device);
+    vkdevice = VK_NULL_HANDLE;
     inspfn = nullptr;
     devpfn = nullptr;
 
-    hlp::SafeRelease(device);
+    desc = {};
+    name.reset();
 }
 
 BMRESULT

@@ -188,9 +188,6 @@ B3D_APIENTRY ResourceHeapD3D12::CreateD3D12ResourceForMap()
 void
 B3D_APIENTRY ResourceHeapD3D12::Uninit()
 {
-    name.reset();
-    desc = {};
-    
     if (mapped_data)
         Unmap();
     mapped_range = {};
@@ -200,6 +197,9 @@ B3D_APIENTRY ResourceHeapD3D12::Uninit()
     hlp::SafeRelease(heap);
     hlp::SafeRelease(device);
     device12 = nullptr;
+
+    desc = {};
+    name.reset();
 }
 
 BMRESULT

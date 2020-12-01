@@ -34,8 +34,8 @@ B3D_APIENTRY ConstantBufferViewD3D12::Init(DeviceD3D12* _device, IBuffer* _buffe
     CopyDesc(_desc);
 
     auto buffer_size = buffer->GetDesc().buffer.size_in_bytes;
-    if (buffer_size >= desc.buffer_offset ||
-        buffer_size > (desc.buffer_offset + (uint64_t)desc.size_in_bytes))
+    if (buffer_size < desc.buffer_offset ||
+        buffer_size < (desc.buffer_offset + (uint64_t)desc.size_in_bytes))
     {
         return BMRESULT_FAILED_RESOURCE_SIZE_EXCEEDED;
     }
@@ -67,15 +67,15 @@ B3D_APIENTRY ConstantBufferViewD3D12::CopyDesc(const CONSTANT_BUFFER_VIEW_DESC& 
 void
 B3D_APIENTRY ConstantBufferViewD3D12::Uninit()
 {
-    name.reset();
-    desc = {};
-
     if (descriptor.handle)
-        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 0x1).Free(descriptor);
+        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, B3D_DEFAULT_NODE_MASK).Free(descriptor);
     descriptor = {};
     virtual_address = {};
     hlp::SafeRelease(buffer);
     hlp::SafeRelease(device);
+
+    desc = {};
+    name.reset();
 }
 
 BMRESULT
