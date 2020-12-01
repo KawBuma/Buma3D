@@ -229,7 +229,6 @@ B3D_APIENTRY DescriptorPoolD3D12::GetDesc() const
 uint32_t
 B3D_APIENTRY DescriptorPoolD3D12::GetCurrentAllocationCount()
 {
-    std::lock_guard lock(allocation_mutex);
     return allocation_count;
 }
 
@@ -244,7 +243,7 @@ B3D_APIENTRY DescriptorPoolD3D12::ResetPoolAndInvalidateAllocatedSets()
             i->ResetRanges();
     }
     allocation_count = 0;
-    reset_id++;
+    ++reset_id;
 }
 
 BMRESULT
@@ -293,7 +292,6 @@ B3D_APIENTRY DescriptorPoolD3D12::GetD3D12DescriptorHeaps() const
 uint64_t
 B3D_APIENTRY DescriptorPoolD3D12::GetResetID()
 {
-    std::lock_guard lock(allocation_mutex);
     return reset_id;
 }
 
@@ -333,7 +331,7 @@ B3D_APIENTRY DescriptorPoolD3D12::AllocateDescriptors(DescriptorSetD3D12* _set)
         pool_remains[DESCRIPTOR_TYPE_SAMPLER] -= ps12.num_sampler_descs;
     }
 
-    allocation_count++;
+    ++allocation_count;
     return BMRESULT_SUCCEED;
 }
 
@@ -367,7 +365,7 @@ B3D_APIENTRY DescriptorPoolD3D12::FreeDescriptors(DescriptorSetD3D12* _set)
         pool_remains[DESCRIPTOR_TYPE_SAMPLER] += ps.at(DESCRIPTOR_TYPE_SAMPLER);
     }
 
-    allocation_count--;
+    --allocation_count;
 }
 
 

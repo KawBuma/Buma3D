@@ -191,7 +191,6 @@ B3D_APIENTRY DescriptorPoolVk::GetDesc() const
 uint32_t
 B3D_APIENTRY DescriptorPoolVk::GetCurrentAllocationCount()
 {
-    std::lock_guard lock(allocation_mutex);
     return allocation_count;
 }
 
@@ -204,7 +203,7 @@ B3D_APIENTRY DescriptorPoolVk::ResetPoolAndInvalidateAllocatedSets()
     VKR_TRACE_IF_FAILED(vkr);
 
     allocation_count = 0;
-    reset_id++;
+    ++reset_id;
 }
 
 BMRESULT
@@ -247,7 +246,6 @@ B3D_APIENTRY DescriptorPoolVk::GetVkDescriptorPool() const
 uint64_t
 B3D_APIENTRY DescriptorPoolVk::GetResetID()
 {
-    std::lock_guard lock(allocation_mutex);
     return reset_id;
 }
 
@@ -272,7 +270,7 @@ B3D_APIENTRY DescriptorPoolVk::AllocateDescriptors(DescriptorSetVk* _set)
         B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
     }
 
-    allocation_count++;
+    ++allocation_count;
     return BMRESULT_SUCCEED;
 }
 
@@ -294,7 +292,7 @@ B3D_APIENTRY DescriptorPoolVk::FreeDescriptors(DescriptorSetVk* _set)
     for (auto& [type, size] : ps)
         pool_remains[type] -= size;
 
-    allocation_count--;
+    --allocation_count;
 }
 
 

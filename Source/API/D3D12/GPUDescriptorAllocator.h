@@ -42,7 +42,7 @@ public:
 
     ~GPUDescriptorAllocator() 
     {
-        entry.~DESCRIPTOR_HEAP_ENTRY();
+        entry = {};
         device.Reset();
     }
 

@@ -317,16 +317,18 @@ B3D_APIENTRY RootSignatureD3D12::CreateD3D12RootSignature(const D3D12_VERSIONED_
 void
 B3D_APIENTRY RootSignatureD3D12::Uninit()
 {
-    name.reset();
+    hlp::SwapClear(total_num_descriptors_per_tables);
+    hlp::SwapClear(pool_sizes);
+
     desc = {};
     desc_data = {};
     root_parameter_counts.fill({});
-    hlp::SwapClear(total_num_descriptors_per_tables);
-    hlp::SwapClear(pool_sizes);
 
     hlp::SafeRelease(root_signature);
     hlp::SafeRelease(device);
     device12 = nullptr;
+
+    name.reset();
 }
 
 BMRESULT 

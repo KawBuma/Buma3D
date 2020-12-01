@@ -83,8 +83,8 @@ private:
     DESC_DATA                                                                       desc_data;
     util::StArray<uint32_t, DESCRIPTOR_TYPE_NUM_TYPES>                              pool_remains;
     std::mutex                                                                      allocation_mutex;
-    uint32_t                                                                        allocation_count;
-    uint64_t                                                                        reset_id;
+    std::atomic_uint32_t                                                            allocation_count;
+    std::atomic_uint64_t                                                            reset_id;
     ID3D12Device*                                                                   device12;
     util::StArray<GPUDescriptorAllocator*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER+1>    dh_allocators;
     util::DyArray<ID3D12DescriptorHeap*>                                            desc_heaps12;

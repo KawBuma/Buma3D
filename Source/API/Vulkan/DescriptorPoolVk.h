@@ -88,8 +88,8 @@ private:
     DESC_DATA                                                       desc_data;
     util::StArray<uint32_t, DESCRIPTOR_TYPE_NUM_TYPES>              pool_remains;
     std::mutex                                                      allocation_mutex;
-    uint32_t                                                        allocation_count;
-    uint64_t                                                        reset_id;
+    std::atomic_uint32_t                                            allocation_count;
+    std::atomic_uint64_t                                            reset_id;
     VkDevice                                                        vkdevice;
     const InstancePFN*                                              inspfn;
     const DevicePFN*                                                devpfn;
