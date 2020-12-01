@@ -13,6 +13,7 @@ B3D_APIENTRY DescriptorSetD3D12::DescriptorSetD3D12()
     , device12                  {}
     , pool                      {}
     , signature                 {}
+    , allocations               {}
     , descriptor_batch          {}
     , update_descriptors_caches {}
 {     
