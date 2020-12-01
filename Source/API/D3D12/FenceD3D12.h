@@ -11,13 +11,13 @@ protected:
     B3D_APIENTRY ~FenceD3D12();
 
 public:
-    BMRESULT B3D_APIENTRY Init(DeviceD3D12* _device, const FENCE_DESC& _desc);
+    BMRESULT B3D_APIENTRY Init(DeviceD3D12* _device, const FENCE_DESC& _desc, bool _init_for_swapchain = false);
     BMRESULT B3D_APIENTRY CreateImpl();
     void B3D_APIENTRY Uninit();
 
 public:
     static BMRESULT
-        B3D_APIENTRY Create(DeviceD3D12* _device, const FENCE_DESC& _desc, FenceD3D12** _dst);
+        B3D_APIENTRY Create(DeviceD3D12* _device, const FENCE_DESC& _desc, FenceD3D12** _dst, bool _init_for_swapchain = false);
 
     void
         B3D_APIENTRY AddRef() override;
@@ -96,6 +96,7 @@ private:
     class BinaryGpuToCpuImplForSwapChain;
     IImpl* impl;
     IImpl* impl_swapchain;
+    bool for_swapchain; // HACK: 実装内部で使用するフェンスのための、IDevice*の循環参照回避用フラグ。 (内部参照カウント機能を追加して、このようなフラグを取り除くべき。 SwapChainD3D12も参照してください。)
 
 };
 

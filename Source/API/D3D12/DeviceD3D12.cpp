@@ -374,6 +374,18 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
     };
     auto Set = [&](const D3D12_HEAP_PROPERTIES& _props, RESOURCE_HEAP_FLAGS _flags)
     {
+        if (is_heap_tear2)
+        {
+            // デバイスの対応するRESOURCE_HEAP_TIERがTIER2の場合全てのバッファ、テクスチャを指定可能なHEAP_TYPEを使用可能。
+            // D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES
+            heap_type_bits[ALL_BUF_TEX] |= 1 << index;
+            hp  ->heap_index            = index;
+            hp  ->flags                 = _flags;
+            hd12->Flags                 = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
+            *hp12                       = _props;
+            Offset();
+        }
+
         // D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS
         heap_type_bits[ONLY_BUF] |= 1 << index;
         hp  ->heap_index         = index;
@@ -381,7 +393,7 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
         hd12->Flags              = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
         *hp12                    = _props;
         Offset();
-                        
+
         // D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES
         heap_type_bits[ONLY_NON_RT_DS_TEX] |= 1 << index;
         hp  ->heap_index                   = index;
@@ -397,18 +409,6 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
         hd12->Flags                    = D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES;
         *hp12                          = _props;
         Offset();
-
-        if (is_heap_tear2)
-        {
-            // デバイスの対応するRESOURCE_HEAP_TIERがTIER2の場合全てのバッファ、テクスチャを指定可能なHEAP_TYPEを使用可能。
-            // D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES
-            heap_type_bits[ALL_BUF_TEX] |= 1 << index;
-            hp  ->heap_index            = index;
-            hp  ->flags                 = _flags;
-            hd12->Flags                 = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
-            *hp12                       = _props;
-            Offset();
-        }
     };
 
     D3D12_HEAP_PROPERTIES d3d12hp{};
@@ -423,29 +423,29 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
     d3d12hp.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
     Set(d3d12hp, RESOURCE_HEAP_PROPERTY_FLAG_DEVICE_LOCAL | DEFAULT_FLAGS);
 
-    /*CUSTOM UPLOAD (WRITABLE) CPU_WRITE_COMBINE, POOL_L0 */
-    d3d12hp.Type                 = D3D12_HEAP_TYPE_CUSTOM;
-    d3d12hp.CPUPageProperty      = is_cache_coherent_uma ? D3D12_CPU_PAGE_PROPERTY_WRITE_BACK : D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE;
-    d3d12hp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
-    Set(d3d12hp, RESOURCE_HEAP_PROPERTY_FLAG_HOST_WRITABLE | RESOURCE_HEAP_PROPERTY_FLAG_HOST_CACHED | RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENT | DEFAULT_FLAGS);
-
     /*UPLOAD (WRITABLE) CPU_WRITE_COMBINE, POOL_L0, STATE_GENERIC_READ */ 
     d3d12hp.Type                 = D3D12_HEAP_TYPE_UPLOAD;
     d3d12hp.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
     d3d12hp.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
     Set(d3d12hp, RESOURCE_HEAP_PROPERTY_FLAG_HOST_WRITABLE | RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENT | DEFAULT_FLAGS | RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_GENERIC_MEMORY_READ_FIXED);
 
-    /*CUSTOM UPLOAD|READBACK (READABLE|WRITABLE) CPU_WRITE_BACK, POOL_L0 */
+    /*CUSTOM UPLOAD (WRITABLE) CPU_WRITE_COMBINE, POOL_L0 */
     d3d12hp.Type                 = D3D12_HEAP_TYPE_CUSTOM;
-    d3d12hp.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+    d3d12hp.CPUPageProperty      = is_cache_coherent_uma ? D3D12_CPU_PAGE_PROPERTY_WRITE_BACK : D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE;
     d3d12hp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
-    Set(d3d12hp, RESOURCE_HEAP_PROPERTY_FLAG_HOST_READABLE | RESOURCE_HEAP_PROPERTY_FLAG_HOST_WRITABLE | RESOURCE_HEAP_PROPERTY_FLAG_HOST_CACHED | DEFAULT_FLAGS);
+    Set(d3d12hp, RESOURCE_HEAP_PROPERTY_FLAG_HOST_WRITABLE | RESOURCE_HEAP_PROPERTY_FLAG_HOST_CACHED | RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENT | DEFAULT_FLAGS);
 
     /*READBACK (READABLE) CPU_WRITE_BACK, POOL_L0, STATE_COPY_DEST */
     d3d12hp.Type                 = D3D12_HEAP_TYPE_READBACK;
     d3d12hp.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
     d3d12hp.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
     Set(d3d12hp, RESOURCE_HEAP_PROPERTY_FLAG_HOST_READABLE | RESOURCE_HEAP_PROPERTY_FLAG_HOST_CACHED | DEFAULT_FLAGS | RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_COPY_DST_FIXED);
+
+    /*CUSTOM UPLOAD|READBACK (READABLE|WRITABLE) CPU_WRITE_BACK, POOL_L0 */
+    d3d12hp.Type                 = D3D12_HEAP_TYPE_CUSTOM;
+    d3d12hp.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+    d3d12hp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+    Set(d3d12hp, RESOURCE_HEAP_PROPERTY_FLAG_HOST_READABLE | RESOURCE_HEAP_PROPERTY_FLAG_HOST_WRITABLE | RESOURCE_HEAP_PROPERTY_FLAG_HOST_CACHED | DEFAULT_FLAGS);
 }
 
 void
@@ -1286,9 +1286,9 @@ BMRESULT DeviceD3D12::SWAPCHAIN_FENCES_DATA::ResizeFences(DeviceD3D12* _device, 
         FENCE_DESC fdesc{ FENCE_TYPE_TIMELINE, 0 ,FENCE_FLAG_NONE };
         for (size_t i = prev_size; i < _buffer_count; i++)
         {
-            util::Ptr<IFence> f;
-            B3D_RET_IF_FAILED(_device->CreateFence(fdesc, &f));
-            (present_fences_head[i] = f->As<FenceD3D12>())->AddRef();
+            util::Ptr<FenceD3D12> f;
+            B3D_RET_IF_FAILED(FenceD3D12::Create(_device, fdesc, &f, /*for swapchain*/true));
+            present_fences_head[i] = f.Detach();
         }
     }
     return BMRESULT_SUCCEED;

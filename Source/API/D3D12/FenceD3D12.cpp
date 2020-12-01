@@ -998,6 +998,7 @@ B3D_APIENTRY FenceD3D12::FenceD3D12()
     , device12          {}
     , impl              {}
     , impl_swapchain    {}
+    , for_swapchain     {}
 {
 
 }
@@ -1008,10 +1009,14 @@ B3D_APIENTRY FenceD3D12::~FenceD3D12()
 }
 
 BMRESULT 
-B3D_APIENTRY FenceD3D12::Init(DeviceD3D12* _device, const FENCE_DESC& _desc)
+B3D_APIENTRY FenceD3D12::Init(DeviceD3D12* _device, const FENCE_DESC& _desc, bool _init_for_swapchain)
 {
     desc = _desc;
-    (device = _device)->AddRef();
+
+    for_swapchain = _init_for_swapchain;
+    if (!for_swapchain)
+        (device = _device)->AddRef();
+
     device12 = _device->GetD3D12Device();
 
     // FENCE_TYPE_TIMELINE以外の場合シグナル状態を示す値として1にクランプ
@@ -1045,17 +1050,20 @@ B3D_APIENTRY FenceD3D12::Uninit()
     B3DSafeDelete(impl_swapchain);
     B3DSafeDelete(impl);
     name.reset();
-    hlp::SafeRelease(device);
+    if (!for_swapchain)
+        hlp::SafeRelease(device);
+    else
+        device = nullptr;
     device12 = nullptr;
     desc = {};
 }
 
 BMRESULT
-B3D_APIENTRY FenceD3D12::Create(DeviceD3D12* _device, const FENCE_DESC& _desc, FenceD3D12** _dst)
+B3D_APIENTRY FenceD3D12::Create(DeviceD3D12* _device, const FENCE_DESC& _desc, FenceD3D12** _dst, bool _init_for_swapchain)
 {
     util::Ptr<FenceD3D12> ptr;
     ptr.Attach(B3DCreateImplementationClass(FenceD3D12));
-    B3D_RET_IF_FAILED(ptr->Init(_device, _desc));
+    B3D_RET_IF_FAILED(ptr->Init(_device, _desc, _init_for_swapchain));
 
     *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;
