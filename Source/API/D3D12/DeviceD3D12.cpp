@@ -661,7 +661,7 @@ B3D_APIENTRY DeviceD3D12::GetResourceAllocationInfo(uint32_t _num_resources, con
     // TODO: ノードマスクの考慮が必要がどうか調査
     util::DyArray<D3D12_RESOURCE_ALLOCATION_INFO1> infos12(_num_resources);
     auto infos12_data = infos12.data();
-    auto ai = device->GetResourceAllocationInfo1(0x1, _num_resources, desc12_data, infos12.data());
+    auto ai = device->GetResourceAllocationInfo1(B3D_DEFAULT_NODE_MASK, _num_resources, desc12_data, infos12.data());
     if (ai.SizeInBytes == UINT64_MAX)
     {
         B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_STATE_CREATION, __FUNCTION__": 情報の取得に失敗しました。");

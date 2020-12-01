@@ -51,7 +51,7 @@ B3D_APIENTRY ConstantBufferViewD3D12::Init(DeviceD3D12* _device, IBuffer* _buffe
     if (!hlp::IsAligned(cbvdesc.BufferLocation, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT))
         return BMRESULT_FAILED_INVALID_PARAMETER;
 
-    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 0x1).Allocate();
+    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, B3D_DEFAULT_NODE_MASK).Allocate();
     device12->CreateConstantBufferView(&cbvdesc, descriptor.handle);
 
     virtual_address = cbvdesc.BufferLocation;

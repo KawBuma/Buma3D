@@ -374,7 +374,7 @@ B3D_APIENTRY ShaderResourceViewD3D12::InitAsTextureSRV()
         break;
     }
 
-    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 0x1).Allocate();
+    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, B3D_DEFAULT_NODE_MASK).Allocate();
     device12->CreateShaderResourceView(texture->GetD3D12Resource(), &srvdesc, descriptor.handle);
 
     return BMRESULT_SUCCEED;

@@ -128,7 +128,7 @@ B3D_APIENTRY BufferD3D12::InitAsPlaced()
     // このリソースが作成可能か確認。
     // WARNING: 現状ノード0(0x1)を決め打ちしているので、別ノードでのdescの有効性を確認する事が出来ていないが、恐らくノードマスクが必要な理由はdescではなく、
     // 戻り値D3D12_RESOURCE_ALLOCATION_INFO::SizeInBytesの各ノードによる値の変動を識別するためである可能性が高い。
-    auto ai = device12->GetResourceAllocationInfo(0x1, 1, &rd);
+    auto ai = device12->GetResourceAllocationInfo(B3D_DEFAULT_NODE_MASK, 1, &rd);
     if (ai.SizeInBytes == -1)// 無効なdescが指定された場合-1が返る。
     {
         if (util::IsEnabledDebug(this))

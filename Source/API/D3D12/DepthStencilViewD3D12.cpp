@@ -246,7 +246,7 @@ B3D_APIENTRY DepthStencilViewD3D12::InitAsTextureDSV()
         break;
     }
 
-    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 0x1).Allocate();
+    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, B3D_DEFAULT_NODE_MASK).Allocate();
     device12->CreateDepthStencilView(texture->GetD3D12Resource(), &dsvdesc, descriptor.handle);
 
     return BMRESULT_SUCCEED;
@@ -265,7 +265,7 @@ B3D_APIENTRY DepthStencilViewD3D12::Uninit()
     desc = {};
 
     if (descriptor.handle)
-        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 0x1).Free(descriptor);
+        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, B3D_DEFAULT_NODE_MASK).Free(descriptor);
     descriptor = {};
 
     hlp::SafeRelease(resource);

@@ -51,7 +51,7 @@ B3D_APIENTRY SamplerViewD3D12::Init(DeviceD3D12* _device, const SAMPLER_DESC& _d
     desc12.MaxLOD          = desc.mip_lod.max;
     util::GetNativeBorderColor(desc.border_color, desc12.BorderColor);
 
-    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 0x1).Allocate();
+    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, B3D_DEFAULT_NODE_MASK).Allocate();
     device12->CreateSampler(&desc12, descriptor.handle);
     if (util::IsEnabledDebug(this))
         device->CheckDXGIInfoQueue();
@@ -92,7 +92,7 @@ B3D_APIENTRY SamplerViewD3D12::Uninit()
     desc = {};
 
     if (descriptor.handle)
-        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 0x1).Free(descriptor);
+        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, B3D_DEFAULT_NODE_MASK).Free(descriptor);
     descriptor = {};
 
     hlp::SafeRelease(device);

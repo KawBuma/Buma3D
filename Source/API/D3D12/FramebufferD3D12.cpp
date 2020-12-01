@@ -61,7 +61,7 @@ B3D_APIENTRY FramebufferD3D12::ParseRenderPassAndAllocateDescriptor()
         }
         else 
         {
-            subpass_descriptor.rtv = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 0x1).Allocate(sp.num_color_attachments);
+            subpass_descriptor.rtv = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, B3D_DEFAULT_NODE_MASK).Allocate(sp.num_color_attachments);
             subpass_descriptor.PrepareRTVHandles();
             for (uint32_t i = 0; i < sp.num_color_attachments; i++)
             {
@@ -133,7 +133,7 @@ B3D_APIENTRY FramebufferD3D12::Uninit()
     {
         if (i.rtv.handle)
         {
-            device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 0x1).Free(i.rtv);
+            device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, B3D_DEFAULT_NODE_MASK).Free(i.rtv);
             i.rtv = {};
         }
     }

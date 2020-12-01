@@ -168,7 +168,7 @@ B3D_APIENTRY UnorderedAccessViewD3D12::InitAsBufferUAV()
     if (hlp::IsFailed(result))
         return result;
 
-    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 0x1).Allocate();
+    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, B3D_DEFAULT_NODE_MASK).Allocate();
     device12->CreateUnorderedAccessView(buffer->GetD3D12Resource()
                                         , counter_buffer ? counter_buffer->As<BufferD3D12>()->GetD3D12Resource() : nullptr
                                         , &uavdesc
@@ -335,7 +335,7 @@ B3D_APIENTRY UnorderedAccessViewD3D12::InitAsTextureUAV()
         break;
     }
 
-    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 0x1).Allocate();
+    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, B3D_DEFAULT_NODE_MASK).Allocate();
     device12->CreateUnorderedAccessView(texture->GetD3D12Resource()
                                         , counter_buffer ? counter_buffer->As<BufferD3D12>()->GetD3D12Resource() : nullptr
                                         , &uavdesc
@@ -357,7 +357,7 @@ B3D_APIENTRY UnorderedAccessViewD3D12::Uninit()
     desc = {};
 
     if (descriptor.handle)
-        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 0x1).Free(descriptor);
+        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, B3D_DEFAULT_NODE_MASK).Free(descriptor);
     descriptor = {};
     virtual_address = {};
 

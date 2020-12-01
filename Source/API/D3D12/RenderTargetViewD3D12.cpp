@@ -287,7 +287,7 @@ B3D_APIENTRY RenderTargetViewD3D12::InitAsTextureRTV()
         break;
     }
 
-    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 0x1).Allocate();
+    descriptor = device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, B3D_DEFAULT_NODE_MASK).Allocate();
     device12->CreateRenderTargetView(texture->GetD3D12Resource(), &rtvdesc, descriptor.handle);
 
     return BMRESULT_SUCCEED;
@@ -306,7 +306,7 @@ B3D_APIENTRY RenderTargetViewD3D12::Uninit()
     desc = {};
 
     if (descriptor.handle)
-        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 0x1).Free(descriptor);
+        device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, B3D_DEFAULT_NODE_MASK).Free(descriptor);
     descriptor = {};
 
     hlp::SafeRelease(resource);
