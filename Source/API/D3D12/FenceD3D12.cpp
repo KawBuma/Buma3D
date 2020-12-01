@@ -1013,9 +1013,10 @@ B3D_APIENTRY FenceD3D12::Init(DeviceD3D12* _device, const FENCE_DESC& _desc, boo
 {
     desc = _desc;
 
+    device = _device;
     for_swapchain = _init_for_swapchain;
     if (!for_swapchain)
-        (device = _device)->AddRef();
+        device->AddRef();
 
     device12 = _device->GetD3D12Device();
 
