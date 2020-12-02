@@ -136,10 +136,11 @@ private:
             auto&& root_sig_desc = _signature->GetDesc();
             auto&& cache_info = _signature->GetUpdateDescriptorsCacheCreateInfo();
             update_root_parameters.resize(root_sig_desc.num_parameters);
+            update_root_parameters_data = update_root_parameters.data();
             for (uint32_t i_rp = 0; i_rp < root_sig_desc.num_parameters; i_rp++)
             {
                 auto&& rp = root_sig_desc.parameters[i_rp];
-                auto&& write_rp = update_root_parameters[i_rp];
+                auto&& write_rp = update_root_parameters_data[i_rp];
                 write_rp.root_parameter = &rp;
                 if (rp.type == ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
                     CreateCacheForDescriptorTable(cache_info, i_rp, write_rp, rp, _dst_sets);

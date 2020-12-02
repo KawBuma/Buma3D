@@ -413,17 +413,17 @@ void DescriptorSetVk::UpdateDescriptorsCache::CreateCacheForDynamicDescriptor(co
 
 void DescriptorSetVk::UpdateDescriptorsCache::CreateCacheForDescriptorTable(const RootSignatureVk::UPDATE_DESCRIPTORS_CACHE_CREATE_INFO& _cache_info, uint32_t _i_rp, UPDATE_ROOT_PARAMETER_BUFFER& _write_rp, const ROOT_PARAMETER& _rp, const util::DyArray<VkDescriptorSet>& _dst_sets)
 {
-    auto&& cache_rp = _cache_info.root_param_infos[_i_rp];
+    auto&& cache_rp = _cache_info.root_param_infos.data()[_i_rp];
     auto&& write_ranges = (_write_rp.descriptor_table = B3DMakeUnique(UPDATE_DESCRIPTOR_TABLE_BUFFER))->ranges;
     write_ranges.resize(_rp.descriptor_table.num_descriptor_ranges);
     for (uint32_t i_dr = 0; i_dr < _rp.descriptor_table.num_descriptor_ranges; i_dr++)
     {
         auto&& dr   = _rp.descriptor_table.descriptor_ranges[i_dr];
-        auto&& data = cache_rp.root_param_data[i_dr];
-        auto&& write_range = write_ranges[i_dr];
+        auto&& data = cache_rp.root_param_data.data()[i_dr];
+        auto&& write_range = write_ranges.data()[i_dr];
         write_range.descriptor_range_index = i_dr;
         write_range.descriptor_range       = &_rp.descriptor_table.descriptor_ranges[i_dr];
-        write_range.dst_set                = _dst_sets[data.dst_set_index];
+        write_range.dst_set                = _dst_sets.data()[data.dst_set_index];
         write_range.dst_binding            = data.dst_binding;
         write_range.descriptor_type        = data.descriptor_type;
 
@@ -440,9 +440,9 @@ void DescriptorSetVk::UpdateDescriptorsCache::CreateCacheForDescriptorTable(cons
 
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            write_range.buffer_infos = B3DMakeUnique(util::DyArray<VkDescriptorBufferInfo>);
-            write_range.buffer_infos->resize(dr.num_descriptors);
-            write_range.buffer_infos_data = write_range.buffer_infos->data();
+            write_range.texel_buffer_views = B3DMakeUnique(util::DyArray<VkBufferView>);
+            write_range.texel_buffer_views->resize(dr.num_descriptors);
+            write_range.texel_buffer_views_data = write_range.texel_buffer_views->data();
             break;
 
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
@@ -450,9 +450,9 @@ void DescriptorSetVk::UpdateDescriptorsCache::CreateCacheForDescriptorTable(cons
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            write_range.texel_buffer_views = B3DMakeUnique(util::DyArray<VkBufferView>);
-            write_range.texel_buffer_views->resize(dr.num_descriptors);
-            write_range.texel_buffer_views_data = write_range.texel_buffer_views->data();
+            write_range.buffer_infos = B3DMakeUnique(util::DyArray<VkDescriptorBufferInfo>);
+            write_range.buffer_infos->resize(dr.num_descriptors);
+            write_range.buffer_infos_data = write_range.buffer_infos->data();
             break;
 
         default:

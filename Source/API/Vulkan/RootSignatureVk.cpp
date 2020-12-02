@@ -155,9 +155,12 @@ B3D_APIENTRY RootSignatureVk::PrepareDescriptorSetLayoutCIs(PIPELINE_LAYOUT_DATA
 BMRESULT
 B3D_APIENTRY RootSignatureVk::CreateDescriptorSetLayouts(PIPELINE_LAYOUT_DATA* _pipeline_layout_data)
 {
+    // RegisterSpaceをディスクリプタセットのインデックスにマップするので必要なサイズは register_space_max_"number"+1 です。
+    auto register_space_count = _pipeline_layout_data->register_space_max_number + 1;
+
     // 最初に、RegisterSpace番号が存在しないような、実質バインディング数0のsetのために使用するレイアウトで埋めます。
     auto&& zero_layout = device->GetZeroBindingDescriptorSetLayout();
-    set_layouts.resize(_pipeline_layout_data->register_space_max_number, zero_layout);
+    set_layouts.resize(register_space_count, zero_layout);
     auto set_layouts_data = set_layouts.data();
 
     // ゼロレイアウト以外のレイアウトを作成
@@ -175,7 +178,7 @@ B3D_APIENTRY RootSignatureVk::CreateDescriptorSetLayouts(PIPELINE_LAYOUT_DATA* _
     {
         uint32_t continuous_valid_layout   = 0;// ディスクリプタセットが継続して有効である場合に加算される。
         uint32_t valid_layout_start_offset = 0;// 有効なレイアウトが開始されるオフセット。
-        for (uint32_t i = 0; i < _pipeline_layout_data->register_space_max_number; i++)
+        for (uint32_t i = 0; i < register_space_count; i++)
         {
             if (set_layouts_data[i] != zero_layout)
             {
@@ -858,12 +861,12 @@ void RootSignatureVk::PIPELINE_LAYOUT_DATA::Finalize(RootSignatureVk* _signature
 
         // pNextチェイン
 
-        auto&& last_pnext = ci.ci.pNext;
+        auto&& last_pnext = &ci.ci.pNext;
 
         ci.flags_ci.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
         ci.flags_ci.bindingCount  = ci.ci.bindingCount;
         ci.flags_ci.pBindingFlags = it_data.layout_data.flags.data();
-        last_pnext = util::ConnectPNextChains(ci.ci, ci.flags_ci);
+        last_pnext = util::ConnectPNextChains(last_pnext, ci.flags_ci);
     }
 }
 
