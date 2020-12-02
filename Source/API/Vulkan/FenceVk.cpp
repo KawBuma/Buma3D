@@ -449,6 +449,7 @@ B3D_APIENTRY FenceVk::FenceVk()
     , inspfn    {}
     , devpfn    {}
     , desc      {}
+    , impl      {}
 {
 
 }
@@ -614,11 +615,14 @@ B3D_APIENTRY FenceVk::CreateTimelineVkSemaphore(DeviceVk* _device, VkSemaphore* 
 void
 B3D_APIENTRY FenceVk::Uninit() 
 {
-    name.reset();
-    desc = {};
-
     B3DSafeDelete(impl);
     hlp::SafeRelease(device);
+    vkdevice = VK_NULL_HANDLE;
+    inspfn   = nullptr;
+    devpfn   = nullptr;
+
+    desc = {};
+    name.reset();
 }
 
 BMRESULT
