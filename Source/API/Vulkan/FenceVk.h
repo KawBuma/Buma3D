@@ -12,6 +12,7 @@ protected:
 
 private:
     BMRESULT B3D_APIENTRY Init(DeviceVk* _device, const FENCE_DESC& _desc);
+    BMRESULT B3D_APIENTRY CopyDesc(const FENCE_DESC& _desc);
     BMRESULT B3D_APIENTRY CreateImpl();
     BMRESULT B3D_APIENTRY CreateVkFence(DeviceVk* _device, VkFence* _dst_fence);
     BMRESULT B3D_APIENTRY SetSemaphoreFlags(const void** _last_pnext, VkExportSemaphoreCreateInfo& _export_ci);

@@ -346,8 +346,8 @@ public:
     BinaryGpuToGpuImpl(FenceD3D12* _owner)
         : owner         { _owner }
         , fence         {}
-        , fence_value   { _owner->desc.initial_value }
-        , state         { _owner->desc.initial_value ? SIGNALED : UNSIGNALED }
+        , fence_value   { 0 }
+        , state         { UNSIGNALED }
     {
     }
 
@@ -381,7 +381,7 @@ public:
         }
 
         B3D_RET_IF_FAILED(CreateFence());
-        state = owner->desc.initial_value ? SIGNALED : UNSIGNALED;
+        state = UNSIGNALED;
         return BMRESULT_SUCCEED;
     }
 
@@ -1011,20 +1011,36 @@ B3D_APIENTRY FenceD3D12::~FenceD3D12()
 BMRESULT 
 B3D_APIENTRY FenceD3D12::Init(DeviceD3D12* _device, const FENCE_DESC& _desc, bool _init_for_swapchain)
 {
-    desc = _desc;
-
     device = _device;
     for_swapchain = _init_for_swapchain;
     if (!for_swapchain)
         device->AddRef();
 
     device12 = _device->GetD3D12Device();
+    desc = _desc;
+
+    B3D_RET_IF_FAILED(CopyDesc(_desc));
+
+    B3D_RET_IF_FAILED(CreateImpl());
+
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY FenceD3D12::CopyDesc(const buma3d::FENCE_DESC& _desc)
+{
+    desc = _desc;
+
+    if (desc.type == FENCE_TYPE_BINARY_GPU_TO_GPU && desc.initial_value != 0)
+    {
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
+                          , "FENCE_DESC::typeがFENCE_TYPE_BINARY_GPU_TO_GPUの場合、FENCE_DESC::initial_valueは0である必要があります。");
+        return BMRESULT_FAILED_INVALID_PARAMETER;
+    }
 
     // FENCE_TYPE_TIMELINE以外の場合シグナル状態を示す値として1にクランプ
     if (desc.type != FENCE_TYPE_TIMELINE)
         desc.initial_value = std::min(desc.initial_value, 1ull);
-
-    B3D_RET_IF_FAILED(CreateImpl());
 
     return BMRESULT_SUCCEED;
 }

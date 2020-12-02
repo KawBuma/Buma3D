@@ -12,6 +12,7 @@ protected:
 
 public:
     BMRESULT B3D_APIENTRY Init(DeviceD3D12* _device, const FENCE_DESC& _desc, bool _init_for_swapchain = false);
+    BMRESULT B3D_APIENTRY CopyDesc(const FENCE_DESC& _desc);
     BMRESULT B3D_APIENTRY CreateImpl();
     void B3D_APIENTRY Uninit();
 

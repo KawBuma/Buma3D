@@ -2291,7 +2291,13 @@ using FENCE_FLAGS = EnumFlagsT;
 struct FENCE_DESC
 {
     FENCE_TYPE      type;
-    uint64_t        initial_value; // フェンスの初期値です。FENCE_TYPE_BINARY_*の場合、値を1以上に設定するとシグナルされた状態で作成されます。
+
+    /**
+     * @brief フェンスの初期値です。
+     *        typeがFENCE_TYPE_BINARY_GPU_TO_CPUの場合、値を1以上に設定するとシグナルされた状態で作成されます。 
+     *        typeがFENCE_TYPE_BINARY_GPU_TO_GPUの場合、値は0である必要があります。 
+    */
+    uint64_t        initial_value;
     FENCE_FLAGS     flags;
 };
 
