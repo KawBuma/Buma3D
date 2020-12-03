@@ -335,7 +335,7 @@ inline VkImageType GetNativeResourceDimension(RESOURCE_DIMENSION _dimension)
 inline uint32_t CalcMipLevels(const TEXTURE_DESC& _desc)
 {
     if (_desc.mip_levels == B3D_USE_ALL_MIPS)
-        return 1 + SCAST<uint32_t>(floorf(log2f(SCAST<float>(std::max({ _desc.extent.width, _desc.extent.height, (uint32_t)_desc.extent.depth}, std::greater<uint32_t>())))));
+        return 1 + SCAST<uint32_t>(floorf(log2f(SCAST<float>(std::max({ _desc.extent.width, _desc.extent.height, _desc.extent.depth })))));
     else
         return _desc.mip_levels;
 }
