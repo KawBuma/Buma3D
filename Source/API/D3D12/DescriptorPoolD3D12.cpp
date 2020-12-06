@@ -303,7 +303,7 @@ B3D_APIENTRY DescriptorPoolD3D12::AllocateDescriptors(DescriptorSetD3D12* _set)
     auto&& ps12 = _set->signature->GetPoolSizes12();
 
     /*NOTE: 単純なメモリ不足(pool->pool_remainsの合計ディスクリプタサイズの不足)による割り当て失敗の確認はDescriptorPoolD3D12::AllocateDescriptorSetによって事前に行われるので、
-            dh_allocators[_type]->Allocate(_size)が失敗する場合、断片化意味します。*/
+            dh_allocators[_type]->Allocate(_size)が失敗する場合、断片化を意味します。*/
 
     auto Allocate = [this, _set](auto _type, auto _size)
     {
@@ -327,7 +327,7 @@ B3D_APIENTRY DescriptorPoolD3D12::AllocateDescriptors(DescriptorSetD3D12* _set)
     }
     if (ps12.num_sampler_descs)
     {
-        B3D_RET_IF_FAILED(Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, ps12.num_descs));
+        B3D_RET_IF_FAILED(Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, ps12.num_sampler_descs));
         pool_remains[DESCRIPTOR_TYPE_SAMPLER] -= ps12.num_sampler_descs;
     }
 
