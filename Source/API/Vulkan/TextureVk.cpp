@@ -858,7 +858,7 @@ B3D_APIENTRY TextureVk::Bind(const BIND_RESOURCE_HEAP_INFO* _info)
         B3D_RET_IF_FAILED(PrepareBindNodeMasks(_info->src_heap->GetDesc().heap_index, _info->num_bind_node_masks, _info->bind_node_masks));
     }
 
-    VkBindImageMemoryInfo bi{ VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO };
+    VkBindImageMemoryInfo bi{ VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO };
     bi.image        = image;
     bi.memory       = _info->src_heap->As<ResourceHeapVk>()->GetVkDeviceMemory();
     bi.memoryOffset = _info->src_heap_offset;// NOTE: 引数はアライメント済みである必要があります。
