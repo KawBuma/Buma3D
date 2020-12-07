@@ -5,6 +5,26 @@ namespace buma3d
 
 class B3D_API DescriptorPoolD3D12 : public IDeviceChildD3D12<IDescriptorPool>, public util::details::NEW_DELETE_OVERRIDE
 {
+public:
+    /*
+    NOTE: ID3D12Device::CopyDescriptors*()はGPU可視ヒープをコピーソースとして使用することができません: https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_heap_flags
+          従って、GPU不可視のディスクリプタヒープを別途用意する必要があります。
+          冗長な割り当て回避するために、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを追加して、コピーソースとして使用する必要がある場合のみcopy_desc_heaps12を作成できるようにします。
+    */
+    struct COPY_SRC_HEAP
+    {
+        ID3D12DescriptorHeap*       copy_desc_heap12;
+        D3D12_CPU_DESCRIPTOR_HANDLE cpu_base_handle;
+        size_t                      increment_size;
+    };
+    struct COPY_SRC_HANDLES
+    {
+        D3D12_CPU_DESCRIPTOR_HANDLE OffsetCPUHandle(size_t _index) const { return D3D12_CPU_DESCRIPTOR_HANDLE{ cpu_handle.ptr + (parent->increment_size * _index) }; }
+        const COPY_SRC_HEAP*        parent;
+        D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle;
+        size_t                      num_descriptors;
+    };
+
 protected:
     B3D_APIENTRY DescriptorPoolD3D12();
     DescriptorPoolD3D12(const DescriptorPoolD3D12&) = delete;
@@ -88,6 +108,7 @@ private:
     ID3D12Device*                                                                   device12;
     util::StArray<GPUDescriptorAllocator*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER+1>    dh_allocators;
     util::DyArray<ID3D12DescriptorHeap*>                                            desc_heaps12;
+    util::UniquePtr<util::DyArray<COPY_SRC_HEAP>>                                   copy_src_heaps;
 
 };
 

@@ -192,6 +192,9 @@ B3D_APIENTRY DescriptorSetVk::CopyDescriptorSet(IDescriptorSet* _src)
     if (signature == src->GetRootSignature())
         return BMRESULT_FAILED_INVALID_PARAMETER;
 
+    if (!(_src->GetPool()->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))
+        return BMRESULT_FAILED_INVALID_PARAMETER;
+
     this->update_descriptors_cache->PrepareCopyDescriptorSetParameters(*src->update_descriptors_cache);
     this->update_descriptors_cache->ApplyUpdate(vkdevice);
 
@@ -236,7 +239,11 @@ B3D_APIENTRY DescriptorSetVk::AddWriteDescriptors(const WRITE_DESCRIPTOR_SET& _w
 BMRESULT
 B3D_APIENTRY DescriptorSetVk::AddCopyDescriptors(const COPY_DESCRIPTOR_SET& _copies)
 {
-    auto&& src_cache = *_copies.src_set->As<DescriptorSetVk>()->update_descriptors_cache;
+    auto src_set = _copies.src_set->As<DescriptorSetVk>();
+    if (!(src_set->GetPool()->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))
+        return BMRESULT_FAILED_INVALID_PARAMETER;
+
+    auto&& src_cache = *src_set->update_descriptors_cache;
     for (uint32_t i_table = 0; i_table < _copies.num_descriptor_tables; i_table++)
     {
         auto&& dt = _copies.descriptor_tables[i_table];

@@ -316,17 +316,18 @@ private:
     };
 
 private:
-    std::atomic_uint32_t                                                                ref_count;
-    util::UniquePtr<util::NameableObjStr>                                               name;
-    DeviceD3D12*                                                                        device;
-    uint32_t                                                                            allocation_id;
-    uint64_t                                                                            reset_id;
-    ID3D12Device*                                                                       device12;
-    DescriptorPoolD3D12*                                                                pool;
-    RootSignatureD3D12*                                                                 signature;
-    util::StArray<GPU_DESCRIPTOR_ALLOCATION, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>    allocations;
-    DESCRIPTOR_BATCH                                                                    descriptor_batch;
-    util::StArray<UpdateDescriptorsCache, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>       update_descriptors_caches;
+    std::atomic_uint32_t                                                                                            ref_count;
+    util::UniquePtr<util::NameableObjStr>                                                                           name;
+    DeviceD3D12*                                                                                                    device;
+    uint32_t                                                                                                        allocation_id;
+    uint64_t                                                                                                        reset_id;
+    ID3D12Device*                                                                                                   device12;
+    DescriptorPoolD3D12*                                                                                            pool;
+    RootSignatureD3D12*                                                                                             signature;
+    util::StArray<GPU_DESCRIPTOR_ALLOCATION, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>                                allocations;
+    DESCRIPTOR_BATCH                                                                                                descriptor_batch;
+    util::UniquePtr<util::StArray<DescriptorPoolD3D12::COPY_SRC_HANDLES, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>>   copy_src_descriptors;
+    util::StArray<UpdateDescriptorsCache, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>                                   update_descriptors_caches;
 
 };
 

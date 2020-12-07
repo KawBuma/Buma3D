@@ -142,11 +142,11 @@ public:
         entry.free_ranges.clear();
 
         // 新規作成したディスクリプタのフリー範囲を追加。
-        auto cpu_handle = entry.descriptor_heap->GetCPUDescriptorHandleForHeapStart();
-        auto gpu_handle = entry.descriptor_heap->GetGPUDescriptorHandleForHeapStart();
-        entry.budget = size_t(dh_desc.NumDescriptors) * dh_increment_size;
-        entry.usage = 0;
-        entry.free_ranges.emplace_back(GPU_DESCRIPTOR_RANGE{ cpu_handle, gpu_handle, entry.budget });
+        entry.cpu_base_handle   = entry.descriptor_heap->GetCPUDescriptorHandleForHeapStart();
+        auto gpu_handle         = entry.descriptor_heap->GetGPUDescriptorHandleForHeapStart();
+        entry.budget    = size_t(dh_desc.NumDescriptors) * dh_increment_size;
+        entry.usage     = 0;
+        entry.free_ranges.emplace_back(GPU_DESCRIPTOR_RANGE{ entry.cpu_base_handle, gpu_handle, entry.budget });
     }
 
     size_t GetIncrementSize() const
@@ -159,6 +159,10 @@ public:
         return entry.descriptor_heap;
     }
 
+    size_t CalcBeginOffset(const GPU_DESCRIPTOR_ALLOCATION& _allocation) const
+    {
+        return SCAST<size_t>(_allocation.handles.cpu_begin.ptr - entry.cpu_base_handle.ptr) / dh_increment_size;
+    }
 
 private:
     HRESULT AllocateHeap()
@@ -178,6 +182,7 @@ private:
     {
         ~DESCRIPTOR_HEAP_ENTRY() { hlp::SafeRelease(descriptor_heap); }
         ID3D12DescriptorHeap*               descriptor_heap;
+        D3D12_CPU_DESCRIPTOR_HANDLE         cpu_base_handle;
         util::List<GPU_DESCRIPTOR_RANGE>    free_ranges;
         size_t                              budget;
         size_t                              usage;

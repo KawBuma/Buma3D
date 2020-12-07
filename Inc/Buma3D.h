@@ -2756,9 +2756,15 @@ struct DESCRIPTOR_POOL_SIZE
 
 enum DESCRIPTOR_POOL_FLAG : EnumT
 {
-      DESCRIPTOR_POOL_FLAG_NONE                   = 0x0
-    , DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SET    = 0x1
-    , DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOL = 0x2 // UPDATE_AFTER_BINDフラグのディスクリプタを割り当て可能なプールが作成されることを示します。非UPDATE_AFTER_BINDフラグのディスクリプタは引き続き割り当て可能です。
+    DESCRIPTOR_POOL_FLAG_NONE                   = 0x0,
+    DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SET    = 0x1,
+    DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOL = 0x2, // UPDATE_AFTER_BINDフラグのディスクリプタを割り当て可能なプールが作成されることを示します。非UPDATE_AFTER_BINDフラグのディスクリプタは引き続き割り当て可能です。
+
+    /**
+     * @brief コピー可能ディスクリプタヒープであることを指定します。 
+     *        このフラグが指定されたヒープから割り当てられたディスクリプタセットは、COPY_DESCRIPTOR_SET::src_setまたはIDescriptorSet::CopyDescriptorSet::_srcでコピー元ディスクリプタとして利用可能です。
+    */
+    DESCRIPTOR_POOL_FLAG_COPY_SRC               = 0x4
 };
 using DESCRIPTOR_POOL_FLAGS = EnumFlagsT;
 
@@ -2832,7 +2838,7 @@ struct COPY_DYNAMIC_DESCRIPTOR
 
 struct COPY_DESCRIPTOR_SET
 {
-    IDescriptorSet*                 src_set;                    // コピーするディスクリプタセットです。
+    IDescriptorSet*                 src_set;                    // コピーするディスクリプタセットです。 src_setのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
     IDescriptorSet*                 dst_set;                    // 宛先のディスクリプタセットです。
     uint32_t                        num_descriptor_tables;      // descriptor_tables配列の要素数です。
     const COPY_DESCRIPTOR_TABLE*    descriptor_tables;          // コピーするディスクリプタテーブルを指定するCOPY_DESCRIPTOR_TABLE構造の配列です。
@@ -4480,6 +4486,11 @@ public:
               const DESCRIPTOR_POOL_DESC& _desc
             , IDescriptorPool**           _dst) = 0;
 
+    /**
+     * @brief 指定のリソースでディスクリプタセットを更新します。 
+     * @param _update_desc UPDATE_DESCRIPTOR_SET_DESC
+     * @return BMRESULT
+    */
     virtual BMRESULT
         B3D_APIENTRY UpdateDescriptorSets(
             const UPDATE_DESCRIPTOR_SET_DESC& _update_desc) = 0;
@@ -5049,6 +5060,7 @@ public:
      * @brief 同じルートシグネチャで割り当てられたディスクリプタセットの全てのディスクリプタをコピーします。
      * @param _src コピーするディスクリプタセットです。 ルートシグネチャは同一である必要があります。
      * @return 正常にコピーされた場合BMRESULT_SUCCEEDが返ります。
+     * @remark _srcのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
     */
     virtual BMRESULT
         B3D_APIENTRY CopyDescriptorSet(

@@ -12,6 +12,8 @@ static constexpr const char* HEAP_TYPE_NAMES[] =
 {
       " (D3D12_HEAP_TYPE_CBV_SRV_UAV)"
     , " (D3D12_HEAP_TYPE_SAMPLER)"
+    , " (D3D12_HEAP_TYPE_CBV_SRV_UAV (for COPY_SRC))"
+    , " (D3D12_HEAP_TYPE_SAMPLER (for COPY_SRC))"
 };
 
 }// namespace /*anonymous*/
@@ -22,12 +24,14 @@ B3D_APIENTRY DescriptorPoolD3D12::DescriptorPoolD3D12()
     , device            {}
     , desc              {}
     , desc_data         {}
+    , pool_remains      {}
     , allocation_mutex  {}
     , allocation_count  {}
     , reset_id          {}
     , device12          {}
     , dh_allocators     {}
     , desc_heaps12      {}
+    , copy_src_heaps    {}
 {     
       
 }
@@ -122,8 +126,24 @@ B3D_APIENTRY DescriptorPoolD3D12::CreateDescriptorHeaps(uint32_t _num_descs, uin
         auto hr = (dh_allocators[_heap_type] = B3DNewArgs(GPUDescriptorAllocator, device12, _heap_type, _num, desc.node_mask))->Init();
         B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
         desc_heaps12.emplace_back(dh_allocators[_heap_type]->GetD3D12DescriptorHeap())->AddRef();
+
+        if (desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
+        {
+            auto&& copy_src_heap = copy_src_heaps->emplace_back();
+
+            D3D12_DESCRIPTOR_HEAP_DESC dhd{ _heap_type, _num, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, B3D_DEFAULT_NODE_MASK };
+            auto hr = device12->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&copy_src_heap.copy_desc_heap12));
+            B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
+
+            copy_src_heap.increment_size    = device12->GetDescriptorHandleIncrementSize(_heap_type);
+            copy_src_heap.cpu_base_handle   = copy_src_heap.copy_desc_heap12->GetCPUDescriptorHandleForHeapStart();
+        }
+
         return BMRESULT_SUCCEED;
     };
+
+    if (desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
+        copy_src_heaps = B3DMakeUnique(util::DyArray<COPY_SRC_HEAP>);
 
     if (_num_descs != 0)
         B3D_RET_IF_FAILED(Create(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _num_descs));
@@ -202,6 +222,16 @@ B3D_APIENTRY DescriptorPoolD3D12::SetName(const char* _name)
         if (i)
         {
             auto hr = util::SetName(i, _name ? hlp::StringConvolution(_name, HEAP_TYPE_NAMES[count]).c_str() : nullptr);
+            B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
+        }
+        count++;
+    }
+
+    if (desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
+    {
+        for (auto& i : *copy_src_heaps)
+        {
+            auto hr = util::SetName(i.copy_desc_heap12, _name ? hlp::StringConvolution(_name, HEAP_TYPE_NAMES[i.copy_desc_heap12->GetDesc().Type + 2]).c_str() : nullptr);
             B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
         }
     }
@@ -307,14 +337,25 @@ B3D_APIENTRY DescriptorPoolD3D12::AllocateDescriptors(DescriptorSetD3D12* _set)
 
     auto Allocate = [this, _set](auto _type, auto _size)
     {
-        _set->allocations[_type] = dh_allocators[_type]->Allocate(_size);
-        if (!_set->allocations[_type].handles)
+        auto&& allocator = dh_allocators[_type];
+        auto&& allocation = _set->allocations[_type];
+        allocation = allocator->Allocate(_size);
+        if (!allocation.handles)
             return BMRESULT_FAILED_FRAGMENTED_POOL;
+
+        if (desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
+        {
+            auto&& copy_src_heap = copy_src_heaps->data()[_type];
+            _set->copy_src_descriptors->data()[_type] = { &copy_src_heap, copy_src_heap.cpu_base_handle.ptr + (copy_src_heap.increment_size * allocator->CalcBeginOffset(allocation)), _size };
+        }
 
         return BMRESULT_SUCCEED;
     };
 
     //std::lock_guard lock(allocation_mutex); <-AllocateDescriptorSet
+
+    if (desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
+        _set->copy_src_descriptors = B3DMakeUnique(B3D_T(util::StArray<DescriptorPoolD3D12::COPY_SRC_HANDLES, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>));
 
     if (ps12.num_descs)
     {
