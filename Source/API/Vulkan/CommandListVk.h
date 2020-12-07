@@ -514,7 +514,7 @@ private:
     {
     public:
         PipelineBarrierBuffer(CommandAllocatorVk* _allocator, COMMAND_TYPE _command_type)
-            : queue_famity_indices  { _allocator->GetDevice()->As<DeviceVk>()->GetQueueFamilyIndices().data() }
+            : device                { _allocator->GetDevice()->As<DeviceVk>() }
             , command_type          { _command_type }
             //, memory_barriers     { _allocator }
             , buffer_barriers       (_allocator)
@@ -607,16 +607,19 @@ private:
         template<typename T, typename U>
         void SetCommonParameters(T& _native_barrier, const U& _barrier)
         {
-            _native_barrier.srcAccessMask = util::GetNativeResourceState(_barrier.src_state);
-            _native_barrier.dstAccessMask = util::GetNativeResourceState(_barrier.dst_state);
-
             if (_barrier.barrier_flags & RESOURCE_BARRIER_FLAG_OWNERSHIP_TRANSFER)
             {
-                _native_barrier.srcQueueFamilyIndex = queue_famity_indices[_barrier.src_queue_type];
-                _native_barrier.dstQueueFamilyIndex = queue_famity_indices[_barrier.dst_queue_type];
+                // キューファミリ所有権転送の開放先、取得元のアクセスマスクが考慮されない事が定義されています(https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/chap8.html#synchronization-queue-transfers)が、
+                // 実際には、ソース/宛先ステージマスクのビットに基づいて、検証レイヤが通常通り(非所有権転送時)のエラーを発行するため、0に設定します。
+                _native_barrier.srcAccessMask = command_type == _barrier.src_queue_type ? util::GetNativeResourceState(_barrier.src_state) : 0x0;
+                _native_barrier.dstAccessMask = command_type == _barrier.dst_queue_type ? util::GetNativeResourceState(_barrier.dst_state) : 0x0;
+                _native_barrier.srcQueueFamilyIndex = device->GetQueueFamilyIndex(_barrier.src_queue_type);
+                _native_barrier.dstQueueFamilyIndex = device->GetQueueFamilyIndex(_barrier.dst_queue_type);
             }
             else
             {
+                _native_barrier.srcAccessMask = util::GetNativeResourceState(_barrier.src_state);
+                _native_barrier.dstAccessMask = util::GetNativeResourceState(_barrier.dst_state);
                 _native_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                 _native_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             }
@@ -711,7 +714,7 @@ private:
         };
 
     private:
-        const uint32_t*                                                             queue_famity_indices;
+        DeviceVk*                                                                   device;
         COMMAND_TYPE                                                                command_type;
         //TBARRIERS<VkMemoryBarrier    , VK_STRUCTURE_TYPE_MEMORY_BARRIER>          memory_barriers;
         TBARRIERS<VkBufferMemoryBarrier, VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER>   buffer_barriers;

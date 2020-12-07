@@ -894,7 +894,7 @@ B3D_APIENTRY TextureVk::Bind(const BIND_RESOURCE_HEAP_INFO* _info)
 BMRESULT 
 B3D_APIENTRY TextureVk::BindForSwapChain(SwapChainVk* _swapchain, uint32_t _image_index)
 {
-    VkBindImageMemoryInfo bi{ VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO };
+    VkBindImageMemoryInfo bi{ VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO };
     bi.image        = image;
     bi.memory       = VK_NULL_HANDLE;// pNextチェーンにVkBindImageMemorySwapchainInfoKHR構造が含まれている場合、memoryはVK_NULL_HANDLEである必要があります。
     bi.memoryOffset = 0;

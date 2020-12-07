@@ -27,12 +27,13 @@ B3D_APIENTRY SamplerViewVk::~SamplerViewVk()
 BMRESULT
 B3D_APIENTRY SamplerViewVk::Init(DeviceVk* _device, const SAMPLER_DESC& _desc)
 {
-    if (device->GetAllocationCounters().samplers >= device->GetDeviceAdapter()->GetPhysicalDeviceData().properties2.properties.limits.maxSamplerAllocationCount)
-        return BMRESULT_FAILED_TOO_MANY_OBJECTS;
-
     (device = _device)->AddRef();
+    vkdevice = _device->GetVkDevice();
     inspfn = &device->GetInstancePFN();
     devpfn = &device->GetDevicePFN();
+
+    if (device->GetAllocationCounters().samplers >= device->GetDeviceAdapter()->GetPhysicalDeviceData().properties2.properties.limits.maxSamplerAllocationCount)
+        return BMRESULT_FAILED_TOO_MANY_OBJECTS;
 
     CopyDesc(_desc);
 

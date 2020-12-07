@@ -191,6 +191,7 @@ B3D_APIENTRY UnorderedAccessViewVk::Init(DeviceVk* _device, IResource* _resource
     }
 
     (device = _device)->AddRef();
+    vkdevice = device->GetVkDevice();
     inspfn = &device->GetInstancePFN();
     devpfn = &device->GetDevicePFN();
 

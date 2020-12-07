@@ -179,6 +179,7 @@ BMRESULT
 B3D_APIENTRY ShaderResourceViewVk::Init(DeviceVk* _device, IResource* _resource, const SHADER_RESOURCE_VIEW_DESC& _desc)
 {
     (device = _device)->AddRef();
+    vkdevice = device->GetVkDevice();
     inspfn = &device->GetInstancePFN();
     devpfn = &device->GetDevicePFN();
 

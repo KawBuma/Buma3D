@@ -723,7 +723,7 @@ B3D_APIENTRY CommandListVk::CopyBufferToTexture(const CMD_COPY_BUFFER_TO_TEXTURE
 
     vkCmdCopyBufferToImage(command_buffer
                            , src_buf->GetVkBuffer()
-                           , dst_tex->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                           , dst_tex->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
                            , _args.num_regions, regionsvk_data);
 }
 

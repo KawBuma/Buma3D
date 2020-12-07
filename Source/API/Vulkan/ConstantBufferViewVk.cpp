@@ -29,6 +29,7 @@ BMRESULT
 B3D_APIENTRY ConstantBufferViewVk::Init(DeviceVk* _device, IBuffer* _buffer, const CONSTANT_BUFFER_VIEW_DESC& _desc)
 {
     (device = _device)->AddRef();
+    vkdevice = device->GetVkDevice();
     inspfn = &device->GetInstancePFN();
     devpfn = &device->GetDevicePFN();
 

@@ -441,7 +441,7 @@ B3D_APIENTRY RootSignatureVk::PrepareRegisterShiftMap()
     for (auto& i : desc_data.register_shifts)
     {
         auto&& shift_type = register_space_shifts[i.register_space];
-        if (shift_type.find(i.register_type) == shift_type.end())
+        if (shift_type.find(i.register_type) != shift_type.end())
         {
             B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
                               , "ROOT_SIGNATURE_DESC::register_shifts内に、register_spaceが同一であり、かつregister_typeが同一である複数のSHADER_REGISTER_SHIFT構造が含まれていない必要があります。");

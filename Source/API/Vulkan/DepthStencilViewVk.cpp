@@ -26,6 +26,7 @@ BMRESULT
 B3D_APIENTRY DepthStencilViewVk::Init(DeviceVk* _device, IResource* _resource, const DEPTH_STENCIL_VIEW_DESC& _desc)
 {
     (device = _device)->AddRef();
+    vkdevice = device->GetVkDevice();
     inspfn = &device->GetInstancePFN();
     devpfn = &device->GetDevicePFN();
 

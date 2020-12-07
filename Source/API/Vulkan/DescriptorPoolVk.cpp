@@ -74,7 +74,7 @@ B3D_APIENTRY DescriptorPoolVk::CreateVkDescriptorPool()
     GetNativePoolSizes(&sizes);
 
     VkDescriptorPoolCreateInfo ci{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-    ci.flags         = util::GetNativeDescriptorFlags(desc.flags);
+    ci.flags         = util::GetNativeDescriptorPoolFlags(desc.flags);
     ci.maxSets       = desc.max_sets_allocation_count * desc.max_num_register_space;
     ci.poolSizeCount = desc.num_pool_sizes;
     ci.pPoolSizes    = sizes.data();

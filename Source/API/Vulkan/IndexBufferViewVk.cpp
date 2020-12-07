@@ -51,6 +51,7 @@ BMRESULT
 B3D_APIENTRY IndexBufferViewVk::Init(DeviceVk* _device, IBuffer* _buffer, const INDEX_BUFFER_VIEW_DESC& _desc)
 {
     (device = _device)->AddRef();
+    vkdevice = _device->GetVkDevice();
     inspfn = &device->GetInstancePFN();
     devpfn = &device->GetDevicePFN();
 
