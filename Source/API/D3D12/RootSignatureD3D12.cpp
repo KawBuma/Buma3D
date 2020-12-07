@@ -57,7 +57,7 @@ B3D_APIENTRY RootSignatureD3D12::CopyDesc(const ROOT_SIGNATURE_DESC& _desc)
     desc.register_shifts = desc_data.register_shifts.data();
     util::MemCopyArray(desc_data.register_shifts.data(), _desc.register_shifts, _desc.num_register_shifts);
 
-    uint32_t handle_offset_in_whole_allocations = 0;
+    uint32_t handle_offset_in_whole_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1]{};
     auto CopyDescriptorTable = [this, &handle_offset_in_whole_allocations](uint32_t _i_rp, ROOT_PARAMETER& _dst_param, ROOT_PARAMETER_DATA* _dst_params_data, const ROOT_PARAMETER& _src_param, TOTAL_NUM_DESCRIPTORS& _total_num_descriptors)
     {
         _dst_param = _src_param;
@@ -71,6 +71,7 @@ B3D_APIENTRY RootSignatureD3D12::CopyDesc(const ROOT_SIGNATURE_DESC& _desc)
         _total_num_descriptors.type = _src_param.descriptor_table.descriptor_ranges[0].type == DESCRIPTOR_TYPE_SAMPLER
             ? D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
             : D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        auto&& handle_offset_by_type = handle_offset_in_whole_allocations[_total_num_descriptors.type];
 
         bool has_sampler     = false;
         bool has_non_sampler = false;
@@ -82,9 +83,9 @@ B3D_APIENTRY RootSignatureD3D12::CopyDesc(const ROOT_SIGNATURE_DESC& _desc)
             has_sampler     |= dr.type == DESCRIPTOR_TYPE_SAMPLER;
             has_non_sampler |= dr.type != DESCRIPTOR_TYPE_SAMPLER;
 
-            _total_num_descriptors.absolute_handle_offsets[i_dr]    = handle_offset_in_whole_allocations;
+            _total_num_descriptors.absolute_handle_offsets[i_dr]    = handle_offset_by_type;
             _total_num_descriptors.total_num_descriptors            += dr.num_descriptors;
-            handle_offset_in_whole_allocations                      += dr.num_descriptors;
+            handle_offset_by_type                                   += dr.num_descriptors;
         }
 
         if (has_sampler && has_non_sampler)
