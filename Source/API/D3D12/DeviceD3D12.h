@@ -338,7 +338,7 @@ private:
     // MakeResourceHeapProperties、GetResourceAllocationInfoで使用します。
     enum HEAP_TYPE { ONLY_BUF, ONLY_NON_RT_DS_TEX, ONLY_RT_DS_TEX, ALL_BUF_TEX };
     util::StArray<uint32_t, ALL_BUF_TEX + 1>                                        heap_type_bits;
-    bool                                                                            is_heap_tear2;
+    bool                                                                            is_heap_tier2;
     util::DyArray<util::UniquePtr<CPUDescriptorAllocator>>                          cpu_descriptor_heap_allocators[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];// [heap_type][node]    
     util::DyArray<util::UniquePtr<INDIRECT_COMMAND_SIGNATURES>>                     command_signatures;// [node]    
 
