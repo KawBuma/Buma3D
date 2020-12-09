@@ -174,13 +174,25 @@ B3D_APIENTRY ResourceHeapD3D12::CreateD3D12ResourceForMap()
         , D3D12_RESOURCE_FLAG_NONE                   // Flags;
     };
 
-    // TODO: HEAP_TIER2未満か、HEAP_FLAG_ALLOW_ONLY_BUFFERSでない場合の対応
-    auto hr = device12->CreatePlacedResource(heap, 0, &buffer_desc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&resource_for_map));
+    // TODO: HEAP_TIER2未満か、HEAP_FLAG_ALLOW_ONLY_BUFFERSでない場合の対応 
+    //       D3D12_HEAP_TIER2未満またはD3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS場合、メモリをマップするためにはD3D12_RESOURCE_DIMENSION_TEXTURE*が必要になります。 
+    //       加えて、マップ操作にはID3D12Resource::WriteToSubresource/ReadFromSubresourceを介して行わなければならず、他APIではこれを行うための追加のエミュレーションが必要です。 
+    if (mapping_usage & TEXTURE)
+        return BMRESULT_FAILED_NOT_IMPLEMENTED;
+
+    auto&& desc12 = device->GetHeapDescs12().data()[desc.heap_index];
+    auto initial_state = D3D12_RESOURCE_STATE_COMMON;
+         if (desc12.Properties.Type == D3D12_HEAP_TYPE_UPLOAD)   initial_state = D3D12_RESOURCE_STATE_GENERIC_READ;
+    else if (desc12.Properties.Type == D3D12_HEAP_TYPE_READBACK) initial_state = D3D12_RESOURCE_STATE_COPY_DEST;
+
+    auto hr = device12->CreatePlacedResource(heap, 0, &buffer_desc, initial_state, nullptr, IID_PPV_ARGS(&resource_for_map));
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
 
     if (util::IsEnabledDebug(this))
+    {
         hr = util::SetName(resource_for_map, "ResourceHeapD3D12::resource_for_map");
-    B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
+        B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
+    }
 
     return BMRESULT_SUCCEED;
 }
