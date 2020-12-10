@@ -980,7 +980,7 @@ BMRESULT
 B3D_APIENTRY DeviceVk::GetResourceAllocationInfo(uint32_t _num_resources, const IResource* const* _resources, RESOURCE_ALLOCATION_INFO* _dst_infos
                                                  , RESOURCE_HEAP_ALLOCATION_INFO* _dst_heap_info) const
 {
-    uint64_t max_alignment = 0;// _resources内の最大アライメント。
+    uint64_t max_alignment = 0;// _resources内の最大要求アライメント。
     uint32_t masked_heap_type_bits = ~0u;// _resources全てを割り当て可能なヒープタイプのビットマスク。
 
     // メモリ要件を取得し引数にセット
@@ -1010,14 +1010,14 @@ B3D_APIENTRY DeviceVk::GetResourceAllocationInfo(uint32_t _num_resources, const 
         // 全リソースを割り当て可能なヒープタイプを抽出(マスクが0になった場合をエラーとして扱うべき?)
         masked_heap_type_bits &= reqs.memoryRequirements.memoryTypeBits;
 
-        // TODO: VkMemoryDedicatedRequirements::requiresDedicatedAllocationはそのリソースに専用割り当てが必要かどうかを示すので、今後問題が起きた際に処理を追加する。
+        // TODO: VkMemoryDedicatedRequirements::requiresDedicatedAllocationはそのリソースに専用割り当てが必要かどうかを示し、この場合に割り当てサイズが変動するケースもありえるので、今後問題が起きた際に処理を追加する。
 
         //B3D_RET_IF_FAILED(_resource->GetMemoryRequirements(_dst));
     }
 
     // 上のスコープで取得した値から各リソースのオフセットを算出
     uint64_t heap_remain = 0;// 最大アライメントのサイズがヒープに加算された後の、残りサイズを保持する一時変数。
-    uint64_t heap_offset = 0;
+    uint64_t aligned_offset = 0;
     uint64_t total_size = 0;
     for (uint32_t i = 0; i < _num_resources; i++)
     {
@@ -1025,18 +1025,20 @@ B3D_APIENTRY DeviceVk::GetResourceAllocationInfo(uint32_t _num_resources, const 
         // 合計サイズにはアライメントされた構造内の最大アライメント要求でアラインした合計サイズを返す。
 
         auto&& _info = _dst_infos[i];
-        _info.heap_offset = hlp::AlignUp(heap_offset, _info.alignment);
+        _info.heap_offset = aligned_offset;
 
-        auto aligned_size = _info.size_in_bytes + (_info.heap_offset - heap_offset);// アラインされたオフセット(_info.heap_offset)と現在のオフセットとの差分
+        auto diff      = aligned_offset;
+        aligned_offset = hlp::AlignUp(aligned_offset, _info.alignment);
+        diff           = aligned_offset - diff;// 現在のオフセットとアラインされた以前のオフセット(aligned_offset)との差分
 
+        auto aligned_size = diff + _info.size_in_bytes;/*hlp::AlignUp(_info.size_in_bytes, _info.alignment)*/ // Vulkan/D3D12共にsizeにはアライメント済みの値が入っている。
         if (heap_remain == 0 || heap_remain < aligned_size)
         {
-            heap_remain += max_alignment;
-            total_size += max_alignment;
+            heap_remain += hlp::AlignUp(aligned_size, max_alignment);
+            total_size  += heap_remain;
         }
 
         heap_remain -= aligned_size;
-        heap_offset += aligned_size;
     }
 
     _dst_heap_info->required_alignment  = max_alignment;
