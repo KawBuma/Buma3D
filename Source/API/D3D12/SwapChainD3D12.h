@@ -79,6 +79,23 @@ private:
         util::SharedPtr<util::DyArray<RESOURCE_FORMAT>> mutable_formats;
     };
 
+    struct SWAPCHAIN_FENCES_DATA
+    {
+        ~SWAPCHAIN_FENCES_DATA();
+        void SetForSignal(uint32_t _current_buffer_index);
+        void SetForWait(uint32_t _current_buffer_index);
+        BMRESULT ResizeFences(DeviceD3D12* _device, uint32_t _buffer_count);
+        util::DyArray<BMRESULT>     fence_results;
+        BMRESULT*                   fence_results_head;
+        util::DyArray<FenceD3D12*>  present_fences;
+        FenceD3D12**                present_fences_head;
+        FENCE_SUBMISSION            fence_submit;
+        uint64_t                    dummy_fence_value;
+        util::DyArray<uint64_t>     present_fence_values;
+        uint64_t*                   present_fence_values_head;
+    };
+
+
 private:
     std::atomic_uint32_t                    ref_count;
     util::UniquePtr<util::NameableObjStr>   name;
@@ -94,7 +111,7 @@ private:
     IDXGISwapChain4*                        swapchain;
     HANDLE                                  prev_present_completion_event;
     PRESENT_INFO                            present_info;
-    DeviceD3D12::SWAPCHAIN_FENCES_DATA*     fences_data;
+    SWAPCHAIN_FENCES_DATA*                  fences_data;
     bool                                    is_acquired;
 
 };

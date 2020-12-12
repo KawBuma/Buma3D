@@ -292,27 +292,6 @@ public:
     const INDIRECT_COMMAND_SIGNATURES*
         B3D_APIENTRY GetIndirectCommandSignatures(NodeMask _node_mask);
 
-    struct SWAPCHAIN_FENCES_DATA;
-    SWAPCHAIN_FENCES_DATA*
-        B3D_APIENTRY GetSwapchainFencesData();
-
-public:
-    struct SWAPCHAIN_FENCES_DATA
-    {
-        ~SWAPCHAIN_FENCES_DATA();
-        void SetForSignal(uint32_t _current_buffer_index);
-        void SetForWait(uint32_t _current_buffer_index);
-        BMRESULT ResizeFences(DeviceD3D12* _device, uint32_t _buffer_count);
-        util::DyArray<BMRESULT>     fence_results;
-        BMRESULT*                   fence_results_head;
-        util::DyArray<FenceD3D12*>  present_fences;
-        FenceD3D12**                present_fences_head;
-        FENCE_SUBMISSION            fence_submit;
-        uint64_t                    dummy_fence_value;
-        util::DyArray<uint64_t>     present_fence_values;
-        uint64_t*                   present_fence_values_head;
-    };
-
 private:
     struct DESC_DATA
     {
@@ -341,9 +320,6 @@ private:
     bool                                                                            is_heap_tier2;
     util::DyArray<util::UniquePtr<CPUDescriptorAllocator>>                          cpu_descriptor_heap_allocators[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];// [heap_type][node]    
     util::DyArray<util::UniquePtr<INDIRECT_COMMAND_SIGNATURES>>                     command_signatures;// [node]    
-
-    // SwapChainD3D12で使用します。
-    util::UniquePtr<SWAPCHAIN_FENCES_DATA>                                          swapchain_fences_data;
 
 };
 
