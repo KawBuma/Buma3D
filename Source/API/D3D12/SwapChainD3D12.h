@@ -90,7 +90,7 @@ private:
     CommandQueueD3D12**                     present_queues_head;
     util::DyArray<TextureD3D12*>            swapchain_buffers;
     uint32_t                                current_buffer_index;
-    bool                                    is_enable_fullscreen;
+    bool                                    is_enabled_fullscreen;
     IDXGISwapChain4*                        swapchain;
     HANDLE                                  prev_present_completion_event;
     PRESENT_INFO                            present_info;

@@ -75,7 +75,7 @@ B3D_APIENTRY SwapChainD3D12::SwapChainD3D12()
     , present_queues_head           {}
     , swapchain_buffers             {}
     , current_buffer_index          {}
-    , is_enable_fullscreen          {}
+    , is_enabled_fullscreen         {}
     , swapchain                     {}
     , prev_present_completion_event {}
     , present_info                  {}
@@ -246,7 +246,7 @@ B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
         // スワップチェーンを破棄前にフルスクリーンを解除
         auto hr = swapchain->SetFullscreenState(FALSE, nullptr);
         B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
-        is_enable_fullscreen = false;
+        is_enabled_fullscreen = false;
 
         // NOTE: D3D12ではスワップチェーン作成時に渡すpDevice毎に1つ以上のスワップチェインを作成出来ずエラーとなるので予め破棄します。
         auto count = swapchain->Release();
@@ -326,7 +326,7 @@ B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
     {
         hr = sc->SetFullscreenState(TRUE, nullptr/*出力先はデフォルト*/);
         B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
-        is_enable_fullscreen = true;
+        is_enabled_fullscreen = true;
     }
 
     // 複数ノードを用いたプレゼント操作
@@ -359,7 +359,7 @@ B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
                                        , queue_node_masks_head, RCAST<IUnknown**>(q12_data));
         B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
     }
-    else if (is_enable_fullscreen)
+    else if (is_enabled_fullscreen)
     {
         // NOTE: Full-Screen Issues: https://docs.microsoft.com/en-us/windows/win32/direct3darticles/dxgi-best-practices#full-screen-issues
         hr = swapchain->ResizeBuffers(scdesc.BufferCount
@@ -473,7 +473,7 @@ B3D_APIENTRY SwapChainD3D12::Uninit()
     fences_data = nullptr;
     hlp::SafeRelease(swapchain);
 
-    is_enable_fullscreen = {};
+    is_enabled_fullscreen = {};
     current_buffer_index = {};
 
     desc_data.reset();

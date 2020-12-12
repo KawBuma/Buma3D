@@ -15,6 +15,7 @@ B3D_APIENTRY SwapChainVk::SwapChainVk()
     , present_queues_head   {}
     , swapchain_buffers     {}
     , current_buffer_index  {}
+    , is_enabled_fullscreen {}
     , inspfn                {}
     , devpfn                {}
     , vkdevice              {}
@@ -272,7 +273,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
             // TODO: CHECK
             if (vkr != VK_SUCCESS)
                 B3D_DEBUG_BREAK();
-            is_enable_fullscreen = false;
+            is_enabled_fullscreen = false;
         }
     }
 #endif
@@ -383,7 +384,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
     {
         vkr = devpfn->vkAcquireFullScreenExclusiveModeEXT(vkdevice, swapchain);
         B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
-        is_enable_fullscreen = true;
+        is_enabled_fullscreen = true;
     }
 #endif
 
@@ -691,16 +692,11 @@ B3D_APIENTRY SwapChainVk::ReleaseSwapChainBuffers()
 void
 B3D_APIENTRY SwapChainVk::Uninit()
 {
-    name.reset();
-
     ReleaseSwapChainBuffers();
     hlp::SwapClear(swapchain_buffers);
 
-    is_enable_fullscreen = {};
+    is_enabled_fullscreen = {};
     current_buffer_index = {};
-
-    desc_data.reset();
-    desc = {};
 
     for (auto& i : present_queues)
         hlp::SafeRelease(i);
@@ -722,6 +718,10 @@ B3D_APIENTRY SwapChainVk::Uninit()
     swapchain_data.reset();
     acquire_info = {};
     pres_info_data = {};
+
+    name.reset();
+    desc = {};
+    desc_data.reset();
 }
 
 BMRESULT 

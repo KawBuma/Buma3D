@@ -137,18 +137,15 @@ private:
     CommandQueueVk**                        present_queues_head;
     util::DyArray<TextureVk*>               swapchain_buffers;
     uint32_t                                current_buffer_index;
-    bool                                    is_enable_fullscreen;
-
+    bool                                    is_enabled_fullscreen;
     const InstancePFN*                      inspfn;
     const DevicePFN*                        devpfn;
     VkDevice                                vkdevice;
     VkSwapchainKHR                          swapchain;
     util::UniquePtr<util::SWAP_CHAIN_DATA>  swapchain_data;
-
     VkAcquireNextImageInfoKHR               acquire_info;
     PRESENT_INFO_DATA                       pres_info_data;
     bool                                    is_acquired;
-
 
 };
 
