@@ -57,14 +57,19 @@ VkDebugReportFlagsEXT GetNativeDebugReportFlags(uint32_t _num_descs, const DEBUG
     return result;
 }
 
-DEBUG_MESSAGE_CATEGORY_FLAG GetNativeCategoryFlags(VkDebugReportObjectTypeEXT _type)
+DEBUG_MESSAGE_CATEGORY_FLAG GetNativeCategoryFlags(VkDebugReportFlagsEXT _flag)
 {
-    // TODO: メッセージID番号を解析して適切なカテゴリを取得
+    if (_flag & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
+        return DEBUG_MESSAGE_CATEGORY_FLAG_PERFORMANCE;
+
     return DEBUG_MESSAGE_CATEGORY_FLAG_ALL;
 }
 
 DEBUG_MESSAGE_CATEGORY_FLAG GetNativeCategoryFlagsForDebugUtils(VkDebugUtilsMessageTypeFlagsEXT _message_types)
 {
+    if (_message_types & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+        return DEBUG_MESSAGE_CATEGORY_FLAG_PERFORMANCE;
+
     return DEBUG_MESSAGE_CATEGORY_FLAG_ALL;
 }
 
@@ -336,7 +341,7 @@ VKAPI_CALL DebugReportCallback
     ss << ", Obejct handle: "; hlp::PrintHex(ss, _object);
     ss << ", Location: " << std::dec << _location << " ]";
 
-    b3d_data->msg_queue->AddMessageFromVkDebugReportCallbacks(GetB3DMessageSeverity(_flag), GetNativeCategoryFlags(_object_type), ss.str().c_str());
+    b3d_data->msg_queue->AddMessageFromVkDebugReportCallbacks(GetB3DMessageSeverity(_flag), GetNativeCategoryFlags(_flag), ss.str().c_str());
 
     // https://vulkan.lunarg.com/doc/view/1.0.37.0/linux/vkspec.chunked/ch32s02.html
     // このコールバックの戻り値は、検証メッセージの原因となったVulkan呼び出しが中止されるかどうかを制御します。
@@ -836,9 +841,9 @@ B3D_APIENTRY DeviceFactoryVk::CreateInstance()
     // アプリケーション
     VkApplicationInfo appinfo{ VK_STRUCTURE_TYPE_APPLICATION_INFO };
     appinfo.pApplicationName     = "Buma3D";
-    appinfo.applicationVersion   = VK_MAKE_VERSION(0, 0, 1);
+    appinfo.applicationVersion   = B3D_HEADER_VERSION;
     appinfo.pEngineName          = "Buma3D";
-    appinfo.engineVersion        = VK_MAKE_VERSION(0, 0, 1);
+    appinfo.engineVersion        = B3D_HEADER_VERSION;
     appinfo.apiVersion           = VK_API_VERSION_1_2;// アプリケーションがサポートする最も高いVulkanAPIバージョン
     create_info.pApplicationInfo = &appinfo;
 

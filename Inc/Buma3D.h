@@ -756,6 +756,7 @@ enum DEBUG_MESSAGE_CATEGORY_FLAG : EnumT
     , DEBUG_MESSAGE_CATEGORY_FLAG_SHADER                    = 0x400
     , DEBUG_MESSAGE_CATEGORY_FLAG_B3D                       = 0x800
     , DEBUG_MESSAGE_CATEGORY_FLAG_B3D_DETAILS               = 0x1000
+    , DEBUG_MESSAGE_CATEGORY_FLAG_PERFORMANCE               = 0x2000
 
     // FIXME: DEBUG_MESSAGE_CATEGORY_FLAG_ALL
     , DEBUG_MESSAGE_CATEGORY_FLAG_ALL                       = DEBUG_MESSAGE_CATEGORY_FLAG_UNKNOWN
@@ -771,6 +772,7 @@ enum DEBUG_MESSAGE_CATEGORY_FLAG : EnumT
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_SHADER
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_B3D        
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_B3D_DETAILS
+                                                            | DEBUG_MESSAGE_CATEGORY_FLAG_PERFORMANCE
 };
 using DEBUG_MESSAGE_CATEGORY_FLAGS = EnumFlagsT;
 
@@ -2365,7 +2367,7 @@ enum COMMAND_ALLOCATOR_FLAG : EnumT
     *         実装によっては、コマンドリストでの個別のResetでは、アロケーターへメモリが返却されないにもかかわらず、新しいメモリを割り当てる可能性があるためです。 
     *         メモリの肥大化を回避するには、コマンドアロケータのResetを呼び出す必要があります。
     */
-    , COMMAND_ALLOCATOR_FLAG_ALLOW_RESET_COMMAND_LIST = 0x1
+    , COMMAND_ALLOCATOR_FLAG_ALLOW_RESET_COMMAND_LIST = 0x2
 };
 using COMMAND_ALLOCATOR_FLAGS = EnumFlagsT;
 

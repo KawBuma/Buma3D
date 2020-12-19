@@ -46,6 +46,7 @@ static constexpr STR_LEN CATEGORIES[] = {
     , ", Cateory: SHADER ] "
     , ", Cateory: B3D ] "
     , ", Cateory: B3D_DETAILS ] "
+    , ", Cateory: PERFORMANCE ] "
     , ", Cateory: ALL ] "
 };
 
@@ -249,7 +250,8 @@ B3D_APIENTRY DebugMessageQueueVk::AddMessageFromVkDebugReportCallbacks(DEBUG_MES
 
     auto str = CreateString(_severity, _category, _str);
     std::lock_guard lock(message_mutex);
-    B3D_ASSERT(PushDebugMessageVk(str) == BMRESULT_SUCCEED);
+    auto bmr = PushDebugMessageVk(str);
+    B3D_ASSERT(bmr == BMRESULT_SUCCEED);
 
     // ブレークポイント
     if (message_filters[_severity].is_enable_debug_break)
@@ -267,7 +269,8 @@ B3D_APIENTRY DebugMessageQueueVk::AddMessageFromB3D(DEBUG_MESSAGE_SEVERITY _seve
 
     auto str = CreateString(_severity, _category, _str);
     std::lock_guard lock(message_mutex);
-    B3D_ASSERT(PushDebugMessageVk(str) == BMRESULT_SUCCEED);
+    auto bmr = PushDebugMessageVk(str);
+    B3D_ASSERT(bmr == BMRESULT_SUCCEED);
 
     // ブレークポイント
     if (message_filters[_severity].is_enable_debug_break)
@@ -301,7 +304,7 @@ B3D_APIENTRY DebugMessageQueueVk::CreateString(DEBUG_MESSAGE_SEVERITY _severity,
 
     size_t str_len = 0;
     auto&& sev = SEVERITIES[_severity];
-    auto&& cat = CATEGORIES[_category == DEBUG_MESSAGE_CATEGORY_FLAG_ALL ? 13/*ALL*/ : hlp::GetFirstBitIndex(_category)];
+    auto&& cat = CATEGORIES[_category == DEBUG_MESSAGE_CATEGORY_FLAG_ALL ? 14/*ALL*/ : hlp::GetFirstBitIndex(_category)];
     str_len += sev.len;
     str_len += cat.len;
     str_len += std::strlen(_src_str) + 1/*\0*/;

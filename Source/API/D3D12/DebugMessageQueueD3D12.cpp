@@ -45,6 +45,7 @@ static constexpr STR_LEN CATEGORIES[] = {
     , ", Cateory: SHADER ] "
     , ", Cateory: B3D ] "
     , ", Cateory: B3D_DETAILS ] "
+    , ", Cateory: PERFORMANCE ] "
 };
 
 }// namespace /*anonymous*/
