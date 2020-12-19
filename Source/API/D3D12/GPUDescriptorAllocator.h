@@ -42,8 +42,6 @@ public:
 
     ~GPUDescriptorAllocator() 
     {
-        entry = {};
-        device.Reset();
     }
 
     HRESULT Init()
@@ -180,7 +178,14 @@ private:
 private:
     struct DESCRIPTOR_HEAP_ENTRY
     {
-        ~DESCRIPTOR_HEAP_ENTRY() { hlp::SafeRelease(descriptor_heap); }
+        ~DESCRIPTOR_HEAP_ENTRY()
+        {
+            usage = 0;
+            budget = 0;
+            hlp::SwapClear(free_ranges);
+            cpu_base_handle = {};
+            hlp::SafeRelease(descriptor_heap);
+        }
         ID3D12DescriptorHeap*               descriptor_heap;
         D3D12_CPU_DESCRIPTOR_HANDLE         cpu_base_handle;
         util::List<GPU_DESCRIPTOR_RANGE>    free_ranges;

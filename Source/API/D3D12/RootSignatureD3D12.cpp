@@ -322,7 +322,7 @@ B3D_APIENTRY RootSignatureD3D12::Uninit()
     hlp::SwapClear(pool_sizes);
 
     desc = {};
-    desc_data = {};
+    desc_data.~DESC_DATA();
     root_parameter_counts.fill({});
 
     hlp::SafeRelease(root_signature);

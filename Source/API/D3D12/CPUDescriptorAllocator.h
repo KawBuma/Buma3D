@@ -207,7 +207,13 @@ private:
 private:
     struct CPU_DESCRIPTOR_HEAP_ENTRY
     {
-        ~CPU_DESCRIPTOR_HEAP_ENTRY() { hlp::SafeRelease(descriptor_heap); }
+        ~CPU_DESCRIPTOR_HEAP_ENTRY()
+        {
+            usage = 0;
+            budget = 0;
+            hlp::SwapClear(free_ranges);
+            hlp::SafeRelease(descriptor_heap);
+        }
         ID3D12DescriptorHeap*            descriptor_heap;
         util::List<CPU_DESCRIPTOR_RANGE> free_ranges;
         size_t                           budget;

@@ -157,9 +157,13 @@ B3D_APIENTRY DescriptorPoolD3D12::CreateDescriptorHeaps(uint32_t _num_descs, uin
 void
 B3D_APIENTRY DescriptorPoolD3D12::Uninit()
 {
-    name.reset();
-    desc = {};
-
+    if (desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
+    {
+        for (auto& i : *copy_src_heaps)
+            hlp::SafeRelease(i.copy_desc_heap12);
+        copy_src_heaps.reset();
+    }
+    
     for (auto& i : desc_heaps12)
         hlp::SafeRelease(i);
 
@@ -167,6 +171,10 @@ B3D_APIENTRY DescriptorPoolD3D12::Uninit()
     { B3DSafeDelete(i); }
 
     hlp::SafeRelease(device);
+    device12 = nullptr;
+
+    desc = {};
+    name.reset();
 }
 
 BMRESULT 

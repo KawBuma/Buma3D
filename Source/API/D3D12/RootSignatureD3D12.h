@@ -94,6 +94,12 @@ private:
         {
             for (auto& i : samplers)
                 hlp::SafeRelease(i);
+
+            hlp::SwapClear(parameters);
+            hlp::SwapClear(parameters_data);
+            hlp::SwapClear(static_samplers);
+            hlp::SwapClear(samplers);
+            hlp::SwapClear(register_shifts);
         }
         util::DyArray<ROOT_PARAMETER>           parameters;
         util::DyArray<ROOT_PARAMETER_DATA>      parameters_data;
