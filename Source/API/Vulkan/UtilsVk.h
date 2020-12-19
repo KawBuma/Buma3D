@@ -729,6 +729,7 @@ inline VkImageLayout ConvertResourceStateForDepthStencil(TEXTURE_ASPECT_FLAGS _a
             result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
         else if (_depth_or_depth_stencil_state == buma3d::RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_WRITE ||
+                 _depth_or_depth_stencil_state == buma3d::RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_READ_WRITE ||
                  _depth_or_depth_stencil_state == buma3d::RESOURCE_STATE_RESOLVE_DEPTH_STENCIL_ATTACHMENT_WRITE)
             result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     }
@@ -738,6 +739,7 @@ inline VkImageLayout ConvertResourceStateForDepthStencil(TEXTURE_ASPECT_FLAGS _a
             result = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
 
         else if (_depth_or_depth_stencil_state == buma3d::RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_WRITE ||
+                 _depth_or_depth_stencil_state == buma3d::RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_READ_WRITE ||
                  _depth_or_depth_stencil_state == buma3d::RESOURCE_STATE_RESOLVE_DEPTH_STENCIL_ATTACHMENT_WRITE)
             result = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
     }
@@ -747,6 +749,7 @@ inline VkImageLayout ConvertResourceStateForDepthStencil(TEXTURE_ASPECT_FLAGS _a
             result = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
 
         else if (_depth_or_depth_stencil_state == buma3d::RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_WRITE ||
+                 _depth_or_depth_stencil_state == buma3d::RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_READ_WRITE ||
                  _depth_or_depth_stencil_state == buma3d::RESOURCE_STATE_RESOLVE_DEPTH_STENCIL_ATTACHMENT_WRITE)
             result = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
     }
