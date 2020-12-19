@@ -39,7 +39,7 @@ B3D_APIENTRY ResourceHeapD3D12::Init(DeviceD3D12* _device, const RESOURCE_HEAP_D
     B3D_RET_IF_FAILED(CreateD3D12Heap());
 
     ConfigMappingUsage();
-    if (mapping_usage != NONE)
+    if (mapping_usage & (RO | WO | RW))
         B3D_RET_IF_FAILED(CreateD3D12ResourceForMap());
 
     return BMRESULT_SUCCEED;

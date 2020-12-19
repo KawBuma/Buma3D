@@ -52,6 +52,7 @@ B3D_APIENTRY DescriptorPoolVk::CopyDesc(const DESCRIPTOR_POOL_DESC& _desc)
 
     desc_data.pool_sizes.resize(_desc.num_pool_sizes);
     util::MemCopyArray(desc_data.pool_sizes.data(), _desc.pool_sizes, _desc.num_pool_sizes);
+    desc.pool_sizes = desc_data.pool_sizes.data();
 }
 
 void
