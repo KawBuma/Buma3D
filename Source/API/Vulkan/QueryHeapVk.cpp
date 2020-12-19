@@ -42,7 +42,8 @@ public:
     }
     void WriteAccelerationStructuresProperties(VkCommandBuffer _cmd_buffer, VkQueryPool _pool, VkAccelerationStructureKHR* _acceleration_structures, const CMD_WRITE_ACCELERATION_STRUCTURE& _args)
     {
-        owner.devpfn->vkCmdWriteAccelerationStructuresPropertiesKHR(_cmd_buffer, _args.num_acceleration_structures, _acceleration_structures, type, _pool, _args.query_desc->query_index);
+        if (owner.devpfn->vkCmdWriteAccelerationStructuresPropertiesKHR)
+            owner.devpfn->vkCmdWriteAccelerationStructuresPropertiesKHR(_cmd_buffer, _args.num_acceleration_structures, _acceleration_structures, type, _pool, _args.query_desc->query_index);
     }
     void ResolveQueryData(VkCommandBuffer _cmd_buffer, VkQueryPool _pool, uint64_t _buffer_stride, const CMD_RESOLVE_QUERY_DATA& _args) override
     {
@@ -70,11 +71,13 @@ public:
 
     void BeginQuery(VkCommandBuffer _cmd_buffer, VkQueryPool _pool, const QUERY_DESC& _desc) override
     {
-        devpfn->vkCmdBeginQueryIndexedEXT(_cmd_buffer, _pool, _desc.query_index, util::GetNativeQueryFlags(_desc.flags), _desc.so_statistics_stream_index);
+        if (devpfn->vkCmdBeginQueryIndexedEXT)
+            devpfn->vkCmdBeginQueryIndexedEXT(_cmd_buffer, _pool, _desc.query_index, util::GetNativeQueryFlags(_desc.flags), _desc.so_statistics_stream_index);
     }
     void EndQuery(VkCommandBuffer _cmd_buffer, VkQueryPool _pool, const QUERY_DESC& _desc) override
     {
-        devpfn->vkCmdEndQueryIndexedEXT(_cmd_buffer, _pool, _desc.query_index, _desc.so_statistics_stream_index);
+        if (devpfn->vkCmdEndQueryIndexedEXT)
+            devpfn->vkCmdEndQueryIndexedEXT(_cmd_buffer, _pool, _desc.query_index, _desc.so_statistics_stream_index);
     }
     void WriteTimeStamp(VkCommandBuffer _cmd_buffer, VkQueryPool _pool, const QUERY_DESC& _desc) override
     {

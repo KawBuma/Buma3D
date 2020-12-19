@@ -160,21 +160,14 @@ DevicePFN::DevicePFN(DeviceVk* _device)
         LOAD(vkCmdSetStencilOpEXT);
     }
 
-    // VK_KHR_ray_tracing
-    if (CHECK_EXTENSION(VK_KHR_RAY_TRACING_EXTENSION_NAME))
+        // VK_KHR_acceleration_structure
+    if (CHECK_EXTENSION(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
     {
-        // VK_KHR_ray_tracing (vulkan_core.h @2020/10/21)
-        LOAD(vkBindAccelerationStructureMemoryKHR);
-        LOAD(vkCmdWriteAccelerationStructuresPropertiesKHR);
-        LOAD(vkDestroyAccelerationStructureKHR);
-        LOAD(vkGetRayTracingShaderGroupHandlesKHR);
-
-        // VK_KHR_ray_tracing (vulkan_beta.h @2020/10/21)
         LOAD(vkCreateAccelerationStructureKHR);
-        LOAD(vkGetAccelerationStructureMemoryRequirementsKHR);
-        LOAD(vkCmdBuildAccelerationStructureKHR);
-        LOAD(vkCmdBuildAccelerationStructureIndirectKHR);
-        LOAD(vkBuildAccelerationStructureKHR);
+        LOAD(vkDestroyAccelerationStructureKHR);
+        LOAD(vkCmdBuildAccelerationStructuresKHR);
+        LOAD(vkCmdBuildAccelerationStructuresIndirectKHR);
+        LOAD(vkBuildAccelerationStructuresKHR);
         LOAD(vkCopyAccelerationStructureKHR);
         LOAD(vkCopyAccelerationStructureToMemoryKHR);
         LOAD(vkCopyMemoryToAccelerationStructureKHR);
@@ -182,14 +175,39 @@ DevicePFN::DevicePFN(DeviceVk* _device)
         LOAD(vkCmdCopyAccelerationStructureKHR);
         LOAD(vkCmdCopyAccelerationStructureToMemoryKHR);
         LOAD(vkCmdCopyMemoryToAccelerationStructureKHR);
-        LOAD(vkCmdTraceRaysKHR);
-        LOAD(vkCreateRayTracingPipelinesKHR);
         LOAD(vkGetAccelerationStructureDeviceAddressKHR);
-        LOAD(vkGetRayTracingCaptureReplayShaderGroupHandlesKHR);
-        LOAD(vkCmdTraceRaysIndirectKHR);
+        LOAD(vkCmdWriteAccelerationStructuresPropertiesKHR);
         LOAD(vkGetDeviceAccelerationStructureCompatibilityKHR);
+        LOAD(vkGetAccelerationStructureBuildSizesKHR);
     }
 
+    // VK_KHR_ray_tracing_pipeline
+    if (CHECK_EXTENSION(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+    {
+        LOAD(vkCmdTraceRaysKHR);
+        LOAD(vkCreateRayTracingPipelinesKHR);
+        LOAD(vkGetRayTracingCaptureReplayShaderGroupHandlesKHR);
+        LOAD(vkCmdTraceRaysIndirectKHR);
+        LOAD(vkGetRayTracingShaderGroupStackSizeKHR);
+        LOAD(vkCmdSetRayTracingPipelineStackSizeKHR);
+    }
+
+    // VK_KHR_deferred_host_operations
+    if (CHECK_EXTENSION(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME))
+    {
+        LOAD(vkCreateDeferredOperationKHR);
+        LOAD(vkDestroyDeferredOperationKHR);
+        LOAD(vkGetDeferredOperationMaxConcurrencyKHR);
+        LOAD(vkGetDeferredOperationResultKHR);
+        LOAD(vkDeferredOperationJoinKHR);
+    }
+
+    // VK_KHR_fragment_shading_rate
+    if (CHECK_EXTENSION(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME))
+    {
+        LOAD(vkGetPhysicalDeviceFragmentShadingRatesKHR);
+        LOAD(vkCmdSetFragmentShadingRateKHR);
+    }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 

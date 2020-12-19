@@ -220,8 +220,10 @@ inline VkBufferUsageFlags GetNativeBufferUsageFlags(BUFFER_USAGE_FLAGS _usage_fl
     if (_usage_flags & BUFFER_USAGE_FLAG_CONDITIONAL_RENDERING)
         result |= VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
 
-    if (_usage_flags & BUFFER_USAGE_FLAG_RAY_TRACING)
-        result |= VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR;
+    // 2020/12/19
+    // TODO: レイトレーシング用usageへの対応;Vulkan Ray Tracing 最終仕様によって、usageが更に細分化されたため、一旦無効化
+    //if (_usage_flags & BUFFER_USAGE_FLAG_RAY_TRACING)
+    //    result |= VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR;
 
     return result;
 }
@@ -1248,8 +1250,6 @@ struct PHYSICAL_DEVICE_PROPERTIES_CHAIN
     util::UniquePtr<VkPhysicalDevicePCIBusInfoPropertiesEXT                 > pci_bus_info_props_ext;
     util::UniquePtr<VkPhysicalDevicePerformanceQueryPropertiesKHR           > performance_query_props_khr;
     util::UniquePtr<VkPhysicalDevicePushDescriptorPropertiesKHR             > push_descriptor_props_khr;
-    util::UniquePtr<VkPhysicalDeviceRayTracingPropertiesKHR                 > ray_tracing_props_khr;
-    util::UniquePtr<VkPhysicalDeviceRayTracingPropertiesNV                  > ray_tracing_props_nv;
     util::UniquePtr<VkPhysicalDeviceSampleLocationsPropertiesEXT            > sample_locations_props_ext;
     util::UniquePtr<VkPhysicalDeviceShaderCoreProperties2AMD                > shader_core_props2_amd;
     util::UniquePtr<VkPhysicalDeviceShaderCorePropertiesAMD                 > shader_core_props_amd;
@@ -1259,6 +1259,13 @@ struct PHYSICAL_DEVICE_PROPERTIES_CHAIN
     util::UniquePtr<VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT       > texel_buffer_alignment_props_ext;
     util::UniquePtr<VkPhysicalDeviceTransformFeedbackPropertiesEXT          > transform_feedback_props_ext;
     util::UniquePtr<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT     > vertex_attribute_divisor_props_ext;
+
+    util::UniquePtr<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT        > fragment_density_map2_props_ext;
+    util::UniquePtr<VkPhysicalDeviceCustomBorderColorPropertiesEXT          > custom_border_color_properties_ext;
+    util::UniquePtr<VkPhysicalDeviceFragmentShadingRatePropertiesKHR        > fragment_shading_rate_props_khr;
+    util::UniquePtr<VkPhysicalDevicePortabilitySubsetPropertiesKHR          > portability_subset_props_khr;
+    util::UniquePtr<VkPhysicalDeviceRayTracingPipelinePropertiesKHR         > ray_tracing_pipeline_props_khr;
+    util::UniquePtr<VkPhysicalDeviceRobustness2PropertiesEXT                > robustness2_props_ext;
 
     // vulkan11
     struct PROPS_11
@@ -1319,7 +1326,6 @@ struct PHYSICAL_DEVICE_FEATURES_CHAIN
 
     util::UniquePtr<VkPhysicalDeviceASTCDecodeFeaturesEXT                      > astc_decode_features_ext;
     util::UniquePtr<VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT          > blend_operation_advanced_features_ext;
-    util::UniquePtr<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT             > buffer_device_address_features_ext;// vulkan1.2から: KHR拡張(と標準機能)に昇格し、非推奨
     util::UniquePtr<VkPhysicalDeviceCoherentMemoryFeaturesAMD                  > coherent_memory_features_amd;
     util::UniquePtr<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV         > compute_shader_derivatives_features_nv;
     util::UniquePtr<VkPhysicalDeviceConditionalRenderingFeaturesEXT            > conditional_rendering_features_ext;
@@ -1342,20 +1348,37 @@ struct PHYSICAL_DEVICE_FEATURES_CHAIN
     util::UniquePtr<VkPhysicalDevicePerformanceQueryFeaturesKHR                > performance_query_features_khr;
     util::UniquePtr<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT    > pipeline_creation_cache_control_features_ext;
     util::UniquePtr<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR    > pipeline_executable_properties_features_khr;
-    util::UniquePtr<VkPhysicalDeviceRayTracingFeaturesKHR                      > ray_tracing_features_khr;
     util::UniquePtr<VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV       > representative_fragment_test_features_nv;
     util::UniquePtr<VkPhysicalDeviceShaderClockFeaturesKHR                     > shader_clock_features_khr;
     util::UniquePtr<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT  > shader_demote_to_helper_invocation_features_ext;
     util::UniquePtr<VkPhysicalDeviceShaderImageFootprintFeaturesNV             > shader_image_footprint_features_nv;
     util::UniquePtr<VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL       > shader_integer_functions2_features_intel;
     util::UniquePtr<VkPhysicalDeviceShaderSMBuiltinsFeaturesNV                 > shader_sm_builtins_features_nv;
-    util::UniquePtr<VkPhysicalDeviceShadingRateImageFeaturesNV                 > shading_rate_image_features_nv;
     util::UniquePtr<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT             > subgroup_size_control_features_ext;
     util::UniquePtr<VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT            > texel_buffer_alignment_features_ext;
     util::UniquePtr<VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT       > texture_compression_astc_hdr_features_ext;
     util::UniquePtr<VkPhysicalDeviceTransformFeedbackFeaturesEXT               > transform_feedback_features_ext;
     util::UniquePtr<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT          > vertex_attribute_divisor_features_ext;
     util::UniquePtr<VkPhysicalDeviceYcbcrImageArraysFeaturesEXT                > ycbcr_image_arrays_features_ext;
+
+    util::UniquePtr<VkPhysicalDevice4444FormatsFeaturesEXT                     > formats_4444_features_ext;
+    util::UniquePtr<VkPhysicalDeviceAccelerationStructureFeaturesKHR           > acceleration_structure_features_khr;
+    util::UniquePtr<VkPhysicalDeviceCustomBorderColorFeaturesEXT               > custom_border_color_features_ext;
+    util::UniquePtr<VkPhysicalDeviceDeviceMemoryReportFeaturesEXT              > device_memory_report_features_ext;
+    util::UniquePtr<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT            > extended_dynamic_state_features_ext;
+    util::UniquePtr<VkPhysicalDeviceImageRobustnessFeaturesEXT                 > image_robustness_features_ext;
+    util::UniquePtr<VkPhysicalDevicePortabilitySubsetFeaturesKHR               > portability_subset_features_khr;
+    util::UniquePtr<VkPhysicalDevicePrivateDataFeaturesEXT                     > private_data_features_ext;
+    util::UniquePtr<VkPhysicalDeviceRobustness2FeaturesEXT                     > robustness2_features_ext;
+    util::UniquePtr<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT               > shader_atomic_float_features_ext;
+    util::UniquePtr<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT          > shader_image_atomic_int64_features_ext;
+    util::UniquePtr<VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR       > shader_terminate_invocation_features_khr;
+    util::UniquePtr<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT             > fragment_density_map2_features_ext;
+    util::UniquePtr<VkPhysicalDeviceShadingRateImageFeaturesNV                 > shading_rate_image_features_nv;
+    util::UniquePtr<VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV         > fragment_shading_rate_enums_features_nv;
+    util::UniquePtr<VkPhysicalDeviceFragmentShadingRateFeaturesKHR             > fragment_shading_rate_features_khr;
+    util::UniquePtr<VkPhysicalDeviceRayQueryFeaturesKHR                        > ray_query_features_khr;
+    util::UniquePtr<VkPhysicalDeviceRayTracingPipelineFeaturesKHR              > ray_tracing_pipeline_features_khr;
 
     // vulkan11
     struct FEATURES_VK11
