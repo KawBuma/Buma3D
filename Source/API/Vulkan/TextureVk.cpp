@@ -414,19 +414,11 @@ B3D_APIENTRY TextureVk::PrepareDrmFormatModifierListCI(const void**& _last_pnext
 }
 
 BMRESULT
-B3D_APIENTRY TextureVk::PrepareExternalMemoryCI(const void**& _last_pnext, const RESOURCE_DESC& _desc, const VkImageCreateInfo& _ci, VkExternalMemoryImageCreateInfo* _external_ci, VkExternalMemoryImageCreateInfoNV* _external_ci_nv)
+B3D_APIENTRY TextureVk::PrepareExternalMemoryCI(const void**& _last_pnext, const RESOURCE_DESC& _desc, const VkImageCreateInfo& _ci, VkExternalMemoryImageCreateInfo* _external_ci)
 {
     // TODO: TextureVk::PrepareExternalMemoryCI
-    if (false)
-    {
-        _external_ci->handleTypes;
-        _last_pnext = util::ConnectPNextChains(_last_pnext, *_external_ci);
-    }
-    else if (false)
-    {
-        _external_ci_nv->handleTypes;
-        _last_pnext = util::ConnectPNextChains(_last_pnext, *_external_ci_nv);
-    }
+    _external_ci->handleTypes;
+    _last_pnext = util::ConnectPNextChains(_last_pnext, *_external_ci);
 
     return BMRESULT_SUCCEED;
 }
@@ -556,9 +548,8 @@ B3D_APIENTRY TextureVk::InitAsPlaced()
     B3D_RET_IF_FAILED(PrepareDrmFormatModifierListCI(last_pnext, &drm_format_modifier_list_ci));
 
     // TODO: VkExternalMemoryImageCreateInfo
-    VkExternalMemoryImageCreateInfo   external_ci    { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO };
-    VkExternalMemoryImageCreateInfoNV external_ci_nv { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV };
-    B3D_RET_IF_FAILED(PrepareExternalMemoryCI(last_pnext, desc, ci, &external_ci, &external_ci_nv));
+    VkExternalMemoryImageCreateInfo external_ci { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO };
+    B3D_RET_IF_FAILED(PrepareExternalMemoryCI(last_pnext, desc, ci, &external_ci));
 
 #if B3D_PLATFORM_IS_USED_ANDROID
     // TDOO: VkExternalFormatANDROID 
@@ -598,9 +589,8 @@ B3D_APIENTRY TextureVk::InitAsReserved()
     B3D_RET_IF_FAILED(PrepareDrmFormatModifierListCI(last_pnext, &drm_format_modifier_list_ci));
 
     // TODO: VkExternalMemoryImageCreateInfo
-    VkExternalMemoryImageCreateInfo   external_ci    { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO };
-    VkExternalMemoryImageCreateInfoNV external_ci_nv { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV };
-    B3D_RET_IF_FAILED(PrepareExternalMemoryCI(last_pnext, desc, ci, &external_ci, &external_ci_nv));
+    VkExternalMemoryImageCreateInfo external_ci { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO };
+    B3D_RET_IF_FAILED(PrepareExternalMemoryCI(last_pnext, desc, ci, &external_ci));
 
 #if B3D_PLATFORM_IS_USED_ANDROID
     // TDOO: VkExternalFormatANDROID 
@@ -636,11 +626,6 @@ B3D_APIENTRY TextureVk::InitAsCommitted(DeviceVk* _device, const COMMITTED_RESOU
     PrepareCreateInfo(desc, &ci);
     auto last_pnext = &ci.pNext;
 
-    // 専用割り当て
-    VkDedicatedAllocationImageCreateInfoNV dedicated_ci{ VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV };
-    dedicated_ci.dedicatedAllocation = VK_TRUE;
-    last_pnext = util::ConnectPNextChains(last_pnext, dedicated_ci);
-
     // TODO: VkImageStencilUsageCreateInfo 
     VkImageStencilUsageCreateInfo stencil_usage_ci{ VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO };
     B3D_RET_IF_FAILED(PrepareStencilUsageCI(last_pnext, &stencil_usage_ci));
@@ -657,9 +642,8 @@ B3D_APIENTRY TextureVk::InitAsCommitted(DeviceVk* _device, const COMMITTED_RESOU
     B3D_RET_IF_FAILED(PrepareDrmFormatModifierListCI(last_pnext, &drm_format_modifier_list_ci));
 
     // TODO: VkExternalMemoryImageCreateInfo
-    VkExternalMemoryImageCreateInfo   external_ci    { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO };
-    VkExternalMemoryImageCreateInfoNV external_ci_nv { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV };
-    B3D_RET_IF_FAILED(PrepareExternalMemoryCI(last_pnext, desc, ci, &external_ci, &external_ci_nv));
+    VkExternalMemoryImageCreateInfo external_ci { VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO };
+    B3D_RET_IF_FAILED(PrepareExternalMemoryCI(last_pnext, desc, ci, &external_ci));
 
 #if B3D_PLATFORM_IS_USED_ANDROID
     // TDOO: VkExternalFormatANDROID 
@@ -743,11 +727,6 @@ B3D_APIENTRY TextureVk::InitForSwapChain(SwapChainVk* _swapchain, const VkSwapch
     VkImageSwapchainCreateInfoKHR swapchain_ci{ VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR };
     swapchain_ci.swapchain = _swapchain->GetVkSwapchain();
     util::ConnectPNextChains(last_pnext, swapchain_ci);
-
-    // TODO: 専用割り当て のスワップチェイン用イメージ作成時の有効性を確認。
-    VkDedicatedAllocationImageCreateInfoNV dedicated_ci{ VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV };
-    dedicated_ci.dedicatedAllocation = VK_TRUE;
-    last_pnext = util::ConnectPNextChains(last_pnext, dedicated_ci);
 
     VkImageFormatListCreateInfo format_list_ci{ VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO };
     util::SharedPtr<util::DyArray<VkFormat>> view_formats;

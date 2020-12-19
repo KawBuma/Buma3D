@@ -18,7 +18,7 @@ private:
     BMRESULT B3D_APIENTRY InitForCommitted(DeviceVk* _device, const COMMITTED_RESOURCE_DESC& _desc, IResourceVk* _dedicated_resource);
     BMRESULT B3D_APIENTRY AllocateMemory(IResourceVk* _dedicated_resource);
     BMRESULT B3D_APIENTRY PrepareVkMemoryAllocateFlagsInfo(const void**& _last_pnext, VkMemoryAllocateFlagsInfo* _info);
-    BMRESULT B3D_APIENTRY PrepareVkMemoryDedicatedAllocateInfo(IResourceVk* _dedicated_resource, const void**& _last_pnext, VkMemoryDedicatedAllocateInfo* _info, VkDedicatedAllocationMemoryAllocateInfoNV* _infonv);
+    BMRESULT B3D_APIENTRY PrepareVkMemoryDedicatedAllocateInfo(IResourceVk* _dedicated_resource, const void**& _last_pnext, VkMemoryDedicatedAllocateInfo* _info);
     BMRESULT B3D_APIENTRY PrepareImportInfos(const void**& _last_pnext, IMPORT_INFOS* _infos);
     BMRESULT B3D_APIENTRY PrepareExportInfos(const void**& _last_pnext, EXPORT_INFOS* _infos);
     void B3D_APIENTRY Uninit();

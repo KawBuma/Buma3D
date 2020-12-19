@@ -11,7 +11,6 @@ struct ResourceHeapVk::IMPORT_INFOS
 
 #if B3D_PLATFORM_IS_USED_WINDOWS
     VkImportMemoryWin32HandleInfoKHR import_w32_khr { VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR };
-    VkImportMemoryWin32HandleInfoNV  import_w32_nv  { VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV };
 #elif B3D_PLATFORM_IS_USED_ANDROID
 VkImportAndroidHardwareBufferInfoANDROID import_ahd{ VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID };
 #endif
@@ -21,10 +20,8 @@ VkImportAndroidHardwareBufferInfoANDROID import_ahd{ VK_STRUCTURE_TYPE_IMPORT_AN
 struct ResourceHeapVk::EXPORT_INFOS
 {
     VkExportMemoryAllocateInfo         export_memory_ai    { VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO };
-    VkExportMemoryAllocateInfoNV       export_memory_ai_nv { VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_NV };
 #if B3D_PLATFORM_IS_USED_WINDOWS
     VkExportMemoryWin32HandleInfoKHR   export_w32_khr      { VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR };
-    VkExportMemoryWin32HandleInfoNV    export_w32_nv       { VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_NV };
 #endif
 };
 
@@ -127,11 +124,10 @@ B3D_APIENTRY ResourceHeapVk::AllocateMemory(IResourceVk* _dedicated_resource)
     }
 
     // 専用割り当て
-    VkMemoryDedicatedAllocateInfo             dedicated_ai{ VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO };
-    VkDedicatedAllocationMemoryAllocateInfoNV dedicated_ai_nv{ VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV };
+    VkMemoryDedicatedAllocateInfo dedicated_ai{ VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO };
     if (_dedicated_resource)
     {
-        B3D_RET_IF_FAILED(PrepareVkMemoryDedicatedAllocateInfo(_dedicated_resource, last_pnext, &dedicated_ai, &dedicated_ai_nv));
+        B3D_RET_IF_FAILED(PrepareVkMemoryDedicatedAllocateInfo(_dedicated_resource, last_pnext, &dedicated_ai));
     }
 
     /* インポート、エクスポート操作 */
@@ -209,16 +205,10 @@ B3D_APIENTRY ResourceHeapVk::PrepareVkMemoryAllocateFlagsInfo(const void**& _las
 }
 
 BMRESULT 
-B3D_APIENTRY ResourceHeapVk::PrepareVkMemoryDedicatedAllocateInfo(IResourceVk* _dedicated_resource, const void**& _last_pnext, VkMemoryDedicatedAllocateInfo* _info, VkDedicatedAllocationMemoryAllocateInfoNV* _infonv)
+B3D_APIENTRY ResourceHeapVk::PrepareVkMemoryDedicatedAllocateInfo(IResourceVk* _dedicated_resource, const void**& _last_pnext, VkMemoryDedicatedAllocateInfo* _info)
 {
     _dedicated_resource->SetDedicatedAllocationInfo(_info);
     _last_pnext = util::ConnectPNextChains(_last_pnext, *_info);
-
-    B3D_UNREFERENCED(_infonv);
-    //else if (false)// Vkulkan 1.1から正式なインターフェースとしてVkMemoryDedicatedAllocateInfoが追加
-    //{
-    // _last_pnext = util::ConnectPNextChains(_last_pnext, *_infonv);
-    //}
 
     return BMRESULT_SUCCEED;
 }
@@ -230,7 +220,6 @@ B3D_APIENTRY ResourceHeapVk::PrepareImportInfos(const void**& _last_pnext, IMPOR
     auto&& import_host_pointer = _infos->import_host_pointer;
 #if B3D_PLATFORM_IS_USED_WINDOWS
     auto&& import_w32_khr      = _infos->import_w32_khr;
-    auto&& import_w32_nv       = _infos->import_w32_nv;
 #elif B3D_PLATFORM_IS_USED_ANDROID
     auto&& import_ahd  { VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID };
 #endif
@@ -250,7 +239,6 @@ B3D_APIENTRY ResourceHeapVk::PrepareImportInfos(const void**& _last_pnext, IMPOR
         _last_pnext = util::ConnectPNextChains(_last_pnext, import_host_pointer);
     }
 #if B3D_PLATFORM_IS_USED_WINDOWS
-    // pNextチェーンにVkImportMemoryWin32HandleInfoKHR構造が含まれている場合は、VkImportMemoryWin32HandleInfoNV構造が含まれていてはなりません。
     else if (false)
     {
         // TODO:
@@ -259,11 +247,6 @@ B3D_APIENTRY ResourceHeapVk::PrepareImportInfos(const void**& _last_pnext, IMPOR
         import_w32_khr.handle     = NULL;
         import_w32_khr.name       = nullptr;
         _last_pnext = util::ConnectPNextChains(_last_pnext, import_w32_khr);
-    }
-    else if (false)
-    {
-        // TODO:
-        _last_pnext = util::ConnectPNextChains(_last_pnext, import_w32_nv);
     }
 #elif B3D_PLATFORM_IS_USED_ANDROID
     if (false)
@@ -280,10 +263,8 @@ BMRESULT
 B3D_APIENTRY ResourceHeapVk::PrepareExportInfos(const void**& _last_pnext, EXPORT_INFOS* _infos)
 {
     auto&& export_memory_ai    = _infos->export_memory_ai;
-    auto&& export_memory_ai_nv = _infos->export_memory_ai_nv;
 #if B3D_PLATFORM_IS_USED_WINDOWS
     auto&& export_w32_khr      = _infos->export_w32_khr;
-    auto&& export_w32_nv       = _infos->export_w32_nv;
 #endif
 
     if (false)
@@ -292,23 +273,11 @@ B3D_APIENTRY ResourceHeapVk::PrepareExportInfos(const void**& _last_pnext, EXPOR
         export_memory_ai.handleTypes;
         _last_pnext = util::ConnectPNextChains(_last_pnext, export_memory_ai);
     }
-    else if (false)
-    {
-        // TODO: 
-        export_memory_ai_nv.handleTypes;
-        _last_pnext = util::ConnectPNextChains(_last_pnext, export_memory_ai_nv);
-    }
 #if B3D_PLATFORM_IS_USED_WINDOWS
-    // pNextチェーンにVkExportMemoryAllocateInfo構造が含まれている場合は、VkExportMemoryAllocateInfoNVまたはVkExportMemoryWin32HandleInfoNV構造を含まないようにする必要があります。
     else if (false)
     {
         // TODO:
         _last_pnext = util::ConnectPNextChains(_last_pnext, export_w32_khr);
-    }
-    else if (false)
-    {
-        // TODO:
-        _last_pnext = util::ConnectPNextChains(_last_pnext, export_w32_nv);
     }
 #endif
 

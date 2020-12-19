@@ -18,7 +18,7 @@ private:
     BMRESULT B3D_APIENTRY PrepareFormatListCI                    (const void**& _last_pnext, const VkImageCreateInfo& _ci, VkImageFormatListCreateInfo* _format_list_ci, util::SharedPtr<util::DyArray<VkFormat>>* _dst_formats);
     BMRESULT B3D_APIENTRY PrepareDrmFormatModifierExplicitCI     (const void**& _last_pnext, VkImageDrmFormatModifierExplicitCreateInfoEXT* _drm_format_modifier_explicit_ci);
     BMRESULT B3D_APIENTRY PrepareDrmFormatModifierListCI         (const void**& _last_pnext, VkImageDrmFormatModifierListCreateInfoEXT* _drm_format_modifier_list_ci);
-    BMRESULT B3D_APIENTRY PrepareExternalMemoryCI                (const void**& _last_pnext, const RESOURCE_DESC& _desc, const VkImageCreateInfo& _ci, VkExternalMemoryImageCreateInfo* _external_ci, VkExternalMemoryImageCreateInfoNV* _external_ci_nv);
+    BMRESULT B3D_APIENTRY PrepareExternalMemoryCI                (const void**& _last_pnext, const RESOURCE_DESC& _desc, const VkImageCreateInfo& _ci, VkExternalMemoryImageCreateInfo* _external_ci);
     BMRESULT B3D_APIENTRY PrepareBindNodeMasks                   (uint32_t _heap_index, uint32_t _num_bind_node_masks, const NodeMask* _bind_node_masks);
     BMRESULT B3D_APIENTRY PrepareVkBindImageMemoryDeviceGroupInfo(const void**& _last_pnext, VkBindImageMemoryDeviceGroupInfo* _device_group_bi, util::DyArray<uint32_t>* _device_inds, IResourceHeap* _src_heap, uint32_t _swapchain_device_index = (uint32_t)-1);
     void     B3D_APIENTRY CreateSparseResourceData();
