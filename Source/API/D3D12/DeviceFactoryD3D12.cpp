@@ -160,41 +160,13 @@ B3D_APIENTRY DeviceFactoryD3D12::SetDebugLayer()
             if (desc.debug.debug_message_callback.Callback)
             {
                 // コールバックが存在する場合、一旦全てのメッセージを受信し、フィルタリングはこちらで行えるようにします。
-                DXGI_INFO_QUEUE_MESSAGE_SEVERITY severities[] = {
-                      DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION
-                    , DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR 
-                    , DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING
-                    , DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO    
-                    , DXGI_INFO_QUEUE_MESSAGE_SEVERITY_MESSAGE
-                };
-                DXGI_INFO_QUEUE_MESSAGE_CATEGORY categories[] = {
-                      DXGI_INFO_QUEUE_MESSAGE_CATEGORY_UNKNOWN
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_MISCELLANEOUS
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_INITIALIZATION
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_CLEANUP
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_COMPILATION
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_STATE_CREATION
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_STATE_SETTING
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_STATE_GETTING
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_RESOURCE_MANIPULATION
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_EXECUTION
-                    , DXGI_INFO_QUEUE_MESSAGE_CATEGORY_SHADER
-                };
-
-                DXGI_INFO_QUEUE_FILTER filter = {};
-                filter.AllowList.NumSeverities = (UINT)hlp::GetStaticArraySize(severities);
-                filter.AllowList.pSeverityList = severities;
-                filter.AllowList.NumCategories = (UINT)hlp::GetStaticArraySize(categories);
-                filter.AllowList.pCategoryList = categories;
-
-                HRESULT hr;
-                hr = dxgi_info_queue->PushStorageFilter(DXGI_DEBUG_ALL, &filter);
-                B3D_RET_IF_FAILED(util::GetBMResultFromHR(hr));
+                dxgi_info_queue->ClearStorageFilter(DXGI_DEBUG_ALL);
             }
             else
             {
                 HRESULT hr;
                 // 一旦全てのメッセージの受信を拒否
+                dxgi_info_queue->ClearStorageFilter(DXGI_DEBUG_ALL);
                 hr = dxgi_info_queue->PushDenyAllStorageFilter(DXGI_DEBUG_ALL);
                 B3D_RET_IF_FAILED(util::GetBMResultFromHR(hr));
 

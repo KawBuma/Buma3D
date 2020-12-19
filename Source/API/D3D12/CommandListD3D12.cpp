@@ -1175,7 +1175,9 @@ B3D_APIENTRY CommandListD3D12::PopulateRenderPassEndOperations(const SUBPASS_END
     auto&& rp = cmd_states->render_pass;
     auto&& barriers_buffer = rp.barrier_buffers[rp.current_subpass];
     barriers_buffer.Set(rp.framebuffer->GetAttachmentOperators(), rp.render_pass->GetRenderPassBarrierData().GetEndRenderPassBarriers());
-    cmd.l->ResourceBarrier(barriers_buffer.resource_barriers_count, barriers_buffer.resource_barriers_data);
+
+    if (barriers_buffer.resource_barriers_count != 0)
+        cmd.l->ResourceBarrier(barriers_buffer.resource_barriers_count, barriers_buffer.resource_barriers_data);
 }
 
 void

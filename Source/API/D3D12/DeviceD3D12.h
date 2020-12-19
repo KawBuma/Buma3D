@@ -28,6 +28,7 @@ private:
     BMRESULT B3D_APIENTRY Init(DeviceFactoryD3D12* _factory, const DEVICE_DESC& _desc);
     void B3D_APIENTRY CopyDesc(const DEVICE_DESC& _desc);
     BMRESULT B3D_APIENTRY CreateD3D12Device();
+    void B3D_APIENTRY DenyMessages();
     BMRESULT B3D_APIENTRY CreateCommandQueueD3D12();
     void B3D_APIENTRY MakeResourceHeapProperties();
     void B3D_APIENTRY PrepareFormatProperties();

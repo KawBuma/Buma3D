@@ -240,6 +240,10 @@ B3D_APIENTRY DeviceD3D12::Init(DeviceFactoryD3D12* _factory, const DEVICE_DESC& 
 
     B3D_RET_IF_FAILED(CreateD3D12Device());
 
+    // いくつかの機能を動作させるために不合理な、(エラー以外の)特定のメッセージを無視します。 
+    if (util::IsEnabledDebug(this))
+        DenyMessages();
+
     B3D_RET_IF_FAILED(CreateCommandQueueD3D12());
 
     MakeResourceHeapProperties();
@@ -304,6 +308,25 @@ B3D_APIENTRY DeviceD3D12::CreateD3D12Device()
     //que->SetMuteDebugOutput(TRUE);
 
     return BMRESULT_SUCCEED;
+}
+
+void
+B3D_APIENTRY DeviceD3D12::DenyMessages()
+{
+    util::ComPtr<ID3D12InfoQueue> info_queue{};
+    if (FAILED(device->QueryInterface<ID3D12InfoQueue>(&info_queue)))
+        return;
+
+    D3D12_MESSAGE_ID unreasonable_messages[] = {
+        /* ResourceHeapD3D12::resource_for_mapが、割り当てられた他のリソース範囲と重複する場合に発行されます。 */
+        D3D12_MESSAGE_ID_HEAP_ADDRESS_RANGE_INTERSECTS_MULTIPLE_BUFFERS 
+    };
+
+    D3D12_INFO_QUEUE_FILTER filter{};
+    filter.DenyList.NumIDs = _countof(unreasonable_messages);
+    filter.DenyList.pIDList = unreasonable_messages;
+    auto hr = info_queue->AddStorageFilterEntries(&filter);
+    HR_TRACE_IF_FAILED(hr);
 }
 
 BMRESULT 
