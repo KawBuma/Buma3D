@@ -802,19 +802,69 @@ B3D_APIENTRY CommandListVk::ResolveTextureRegion(const CMD_RESOLVE_TEXTURE_REGIO
 void
 B3D_APIENTRY CommandListVk::ClearDepthStencilView(IDepthStencilView* _view, const CLEAR_DEPTH_STENCIL_VALUE& _clear_values)
 {
+    // OPTIMIZE: CommandListVk::ClearDepthStencilView
+    B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_WARNING, DEBUG_MESSAGE_CATEGORY_FLAG_PERFORMANCE
+                      , "Vulkanではレンダーパスインスタンス外でのクリア操作を転送(TRANSFER)操作と定義しており、他APIとのオーバーヘッドを伴わない共通化がありません。 代わりに、レンダーパス内でのLOAD_OP_CLEARによるクリア操作、またはClearAttachments()によってクリア操作を行うことが可能です。");
+
     auto dsv = _view->As<DepthStencilViewVk>();
-    vkCmdClearColorImage(command_buffer, dsv->GetResource()->As<TextureVk>()->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-                         , RCAST<const VkClearColorValue*>(&_clear_values)
-                         , 1, dsv->GetVkImageSubresourceRange());
+    VkImageMemoryBarrier barrier{
+          VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER            // VkStructureType            sType;
+        , nullptr                                           // const void*                pNext;
+        , 0                                                 // VkAccessFlags              srcAccessMask;
+        , VK_ACCESS_TRANSFER_WRITE_BIT                      // VkAccessFlags              dstAccessMask;
+        , VK_IMAGE_LAYOUT_UNDEFINED                         // VkImageLayout              oldLayout;
+        , VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL              // VkImageLayout              newLayout;
+        , VK_QUEUE_FAMILY_IGNORED                           // uint32_t                   srcQueueFamilyIndex;
+        , VK_QUEUE_FAMILY_IGNORED                           // uint32_t                   dstQueueFamilyIndex;
+        , dsv->GetResource()->As<TextureVk>()->GetVkImage() // VkImage                    image;
+        , *dsv->GetVkImageSubresourceRange()                // VkImageSubresourceRange    subresourceRange;
+    };
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0x0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    vkCmdClearDepthStencilImage(command_buffer, dsv->GetResource()->As<TextureVk>()->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+                                , RCAST<const VkClearDepthStencilValue*>(&_clear_values)
+                                , 1, dsv->GetVkImageSubresourceRange());
+
+    barrier.srcAccessMask   = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask   = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    barrier.oldLayout       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout       = util::ConvertResourceStateForDepthStencil(dsv->GetDesc().texture.subresource_range.offset.aspect, RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_READ_WRITE);;
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0x0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 void
 B3D_APIENTRY CommandListVk::ClearRenderTargetView(IRenderTargetView* _view, const CLEAR_RENDER_TARGET_VALUE& _clear_values)
 {
+    // OPTIMIZE: CommandListVk::ClearRenderTargetView
+    //           Vulkanではレンダーパスインスタンス外でのクリア操作を転送(TRANSFER)操作と定義しており、D3D12とのオーバーヘッドを伴わない共通化がありません(D3D12の場合D3D12_RESOURCE_STATE_RENDER_TARGET状態でクリア操作が行われるため)。
+    //           代わりに、レンダーパス内でのLOAD_OP_CLEARによるクリア操作、またはClearAttachments()によってVK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMALのレイアウトでクリア操作を行うことが可能です。
+    B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_WARNING, DEBUG_MESSAGE_CATEGORY_FLAG_PERFORMANCE
+                      , "Vulkanではレンダーパスインスタンス外でのクリア操作を転送(TRANSFER)操作と定義しており、他APIとのオーバーヘッドを伴わない共通化がありません。 代わりに、レンダーパス内でのLOAD_OP_CLEARによるクリア操作、またはClearAttachments()によってクリア操作を行うことが可能です。");
+
     auto rtv = _view->As<RenderTargetViewVk>();
+    VkImageMemoryBarrier barrier{
+          VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER            // VkStructureType            sType;
+        , nullptr                                           // const void*                pNext;
+        , 0                                                 // VkAccessFlags              srcAccessMask;
+        , VK_ACCESS_TRANSFER_WRITE_BIT                      // VkAccessFlags              dstAccessMask;
+        , VK_IMAGE_LAYOUT_UNDEFINED                         // VkImageLayout              oldLayout;
+        , VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL              // VkImageLayout              newLayout;
+        , VK_QUEUE_FAMILY_IGNORED                           // uint32_t                   srcQueueFamilyIndex;
+        , VK_QUEUE_FAMILY_IGNORED                           // uint32_t                   dstQueueFamilyIndex;
+        , rtv->GetResource()->As<TextureVk>()->GetVkImage() // VkImage                    image;
+        , *rtv->GetVkImageSubresourceRange()                // VkImageSubresourceRange    subresourceRange;
+    };
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0x0, 0, nullptr, 0, nullptr, 1, &barrier);
+
     vkCmdClearColorImage(command_buffer, rtv->GetResource()->As<TextureVk>()->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
                          , RCAST<const VkClearColorValue*>(&_clear_values)
                          , 1, rtv->GetVkImageSubresourceRange());
+
+    barrier.srcAccessMask   = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.oldLayout       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout       = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0x0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 void
