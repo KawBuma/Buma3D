@@ -142,10 +142,17 @@ private:
                 auto&& rp = root_sig_desc.parameters[i_rp];
                 auto&& write_rp = update_root_parameters_data[i_rp];
                 write_rp.root_parameter = &rp;
-                if (rp.type == ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
-                    CreateCacheForDescriptorTable(cache_info, i_rp, write_rp, rp, _dst_sets);
-                else
-                    CreateCacheForDynamicDescriptor(cache_info, i_rp, write_rp, _dst_sets);
+
+                switch (rp.type)
+                {
+                case buma3d::ROOT_PARAMETER_TYPE_PUSH_32BIT_CONSTANTS : break;
+                case buma3d::ROOT_PARAMETER_TYPE_DYNAMIC_DESCRIPTOR   : CreateCacheForDynamicDescriptor(cache_info, i_rp, write_rp, _dst_sets); break;
+                case buma3d::ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE     : CreateCacheForDescriptorTable(cache_info, i_rp, write_rp, rp, _dst_sets); break;
+
+                default:
+                    B3D_ASSERT(false && "rp.type invalid");
+                    break;
+                }
             }
             write_descriptor_sets.resize(cache_info.total_num_bindings, { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET });
             copy_descriptor_sets.resize(cache_info.total_num_bindings, { VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET });

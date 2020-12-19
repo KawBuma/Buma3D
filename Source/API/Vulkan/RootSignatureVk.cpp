@@ -194,7 +194,7 @@ B3D_APIENTRY RootSignatureVk::CreateDescriptorSetLayouts(PIPELINE_LAYOUT_DATA* _
                 auto&& cis_data = _pipeline_layout_data->cis_data.at(i);
                 for (auto& i_src : cis_data.layout_data.src)
                 {
-                    if (i_src.root_param->type == ROOT_PARAMETER_TYPE_DYNAMIC_DESCRIPTOR)
+                    if (i_src.root_param && i_src.root_param->type == ROOT_PARAMETER_TYPE_DYNAMIC_DESCRIPTOR)
                     {
                         valid_set_layout.num_dynamic_descriptors++;
                         valid_set_layout.dynamic_descriptor_root_param_indices.emplace_back(i_src.root_param_index);
