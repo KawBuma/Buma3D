@@ -66,6 +66,7 @@ B3D_APIENTRY DescriptorPoolD3D12::CopyDesc(const DESCRIPTOR_POOL_DESC& _desc)
 
     desc_data.pool_sizes.resize(_desc.num_pool_sizes);
     util::MemCopyArray(desc_data.pool_sizes.data(), _desc.pool_sizes, _desc.num_pool_sizes);
+    desc.pool_sizes = desc_data.pool_sizes.data();
 }
 
 uint32_t
