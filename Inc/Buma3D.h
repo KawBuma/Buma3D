@@ -1239,14 +1239,14 @@ struct FENCE_SUBMISSION
 struct SWAP_CHAIN_ACQUIRE_NEXT_BUFFER_INFO
 {
     /**
-     * @brief バックバッファが利用可能になったタイミングを通知するGPU_TO_GPUフェンスです。 nullptrでない場合signal_fence_to_cpuメンバもnullptrであってはなりません。
+     * @brief バックバッファが利用可能になったタイミングを通知するGPU_TO_GPUフェンスです。 nullptrの場合signal_fence_to_cpuメンバはnullptrであってはなりません。
      * @remark 指定された場合、現在非シグナル状態である必要がります。
      *         指定された場合、AcquireNextBuffer呼び出し後、その呼び出しに使用したスワップチェインが破棄される前に、GPUでの待機操作によって非シグナル状態にする必要があります。
     */
     IFence*        signal_fence;
 
     /**
-     * @brief バックバッファが利用可能になったタイミングを通知するGPU_TO_CPUフェンスです。 nullptrでない場合signal_fenceメンバもnullptrであってはなりません。
+     * @brief バックバッファが利用可能になったタイミングを通知するGPU_TO_CPUフェンスです。 nullptrの場合signal_fenceメンバはnullptrであってはなりません。
      * @remark 指定された場合、現在非シグナル状態である必要がります。
      *         指定された場合、AcquireNextBuffer呼び出し後、その呼び出しに使用したスワップチェインが破棄される前に、適切に待機操作、リセットを行う必要があります。
     */

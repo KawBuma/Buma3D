@@ -837,14 +837,11 @@ B3D_APIENTRY SwapChainVk::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUFFER
              プレゼントの実行中(画像利用不可時)にカラーアタッチメントとして書き込みを行うと、ディスプレイへの表示結果が破壊される可能性もあります。
              利用可能(available)になるタイミングをアプリケーションが知るためには、vkAcquireNextImageKHRにsemaphoreとfenceを渡し、これらのシグナルを待機します。 */
 
-    int active_fence_count = 0;
-    active_fence_count += _info.signal_fence        ? 1 : 0;
-    active_fence_count += _info.signal_fence_to_cpu ? 1 : 0;
     if (util::IsEnabledDebug(this))
     {
-        if (active_fence_count == 1)
+        if (!(_info.signal_fence || _info.signal_fence_to_cpu))
         {
-            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION, __FUNCTION__": _info.signal_fenceとsignal_fence_to_cpuの両方が有効なポインタまたはnullptrと等しくなる必要があります。");
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION, __FUNCTION__": _info.signal_fenceとsignal_fence_to_cpuのどちらかが有効なポインタである必要があります。");
             return BMRESULT_FAILED_INVALID_PARAMETER;
         }
 
@@ -865,20 +862,20 @@ B3D_APIENTRY SwapChainVk::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUFFER
         ? UINT64_MAX
         : SCAST<uint64_t>(_info.timeout_millisec) * 1'000'000ull;
 
-    if (active_fence_count == 2)
-    {
-        auto semaphore  = _info.signal_fence->As<FenceVk>();
-        auto fence      = _info.signal_fence_to_cpu->As<FenceVk>();
-        semaphore->SubmitSignal(0);
-        fence->SubmitSignalToCpu();
+    ai.semaphore = VK_NULL_HANDLE;
+    ai.fence     = VK_NULL_HANDLE;
 
-        ai.semaphore = semaphore->GetVkSemaphore();
-        ai.fence     = fence->GetVkFence();
-    }
-    else
+    if (_info.signal_fence)
     {
-        ai.semaphore = VK_NULL_HANDLE;
-        ai.fence = VK_NULL_HANDLE;
+        auto semaphore = _info.signal_fence->As<FenceVk>();
+        semaphore->SubmitSignal(0);
+        ai.semaphore = semaphore->GetVkSemaphore();
+    }
+    if (_info.signal_fence_to_cpu)
+    {
+        auto fence = _info.signal_fence_to_cpu->As<FenceVk>();
+        fence->SubmitSignalToCpu();
+        ai.fence = fence->GetVkFence();
     }
 
     uint32_t next_buffer_index = 0;

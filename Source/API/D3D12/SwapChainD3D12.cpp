@@ -581,14 +581,11 @@ B3D_APIENTRY SwapChainD3D12::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUF
         return BMRESULT_FAILED_INVALID_CALL;
     }
 
-    int active_fence_count = 0;
-    active_fence_count += _info.signal_fence        ? 1 : 0;
-    active_fence_count += _info.signal_fence_to_cpu ? 1 : 0;
     if (util::IsEnabledDebug(this))
     {
-        if (active_fence_count == 1)
+        if (!(_info.signal_fence || _info.signal_fence_to_cpu))
         {
-            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION, __FUNCTION__": _info.signal_fenceとsignal_fence_to_cpuの両方が有効なポインタまたはnullptrと等しくなる必要があります。");
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION, __FUNCTION__": _info.signal_fenceとsignal_fence_to_cpuの両方がnullptrであってはなりません。");
             return BMRESULT_FAILED_INVALID_PARAMETER;
         }
 
@@ -630,13 +627,15 @@ B3D_APIENTRY SwapChainD3D12::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUF
     B3D_RET_IF_FAILED(bmr);
 
     // 引数のフェンスをプレゼント完了通知用フェンスのペイロードにすり替え
-    if (active_fence_count == 2)
+    if (_info.signal_fence)
     {
-        auto res = _info.signal_fence->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
-        B3D_RET_IF_FAILED(res);
-
-        res = _info.signal_fence_to_cpu->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
-        B3D_RET_IF_FAILED(res);
+        bmr = _info.signal_fence->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
+        B3D_RET_IF_FAILED(bmr);
+    }
+    if (_info.signal_fence_to_cpu)
+    {
+        bmr = _info.signal_fence_to_cpu->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
+        B3D_RET_IF_FAILED(bmr);
     }
 
     is_acquired = true;
