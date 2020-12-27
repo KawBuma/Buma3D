@@ -111,25 +111,29 @@ void
 B3D_APIENTRY FramebufferVk::CopyDesc(const FRAMEBUFFER_DESC& _desc)
 {
     desc = _desc;
+
     desc_data.render_passvk = desc.render_pass->As<RenderPassVk>();
     desc_data.attachments.resize(desc.num_attachments);
+    auto attachments_data = desc_data.attachments.data();
     for (uint32_t i = 0; i < desc.num_attachments; i++)
-        desc_data.attachments[i] = desc.attachments[i];
+        (attachments_data[i] = desc.attachments[i])->AddRef();
+
+    desc.attachments = attachments_data;
 }
 
 void
 B3D_APIENTRY FramebufferVk::Uninit()
 {
-    name.reset();
-    desc = {};
-
     if (framebuffer)
         vkDestroyFramebuffer(vkdevice, framebuffer, B3D_VK_ALLOC_CALLBACKS);
     framebuffer = VK_NULL_HANDLE;
 
-    desc_data = {};
+    desc = {};
+    desc_data.Uninit();
 
     hlp::SafeRelease(device);
+    vkdevice = VK_NULL_HANDLE;
+    name.reset();
 }
 
 BMRESULT

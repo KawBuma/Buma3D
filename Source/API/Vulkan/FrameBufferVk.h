@@ -60,12 +60,15 @@ public:
 private:
     struct DESC_DATA
     {
-        util::Ptr<RenderPassVk>                        render_passvk;
-        util::DyArray<util::Ptr<IView>>                attachments;
-        util::DyArray<util::Ptr<ShaderResourceViewVk>> input_attachments;
-        util::DyArray<util::Ptr<RenderTargetViewVk>>   color_attachments;
-        util::DyArray<util::Ptr<RenderTargetViewVk>>   resolve_attachments;
-        util::DyArray<util::Ptr<DepthStencilViewVk>>   depth_stencil_attachments;
+        void Uninit()
+        {
+            render_passvk.Reset();
+            for (auto& i : attachments)
+                hlp::SafeRelease(i);
+            hlp::SwapClear(attachments);
+        }
+        util::Ptr<RenderPassVk> render_passvk;
+        util::DyArray<IView*>   attachments;
     };
 
 private:

@@ -202,8 +202,15 @@ private:
 
     struct DESC_DATA
     {
-        util::Ptr<RenderPassD3D12>      render_pass12;
-        util::DyArray<util::Ptr<IView>> attachments;
+        void Uninit()
+        {
+            render_pass12.Reset();
+            for (auto& i : attachments)
+                hlp::SafeRelease(i);
+            hlp::SwapClear(attachments);
+        }
+        util::Ptr<RenderPassD3D12>  render_pass12;
+        util::DyArray<IView*>       attachments;
     };
 
 

@@ -119,16 +119,16 @@ B3D_APIENTRY FramebufferD3D12::CopyDesc(const FRAMEBUFFER_DESC& _desc)
 
     desc_data.render_pass12 = desc.render_pass->As<RenderPassD3D12>();
     desc_data.attachments.resize(desc.num_attachments);
+    auto attachments_data = desc_data.attachments.data();
     for (uint32_t i = 0; i < desc.num_attachments; i++)
-    {
-        desc_data.attachments[i] = desc.attachments[i];
-    }
+        (attachments_data[i] = desc.attachments[i])->AddRef();
+
+    desc.attachments = attachments_data;
 }
 
 void
 B3D_APIENTRY FramebufferD3D12::Uninit()
 {
-    name.reset();
     for (auto& i : descriptors)
     {
         if (i.rtv.handle)
@@ -139,12 +139,13 @@ B3D_APIENTRY FramebufferD3D12::Uninit()
     }
     hlp::SwapClear(descriptors);
     
-    desc = {};
-    desc_data = {};
     hlp::SwapClear(attachment_operators);
+    desc = {};
+    desc_data.Uninit();
 
     hlp::SafeRelease(device);
     device12 = nullptr;
+    name.reset();
 }
 
 BMRESULT
