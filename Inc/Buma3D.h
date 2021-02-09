@@ -166,6 +166,9 @@ struct IDescriptorSet;              DECLARE_SHARED_PTR(DescriptorSet);
 struct IRootSignature;              DECLARE_SHARED_PTR(RootSignature);
 struct IPipelineState;              DECLARE_SHARED_PTR(PipelineState);
 
+struct IDescriptorSetLayout;        DECLARE_SHARED_PTR(IDescriptorSetLayout);
+struct IPipelineLayout;             DECLARE_SHARED_PTR(IPipelineLayout);
+
 struct ICommandQueue;               DECLARE_SHARED_PTR(CommandQueue);
 struct ICommandAllocator;           DECLARE_SHARED_PTR(CommandAllocator);
 struct ICommandList;                DECLARE_SHARED_PTR(CommandList);
@@ -2791,6 +2794,21 @@ struct DESCRIPTOR_POOL_DESC
     NodeMask                    node_mask;                  // ディスクリプタが作成されるノードを指定します。TODO: D3D12で、複数のノードを指定可能にするかどうか。(VulkanではディスクリプタプールにNodeMaskの制約が無く、D3D12のCreationNodeMaskの為にVkDescriptorPoolが複数作成されることは避けたい。)
 };
 
+enum DESCRIPTOR_FLAG : EnumT
+{
+      DESCRIPTOR_FLAG_NONE                                              = 0x0   // コマンドリストにセットされた後、ディスクリプタ自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。 これは、コマンドリストにセットされた後、ディスクリプタが指すリソースの参照を、CopyDescriptors等によって変更できない事を示します。
+    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND                     = 0x1   // コマンドリストにセットされた後、ディスクリプタ自体が揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CopyDescriptors等によって変更することが出来ます。 DESCRIPTORS_VOLATILE
+    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING           = 0x2   // コマンドリストにセットされていないディスクリプタを更新出来ることを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
+    , DESCRIPTOR_FLAG_PARTIALLY_BOUND                                   = 0x4   // リソースがシェーダー側で参照されない場合、ディスクリプタへリソースを設定する必要が無いことを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
+    , DESCRIPTOR_FLAG_VARIABLE_DESCRIPTOR_COUNT                         = 0x8   // このフラグが指定されるDESCRIPTOR_SET_LAYOUT_BINDING::base_shader_register番号がDESCRIPTOR_SET_LAYOUT_DESC::bindingsの各要素において最も大きい場合、シェーダー側で可変長のリソース配列が使用可能であることを示します。 
+
+//  , DESCRIPTOR_FLAG_DATA_VOLATILE                                     = 0x10  // コマンドリストにセットされた後、ディスクリプタが指すリソースが揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CPUによってリソースのデータを操作可能です。
+//  , DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE                  = 0x20  // コマンドリストにセットされた後、ディスクリプタが指すリソースを参照するドローコールが実行されている間、そのデータが静的である事を指定します。(もう一度セットし直すことでリソースが変更された事をドライバに通知することが出来ます。)
+//  , DESCRIPTOR_FLAG_DATA_STATIC                                       = 0x40  // コマンドリストにセットされた後、ディスクリプタが指すリソースは静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。
+
+//  , DESCRIPTOR_FLAG_DESCRIPTORS_STATIC_KEEPING_BUFFER_BOUNDS_CHECKS   = 0x10000
+};
+using DESCRIPTOR_FLAGS = EnumFlagsT;
 
 #pragma endregion descriptor
 
@@ -2894,19 +2912,6 @@ enum RAY_TRACING_SHADER_VISIBILITY_FLAG : EnumT
     , RAY_TRACING_SHADER_VISIBILITY_FLAG_CALLABLE     = 0x20
 };
 using RAY_TRACING_SHADER_VISIBILITY_FLAGS = EnumFlagsT;
-
-enum DESCRIPTOR_FLAG : EnumT
-{
-      DESCRIPTOR_FLAG_NONE                                              = 0x0   // コマンドリストにセットされた後、ディスクリプタ自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。 これは、コマンドリストにセットされた後、ディスクリプタが指すリソースの参照を、CopyDescriptors等によって変更できない事を示します。
-    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND                     = 0x1   // コマンドリストにセットされた後、ディスクリプタ自体が揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CopyDescriptors等によって変更することが出来ます。 DESCRIPTORS_VOLATILE
-    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING           = 0x2   // コマンドリストにセットされていないディスクリプタを更新出来ることを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
-    , DESCRIPTOR_FLAG_PARTIALLY_BOUND                                   = 0x4   // リソースがシェーダー側で参照されない場合、ディスクリプタへリソースを設定する必要が無いことを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
-//  , DESCRIPTOR_FLAG_DATA_VOLATILE                                     = 0x8   // コマンドリストにセットされた後、ディスクリプタが指すリソースが揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CPUによってリソースのデータを操作可能です。
-//  , DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE                  = 0x10  // コマンドリストにセットされた後、ディスクリプタが指すリソースを参照するドローコールが実行されている間、そのデータが静的である事を指定します。(もう一度セットし直すことでリソースが変更された事をドライバに通知することが出来ます。)
-//  , DESCRIPTOR_FLAG_DATA_STATIC                                       = 0x20  // コマンドリストにセットされた後、ディスクリプタが指すリソースは静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。
-//  , DESCRIPTOR_FLAG_DESCRIPTORS_STATIC_KEEPING_BUFFER_BOUNDS_CHECKS   = 0x10000
-};
-using DESCRIPTOR_FLAGS = EnumFlagsT;
 
 struct DESCRIPTOR_RANGE
 {
@@ -3064,6 +3069,69 @@ struct ROOT_SIGNATURE_DESC
 };
 
 #pragma endregion root signature
+
+#pragma region pipeline layout
+
+struct DESCRIPTOR_SET_LAYOUT_BINDING
+{
+    DESCRIPTOR_TYPE     descriptor_type;
+    uint32_t            base_shader_register;
+    uint32_t            num_descriptors;
+    SHADER_VISIBILITY   shader_visibility;
+    DESCRIPTOR_FLAGS    flags;
+    ISamplerView*       static_sampler;
+};
+
+enum DESCRIPTOR_SET_LAYOUT_FLAG : EnumT
+{
+      DESCRIPTOR_SET_LAYOUT_FLAG_NONE                   = 0x0
+    , DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL = 0x1 // このフラグが指定されたレイアウトを使用するディスクリプタセットは、DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BINDで作成されたプールから割り当てる必要があることを指定します。
+//  , DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR        = 0x2 // TODO: PUSH_DESCRIPTOR は ID3D12GraphicsCommandList::Set*RootCBV/SRV/UAVに直接的にマップ可能ですがvkCmdPushDescriptorSetKHRの柔軟性は大きく損なわれます。
+};
+using DESCRIPTOR_SET_LAYOUT_FLAGS = EnumFlagsT;
+
+struct DESCRIPTOR_SET_LAYOUT_DESC
+{
+    DESCRIPTOR_SET_LAYOUT_FLAGS             flags;
+    uint32_t                                num_bindings;
+    const DESCRIPTOR_SET_LAYOUT_BINDING*    bindings;
+};
+
+struct PUSH_CONSTANT_PARAMETER
+{
+    SHADER_VISIBILITY   visibility;
+    uint32_t            shader_register;
+    uint32_t            register_space;
+    uint32_t            num_32bit_values;
+};
+
+enum PIPELINE_LAYOUT_FLAG : EnumT
+{
+      PIPELINE_LAYOUT_FLAG_NONE                                 = 0x0
+    , PIPELINE_LAYOUT_FLAG_DENY_INPUT_ASSEMBLER_INPUT_LAYOUT    = 0x1
+    , PIPELINE_LAYOUT_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS       = 0x2
+    , PIPELINE_LAYOUT_FLAG_ALLOW_HULL_SHADER_ROOT_ACCESS        = 0x4
+    , PIPELINE_LAYOUT_FLAG_ALLOW_DOMAIN_SHADER_ROOT_ACCESS      = 0x8
+    , PIPELINE_LAYOUT_FLAG_ALLOW_GEOMETRY_SHADER_ROOT_ACCESS    = 0x10
+    , PIPELINE_LAYOUT_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS        = 0x20
+    , PIPELINE_LAYOUT_FLAG_ALLOW_STREAM_OUTPUT                  = 0x40
+    , PIPELINE_LAYOUT_FLAG_ALLOW_MESH_SHADER_ROOT_ACCESS        = 0x80
+    , PIPELINE_LAYOUT_FLAG_ALLOW_TASK_SHADER_ROOT_ACCESS        = 0x100
+
+    , PIPELINE_LAYOUT_FLAG_RAY_TRACING_SHADER_VISIBILITY        = 0x200
+};
+using PIPELINE_LAYOUT_FLAGS = EnumFlagsT;
+
+struct PIPELINE_LAYOUT_DESC
+{
+    PIPELINE_LAYOUT_FLAGS           flags;
+    uint32_t                        num_set_layouts;
+    IDescriptorSetLayout*const *    set_layouts;
+    uint32_t                        num_push_constants;
+    const PUSH_CONSTANT_PARAMETER*  push_constants;
+};
+
+#pragma endregion pipeline layout
 
 #pragma region render pass
 
@@ -5104,6 +5172,43 @@ public:
         B3D_APIENTRY GetDescriptorPoolRequirementSizes(
               uint32_t              _num_descriptor_sets
             , uint32_t*             _dst_num_register_space
+            , DESCRIPTOR_POOL_SIZE* _dst_sizes) const = 0;
+
+};
+
+B3D_INTERFACE IDescriptorSetLayout : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorSetLayout() {}
+
+public:
+    virtual const DESCRIPTOR_SET_LAYOUT_DESC&
+        B3D_APIENTRY GetDesc() const = 0;
+
+};
+
+B3D_INTERFACE IPipelineLayout : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IPipelineLayout() {}
+
+public:
+    //virtual const PIPELINE_LAYOUT_DESC& 
+    //    B3D_APIENTRY GetDesc() const = 0;
+
+    /**
+     * @brief このルートシグネチャに対応するディスクリプタプール、セットを作成する際に必要なプールサイズの情報を取得します。
+     * @param _num_descriptor_sets 割り当てるディスクリプタセットの数を指定します。
+     * @param[out] _dst_num_register_space ルートシグネチャ内に含まれるregister_spaceの数を取得します。(register_space番号自体の最大値ではありません。) nullptrの場合値は書き込まれません。
+     * @param[out] _dst_sizes 必要なプールサイズを取得します。nullptrの場合値は書き込まれません。
+     * @return _dst_sizesに必要なDESCRIPTOR_POOL_SIZE構造の配列要素数を返します。
+     * @remark この関数はROOT_SIGNATURE_DESCと_num_descriptor_setsに基づきプールサイズを計算するヘルパー関数です。 プールサイズを指定する際、この関数を必ず使用する必要はありません。
+     * @note 複数のルートシグネチャを1つのプールで割り当てる際のサイズを取得する場合、IDevice::GetDescriptorPoolSizesAllocationInfoの利用を検討してください。
+     *       _dst_sizes配列に書き込まれるDESCRIPTOR_TYPEの順序は不定です。必要な割り当てが存在しないDESCRIPTOR_TYPEはスキップされます。
+    */
+    virtual uint32_t
+        B3D_APIENTRY GetDescriptorPoolRequirementSizes(
+              uint32_t              _num_descriptor_sets
             , DESCRIPTOR_POOL_SIZE* _dst_sizes) const = 0;
 
 };

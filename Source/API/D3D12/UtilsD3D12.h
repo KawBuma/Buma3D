@@ -668,8 +668,22 @@ inline D3D12_ROOT_DESCRIPTOR_FLAGS GetNativeDescriptorFlags(ROOT_PARAMETER_TYPE 
 {
     D3D12_ROOT_DESCRIPTOR_FLAGS result = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
 
-    //if (_flags & DESCRIPTOR_FLAG_ALLOW_UPDATE_AFTER_BIND)
+    B3D_UNREFERENCED(_type, _flags);
+
+    //if (_flags & DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND)
     //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
+
+    //if (_flags & DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING)
+    //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
+
+    //if (_flags & DESCRIPTOR_FLAG_PARTIALLY_BOUND)
+    //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
+
+    //if (_flags & DESCRIPTOR_FLAG_VARIABLE_DESCRIPTOR_COUNT)
+    //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
+
+
+    // _DATAフラグはVulkanに存在しませんが、フラグ外で同等の指定を行う機能が存在するかどうかを調査します。
 
     //if (_flags & DESCRIPTOR_FLAG_DATA_VOLATILE)
     //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
@@ -683,6 +697,13 @@ inline D3D12_ROOT_DESCRIPTOR_FLAGS GetNativeDescriptorFlags(ROOT_PARAMETER_TYPE 
     //if (_flags & DESCRIPTOR_FLAG_DESCRIPTORS_STATIC_KEEPING_BUFFER_BOUNDS_CHECKS)
     //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
 
+    return result;
+}
+
+inline D3D12_ROOT_DESCRIPTOR_FLAGS GetNativeDescriptorFlags(DESCRIPTOR_TYPE _type, DESCRIPTOR_FLAGS _flags)
+{
+    D3D12_ROOT_DESCRIPTOR_FLAGS result = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+    B3D_UNREFERENCED(_type, _flags);
     return result;
 }
 

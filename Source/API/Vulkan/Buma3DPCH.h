@@ -100,6 +100,9 @@ DECLARE_VK_SHARED_PTR(DescriptorPoolVk);
 DECLARE_VK_SHARED_PTR(DescriptorSetVk);
 DECLARE_VK_SHARED_PTR(RootSignatureVk);
 
+DECLARE_VK_SHARED_PTR(DescriptorSetLayoutVk);
+DECLARE_VK_SHARED_PTR(PipelineLayoutVk);
+
 struct IPipelineStateVk;
 DECLARE_VK_SHARED_PTR(GraphicsPipelineStateVk);
 DECLARE_VK_SHARED_PTR(ComputePipelineStateVk);
@@ -201,6 +204,9 @@ DECLARE_VK_SHARED_PTR(AccelerationStructureVk);
 #include "RootSignatureVk.h"
 #include "DescriptorPoolVk.h"
 #include "DescriptorSetVk.h"
+
+#include "DescriptorSetLayoutVk.h"
+//#include "PipelineLayoutVk.h"
 
 #include "ShaderModuleVk.h"
 #include "PipelineStateVk.h"

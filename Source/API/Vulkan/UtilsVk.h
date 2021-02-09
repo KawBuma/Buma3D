@@ -1070,6 +1070,20 @@ inline VkDescriptorBindingFlags GetNativeDescriptorFlags(DESCRIPTOR_FLAGS _flags
     return result;
 }
 
+inline VkDescriptorSetLayoutCreateFlags GetNativeDescriptorSetLayoutFlags(DESCRIPTOR_SET_LAYOUT_FLAGS _flags)
+{
+    VkDescriptorSetLayoutCreateFlags result = 0x0;
+
+    if (_flags & DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL)
+        result |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+
+    // TODO: GetNativeDescriptorSetLayoutFlags: PUSH_DESCRIPTOR
+    //if (_flags & DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR)
+    //    result |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+
+    return result;
+}
+
 inline VkDescriptorPoolCreateFlags GetNativeDescriptorPoolFlags(DESCRIPTOR_POOL_FLAGS _flags)
 {
     VkDescriptorPoolCreateFlags result = 0;
