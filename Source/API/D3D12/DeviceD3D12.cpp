@@ -819,7 +819,7 @@ B3D_APIENTRY DeviceD3D12::CreateRootSignature(const ROOT_SIGNATURE_DESC& _desc, 
 }
 
 BMRESULT
-B3D_APIENTRY DeviceD3D12::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC& _desc, IDescriptorPool0** _dst)
+B3D_APIENTRY DeviceD3D12::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC0& _desc, IDescriptorPool0** _dst)
 {
     util::Ptr<DescriptorPool0D3D12> ptr;
     B3D_RET_IF_FAILED(DescriptorPool0D3D12::Create(this, _desc, &ptr));

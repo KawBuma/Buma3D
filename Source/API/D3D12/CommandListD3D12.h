@@ -68,7 +68,7 @@ public:
             , IRootSignature*       _root_signature) override;
 
     void
-        B3D_APIENTRY BindDescriptorSet(
+        B3D_APIENTRY BindDescriptorSet0(
               PIPELINE_BIND_POINT               _bind_point
             , const CMD_BIND_DESCRIPTOR_SET&    _args) override;
 

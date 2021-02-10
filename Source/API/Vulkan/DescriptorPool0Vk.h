@@ -11,15 +11,15 @@ protected:
     B3D_APIENTRY ~DescriptorPool0Vk();
 
 private:
-    BMRESULT B3D_APIENTRY Init(DeviceVk* _device, const DESCRIPTOR_POOL_DESC& _desc);
-    void B3D_APIENTRY CopyDesc(const DESCRIPTOR_POOL_DESC& _desc);
+    BMRESULT B3D_APIENTRY Init(DeviceVk* _device, const DESCRIPTOR_POOL_DESC0& _desc);
+    void B3D_APIENTRY CopyDesc(const DESCRIPTOR_POOL_DESC0& _desc);
     void B3D_APIENTRY GetNativePoolSizes(util::DyArray<VkDescriptorPoolSize>* _sises);
     BMRESULT B3D_APIENTRY CreateVkDescriptorPool();
     void B3D_APIENTRY Uninit();
 
 public:
     static BMRESULT
-        B3D_APIENTRY Create(DeviceVk* _device, const DESCRIPTOR_POOL_DESC& _desc, DescriptorPool0Vk** _dst);
+        B3D_APIENTRY Create(DeviceVk* _device, const DESCRIPTOR_POOL_DESC0& _desc, DescriptorPool0Vk** _dst);
 
     void
         B3D_APIENTRY AddRef() override;
@@ -48,7 +48,7 @@ public:
     const DevicePFN&
         B3D_APIENTRY GetDevicePFN() const override;
 
-    const DESCRIPTOR_POOL_DESC&
+    const DESCRIPTOR_POOL_DESC0&
         B3D_APIENTRY GetDesc() const override;
 
     uint32_t
@@ -84,7 +84,7 @@ private:
     std::atomic_uint32_t                                            ref_count;
     util::UniquePtr<util::NameableObjStr>                           name;
     DeviceVk*                                                       device;
-    DESCRIPTOR_POOL_DESC                                            desc;
+    DESCRIPTOR_POOL_DESC0                                           desc;
     DESC_DATA                                                       desc_data;
     util::StArray<uint32_t, DESCRIPTOR_TYPE_NUM_TYPES>              pool_remains;
     std::mutex                                                      allocation_mutex;

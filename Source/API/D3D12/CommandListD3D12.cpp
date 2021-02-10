@@ -501,7 +501,7 @@ B3D_APIENTRY CommandListD3D12::SetRootSignature(PIPELINE_BIND_POINT _bind_point,
 }
 
 void
-B3D_APIENTRY CommandListD3D12::BindDescriptorSet(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SET& _args)
+B3D_APIENTRY CommandListD3D12::BindDescriptorSet0(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SET& _args)
 {
     // ヒープ更新
     auto&& descriptor = cmd_states->descriptor;

@@ -42,7 +42,7 @@ B3D_APIENTRY DescriptorPool0D3D12::~DescriptorPool0D3D12()
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorPool0D3D12::Init(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC& _desc)
+B3D_APIENTRY DescriptorPool0D3D12::Init(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC0& _desc)
 {
     (device = _device)->AddRef();
     device12 = device->GetD3D12Device();
@@ -60,7 +60,7 @@ B3D_APIENTRY DescriptorPool0D3D12::Init(DeviceD3D12* _device, const DESCRIPTOR_P
 }
 
 void 
-B3D_APIENTRY DescriptorPool0D3D12::CopyDesc(const DESCRIPTOR_POOL_DESC& _desc)
+B3D_APIENTRY DescriptorPool0D3D12::CopyDesc(const DESCRIPTOR_POOL_DESC0& _desc)
 {
     desc = _desc;
 
@@ -179,7 +179,7 @@ B3D_APIENTRY DescriptorPool0D3D12::Uninit()
 }
 
 BMRESULT 
-B3D_APIENTRY DescriptorPool0D3D12::Create(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC& _desc, DescriptorPool0D3D12** _dst)
+B3D_APIENTRY DescriptorPool0D3D12::Create(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC0& _desc, DescriptorPool0D3D12** _dst)
 {
     util::Ptr<DescriptorPool0D3D12> ptr;
     ptr.Attach(B3DCreateImplementationClass(DescriptorPool0D3D12));
@@ -259,7 +259,7 @@ B3D_APIENTRY DescriptorPool0D3D12::GetDevice() const
     return device;
 }
 
-const DESCRIPTOR_POOL_DESC&
+const DESCRIPTOR_POOL_DESC0&
 B3D_APIENTRY DescriptorPool0D3D12::GetDesc() const
 {
     return desc;

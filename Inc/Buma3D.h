@@ -2784,7 +2784,7 @@ enum DESCRIPTOR_POOL_FLAG : EnumT
 };
 using DESCRIPTOR_POOL_FLAGS = EnumFlagsT;
 
-struct DESCRIPTOR_POOL_DESC
+struct DESCRIPTOR_POOL_DESC0
 {
     DESCRIPTOR_POOL_FLAGS       flags;
     uint32_t                    max_sets_allocation_count;  // ディスクリプタセットを割り当て出来る回数の最大値を指定します。
@@ -4564,7 +4564,7 @@ public:
 
     virtual BMRESULT
         B3D_APIENTRY CreateDescriptorPool(
-              const DESCRIPTOR_POOL_DESC& _desc
+              const DESCRIPTOR_POOL_DESC0& _desc
             , IDescriptorPool0**           _dst) = 0;
 
     /**
@@ -5077,7 +5077,7 @@ protected:
     B3D_APIENTRY ~IDescriptorPool0() {}
 
 public:
-    virtual const DESCRIPTOR_POOL_DESC&
+    virtual const DESCRIPTOR_POOL_DESC0&
         B3D_APIENTRY GetDesc() const = 0;
 
     /**
@@ -5387,7 +5387,7 @@ public:
             , IRootSignature*       _root_signature) = 0;
 
     virtual void
-        B3D_APIENTRY BindDescriptorSet(
+        B3D_APIENTRY BindDescriptorSet0(
               PIPELINE_BIND_POINT               _bind_point
             , const CMD_BIND_DESCRIPTOR_SET&    _args) = 0;
 

@@ -177,7 +177,7 @@ public:
 
     BMRESULT
         B3D_APIENTRY CreateDescriptorPool(
-              const DESCRIPTOR_POOL_DESC& _desc
+              const DESCRIPTOR_POOL_DESC0& _desc
             , IDescriptorPool0**           _dst) override;
 
     BMRESULT

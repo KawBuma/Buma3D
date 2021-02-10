@@ -376,7 +376,7 @@ B3D_APIENTRY CommandListVk::SetRootSignature(PIPELINE_BIND_POINT _bind_point, IR
 }
 
 void
-B3D_APIENTRY CommandListVk::BindDescriptorSet(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SET& _args)
+B3D_APIENTRY CommandListVk::BindDescriptorSet0(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SET& _args)
 {
     auto&& descriptor = cmd_states->descriptor;
     {

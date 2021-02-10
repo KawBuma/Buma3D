@@ -31,8 +31,8 @@ protected:
     B3D_APIENTRY ~DescriptorPool0D3D12();
 
 private:
-    BMRESULT B3D_APIENTRY Init(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC& _desc);
-    void B3D_APIENTRY CopyDesc(const DESCRIPTOR_POOL_DESC& _desc);
+    BMRESULT B3D_APIENTRY Init(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC0& _desc);
+    void B3D_APIENTRY CopyDesc(const DESCRIPTOR_POOL_DESC0& _desc);
     uint32_t B3D_APIENTRY GetCbvSrvUavCountsInPoolSizes();
     uint32_t B3D_APIENTRY GetSamplerCountsInPoolSizes();
     BMRESULT B3D_APIENTRY CreateDescriptorHeaps(uint32_t _num_descs, uint32_t _num_sampler_descs);
@@ -40,7 +40,7 @@ private:
 
 public:
     static BMRESULT
-        B3D_APIENTRY Create(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC& _desc, DescriptorPool0D3D12** _dst);
+        B3D_APIENTRY Create(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC0& _desc, DescriptorPool0D3D12** _dst);
 
     void
         B3D_APIENTRY AddRef() override;
@@ -60,7 +60,7 @@ public:
     IDevice*
         B3D_APIENTRY GetDevice() const override;
 
-    const DESCRIPTOR_POOL_DESC&
+    const DESCRIPTOR_POOL_DESC0&
         B3D_APIENTRY GetDesc() const override;
 
     uint32_t
@@ -99,7 +99,7 @@ private:
     std::atomic_uint32_t                                                            ref_count;
     util::UniquePtr<util::NameableObjStr>                                           name;
     DeviceD3D12*                                                                    device;
-    DESCRIPTOR_POOL_DESC                                                            desc;
+    DESCRIPTOR_POOL_DESC0                                                           desc;
     DESC_DATA                                                                       desc_data;
     util::StArray<uint32_t, DESCRIPTOR_TYPE_NUM_TYPES>                              pool_remains;
     std::mutex                                                                      allocation_mutex;

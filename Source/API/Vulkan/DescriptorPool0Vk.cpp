@@ -28,7 +28,7 @@ B3D_APIENTRY DescriptorPool0Vk::~DescriptorPool0Vk()
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorPool0Vk::Init(DeviceVk* _device, const DESCRIPTOR_POOL_DESC& _desc)
+B3D_APIENTRY DescriptorPool0Vk::Init(DeviceVk* _device, const DESCRIPTOR_POOL_DESC0& _desc)
 {
     (device = _device)->AddRef();
     inspfn = &device->GetInstancePFN();
@@ -46,7 +46,7 @@ B3D_APIENTRY DescriptorPool0Vk::Init(DeviceVk* _device, const DESCRIPTOR_POOL_DE
 }
 
 void 
-B3D_APIENTRY DescriptorPool0Vk::CopyDesc(const DESCRIPTOR_POOL_DESC& _desc)
+B3D_APIENTRY DescriptorPool0Vk::CopyDesc(const DESCRIPTOR_POOL_DESC0& _desc)
 {
     desc = _desc;
 
@@ -102,7 +102,7 @@ B3D_APIENTRY DescriptorPool0Vk::Uninit()
 }
 
 BMRESULT 
-B3D_APIENTRY DescriptorPool0Vk::Create(DeviceVk* _device, const DESCRIPTOR_POOL_DESC& _desc, DescriptorPool0Vk** _dst)
+B3D_APIENTRY DescriptorPool0Vk::Create(DeviceVk* _device, const DESCRIPTOR_POOL_DESC0& _desc, DescriptorPool0Vk** _dst)
 {
     util::Ptr<DescriptorPool0Vk> ptr;
     ptr.Attach(B3DCreateImplementationClass(DescriptorPool0Vk));
@@ -183,7 +183,7 @@ B3D_APIENTRY DescriptorPool0Vk::GetDevicePFN() const
     return *devpfn;
 }
 
-const DESCRIPTOR_POOL_DESC&
+const DESCRIPTOR_POOL_DESC0&
 B3D_APIENTRY DescriptorPool0Vk::GetDesc() const
 {
     return desc;
