@@ -35,8 +35,8 @@ public:
     */
     virtual BMRESULT
         B3D_APIENTRY AddDescriptorWriteRange(
-            /* DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER* */void* _dst
-            , uint32_t                                                  _array_index) const { B3D_UNREFERENCED(_dst, _array_index); return BMRESULT_FAILED_INVALID_CALL; }
+            /* DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER* */void* _dst
+            , uint32_t                                                   _array_index) const { B3D_UNREFERENCED(_dst, _array_index); return BMRESULT_FAILED_INVALID_CALL; }
 
 };
 

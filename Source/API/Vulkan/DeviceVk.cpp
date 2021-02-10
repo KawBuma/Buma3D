@@ -1168,8 +1168,8 @@ B3D_APIENTRY DeviceVk::CreateRootSignature(const ROOT_SIGNATURE_DESC& _desc, IRo
 BMRESULT
 B3D_APIENTRY DeviceVk::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC& _desc, IDescriptorPool** _dst)
 {
-    util::Ptr<DescriptorPoolVk> ptr;
-    B3D_RET_IF_FAILED(DescriptorPoolVk::Create(this, _desc, &ptr));
+    util::Ptr<DescriptorPool0Vk> ptr;
+    B3D_RET_IF_FAILED(DescriptorPool0Vk::Create(this, _desc, &ptr));
 
     *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;
@@ -1181,14 +1181,14 @@ B3D_APIENTRY DeviceVk::UpdateDescriptorSets(const UPDATE_DESCRIPTOR_SET_DESC& _u
     for (uint32_t i = 0; i < _update_desc.num_write_descriptor_sets; i++)
     {
         auto&& write = _update_desc.write_descriptor_sets[i];
-        auto dst_set = write.dst_set->As<DescriptorSetVk>();
+        auto dst_set = write.dst_set->As<DescriptorSet0Vk>();
         B3D_RET_IF_FAILED(dst_set->AddWriteDescriptors(write));
         dst_set->UpdateDescriptors();
     }
     for (uint32_t i = 0; i < _update_desc.num_copy_descriptor_sets; i++)
     {
         auto&& copy = _update_desc.copy_descriptor_sets[i];
-        auto dst_set = copy.dst_set->As<DescriptorSetVk>();
+        auto dst_set = copy.dst_set->As<DescriptorSet0Vk>();
         B3D_RET_IF_FAILED(dst_set->AddCopyDescriptors(copy));
         dst_set->UpdateDescriptors();
     }

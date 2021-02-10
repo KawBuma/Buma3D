@@ -174,7 +174,7 @@ B3D_APIENTRY ConstantBufferViewVk::GetVkDescriptorBufferInfo() const
 BMRESULT
 B3D_APIENTRY ConstantBufferViewVk::AddDescriptorWriteRange(void* _dst, uint32_t _array_index) const
 {
-    auto&& dst = *RCAST<DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst);
+    auto&& dst = *RCAST<DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst);
     if (!dst.buffer_infos_data)
         return BMRESULT_FAILED;
     dst.buffer_infos_data[_array_index] = descriptor_buffer_info;

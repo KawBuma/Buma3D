@@ -371,7 +371,7 @@ B3D_APIENTRY DepthStencilViewVk::GetVkImageSubresourceRange() const
 BMRESULT
 B3D_APIENTRY DepthStencilViewVk::AddDescriptorWriteRange(void* _dst, uint32_t _array_index) const
 {
-    auto&& dst = *RCAST<DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst);
+    auto&& dst = *RCAST<DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst);
     if (!dst.image_infos_data)
         return BMRESULT_FAILED;
     auto&& info = dst.image_infos_data[_array_index];

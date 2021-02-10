@@ -20,7 +20,7 @@ struct UnorderedAccessViewVk::IImpl : util::details::NEW_DELETE_OVERRIDE
     virtual const VkDescriptorBufferInfo* GetVkDescriptorBufferInfo() const { return nullptr; }
     virtual VkImageLayout                 GetVkImageLayout()          const { return VK_IMAGE_LAYOUT_UNDEFINED; }
 
-    virtual BMRESULT AddDescriptorWriteRange(DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const = 0;
+    virtual BMRESULT AddDescriptorWriteRange(DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const = 0;
 
     virtual const VkImageSubresourceRange* GetVkImageSubresourceRange() const { return nullptr; }
 
@@ -71,7 +71,7 @@ public:
         return info;
     }
 
-    BMRESULT AddDescriptorWriteRange(DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const override
+    BMRESULT AddDescriptorWriteRange(DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const override
     {
         if (view)
         {
@@ -136,7 +136,7 @@ public:
         return VK_IMAGE_LAYOUT_GENERAL;
     }
 
-    BMRESULT AddDescriptorWriteRange(DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const override
+    BMRESULT AddDescriptorWriteRange(DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const override
     {
         if (!_dst->image_infos_data)
             return BMRESULT_FAILED;
@@ -631,7 +631,7 @@ B3D_APIENTRY UnorderedAccessViewVk::GetVkImageSubresourceRange() const
 BMRESULT
 B3D_APIENTRY UnorderedAccessViewVk::AddDescriptorWriteRange(void* _dst, uint32_t _array_index) const
 {
-    return impl->AddDescriptorWriteRange(RCAST<DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst), _array_index);
+    return impl->AddDescriptorWriteRange(RCAST<DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst), _array_index);
 }
 
 const VIEW_DESC&

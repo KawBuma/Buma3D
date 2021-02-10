@@ -382,8 +382,8 @@ B3D_APIENTRY CommandListVk::BindDescriptorSet(PIPELINE_BIND_POINT _bind_point, c
     {
         auto incoming_pool = _args.descriptor_set->GetPool();
         if (incoming_pool != descriptor.current_pool)
-            descriptor.current_pool = incoming_pool->As<DescriptorPoolVk>();
-        descriptor.current_set = _args.descriptor_set->As<DescriptorSetVk>();
+            descriptor.current_pool = incoming_pool->As<DescriptorPool0Vk>();
+        descriptor.current_set = _args.descriptor_set->As<DescriptorSet0Vk>();
     }
     auto&& valid_set_layouts    = cmd_states->pipeline.current_root_signatures[_bind_point]->GetValidSetLayoutsArray();
     auto   sets                 = descriptor.current_set->GetVkDescriptorSets().data();

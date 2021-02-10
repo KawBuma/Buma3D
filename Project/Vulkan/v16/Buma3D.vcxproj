@@ -98,8 +98,10 @@
     <ClInclude Include="..\..\..\Source\API\Vulkan\DebugMessageQueueVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DebugMessageVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DepthStencilViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorPool0Vk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetLayoutVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSet0Vk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DeviceAdapterVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DeviceChildVk.h" />
@@ -149,8 +151,10 @@
     <ClCompile Include="..\..\..\Source\API\Vulkan\DebugMessageQueueVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DebugMessageVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DepthStencilViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorPool0Vk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetLayoutVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSet0Vk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DeviceAdapterVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DeviceFactoryVk.cpp" />

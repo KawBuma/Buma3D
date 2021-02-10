@@ -96,8 +96,8 @@ DECLARE_VK_SHARED_PTR(SamplerViewVk);
 
 DECLARE_VK_SHARED_PTR(FramebufferVk);
 DECLARE_VK_SHARED_PTR(RenderPassVk);
-DECLARE_VK_SHARED_PTR(DescriptorPoolVk);
-DECLARE_VK_SHARED_PTR(DescriptorSetVk);
+DECLARE_VK_SHARED_PTR(DescriptorPool0Vk);
+DECLARE_VK_SHARED_PTR(DescriptorSet0Vk);
 DECLARE_VK_SHARED_PTR(RootSignatureVk);
 
 DECLARE_VK_SHARED_PTR(DescriptorSetLayoutVk);
@@ -202,9 +202,11 @@ DECLARE_VK_SHARED_PTR(AccelerationStructureVk);
 #include "FramebufferVk.h"
 
 #include "RootSignatureVk.h"
+#include "DescriptorPool0Vk.h"
+#include "DescriptorSet0Vk.h"
+
 #include "DescriptorPoolVk.h"
 #include "DescriptorSetVk.h"
-
 #include "DescriptorSetLayoutVk.h"
 #include "PipelineLayoutVk.h"
 

@@ -432,8 +432,8 @@ private:
             mapped_dynamic_descriptor_offsets.BeginRecord();
         }
 
-        DescriptorPoolVk*           current_pool;
-        DescriptorSetVk*            current_set;
+        DescriptorPool0Vk*          current_pool;
+        DescriptorSet0Vk*           current_set;
         WeakSimpleArray<uint32_t>   dynamic_descriptor_offsets;
         WeakSimpleArray<uint32_t*>  mapped_dynamic_descriptor_offsets;
     };
