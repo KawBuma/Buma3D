@@ -110,6 +110,7 @@
     <ClInclude Include="..\..\..\Source\API\Vulkan\FramebufferVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\GraphicsPipelineStateVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\IndexBufferViewVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\PipelineLayoutVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\PipelineStateVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\QueryHeapVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\RayTracingPipelineStateVk.h" />
@@ -159,6 +160,7 @@
     <ClCompile Include="..\..\..\Source\API\Vulkan\FramebufferVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\GraphicsPipelineStateVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\IndexBufferViewVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\PipelineLayoutVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\PipelineStateVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\QueryHeapVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\RayTracingPipelineStateVk.cpp" />

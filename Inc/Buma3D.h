@@ -5196,20 +5196,20 @@ public:
     //virtual const PIPELINE_LAYOUT_DESC& 
     //    B3D_APIENTRY GetDesc() const = 0;
 
-    /**
-     * @brief このルートシグネチャに対応するディスクリプタプール、セットを作成する際に必要なプールサイズの情報を取得します。
-     * @param _num_descriptor_sets 割り当てるディスクリプタセットの数を指定します。
-     * @param[out] _dst_num_register_space ルートシグネチャ内に含まれるregister_spaceの数を取得します。(register_space番号自体の最大値ではありません。) nullptrの場合値は書き込まれません。
-     * @param[out] _dst_sizes 必要なプールサイズを取得します。nullptrの場合値は書き込まれません。
-     * @return _dst_sizesに必要なDESCRIPTOR_POOL_SIZE構造の配列要素数を返します。
-     * @remark この関数はROOT_SIGNATURE_DESCと_num_descriptor_setsに基づきプールサイズを計算するヘルパー関数です。 プールサイズを指定する際、この関数を必ず使用する必要はありません。
-     * @note 複数のルートシグネチャを1つのプールで割り当てる際のサイズを取得する場合、IDevice::GetDescriptorPoolSizesAllocationInfoの利用を検討してください。
-     *       _dst_sizes配列に書き込まれるDESCRIPTOR_TYPEの順序は不定です。必要な割り当てが存在しないDESCRIPTOR_TYPEはスキップされます。
-    */
-    virtual uint32_t
-        B3D_APIENTRY GetDescriptorPoolRequirementSizes(
-              uint32_t              _num_descriptor_sets
-            , DESCRIPTOR_POOL_SIZE* _dst_sizes) const = 0;
+    ///**
+    // * @brief このルートシグネチャに対応するディスクリプタプール、セットを作成する際に必要なプールサイズの情報を取得します。
+    // * @param _num_descriptor_sets 割り当てるディスクリプタセットの数を指定します。
+    // * @param[out] _dst_num_register_space ルートシグネチャ内に含まれるregister_spaceの数を取得します。(register_space番号自体の最大値ではありません。) nullptrの場合値は書き込まれません。
+    // * @param[out] _dst_sizes 必要なプールサイズを取得します。nullptrの場合値は書き込まれません。
+    // * @return _dst_sizesに必要なDESCRIPTOR_POOL_SIZE構造の配列要素数を返します。
+    // * @remark この関数はROOT_SIGNATURE_DESCと_num_descriptor_setsに基づきプールサイズを計算するヘルパー関数です。 プールサイズを指定する際、この関数を必ず使用する必要はありません。
+    // * @note 複数のルートシグネチャを1つのプールで割り当てる際のサイズを取得する場合、IDevice::GetDescriptorPoolSizesAllocationInfoの利用を検討してください。
+    // *       _dst_sizes配列に書き込まれるDESCRIPTOR_TYPEの順序は不定です。必要な割り当てが存在しないDESCRIPTOR_TYPEはスキップされます。
+    //*/
+    //virtual uint32_t
+    //    B3D_APIENTRY GetDescriptorPoolRequirementSizes(
+    //          uint32_t              _num_descriptor_sets
+    //        , DESCRIPTOR_POOL_SIZE* _dst_sizes) const = 0;
 
 };
 

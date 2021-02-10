@@ -13,6 +13,7 @@ public:
     };
     struct ROOT_PARAMETERS12_INFO
     {
+        bool                                                            is_zero_layout;                 // ルートパラメーター数が0の場合trueです。 VulkanのVkDescriptorSetLayoutをエミュレートします。
         uint32_t                                                        num_static_samplers;
         uint32_t                                                        num_dynamic_parameters;
         uint32_t                                                        num_cbv_srv_uav_ranges;

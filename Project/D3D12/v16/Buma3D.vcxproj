@@ -113,6 +113,7 @@
     <ClInclude Include="..\..\..\Source\API\D3D12\GPUDescriptorAllocator.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\GraphicsPipelineStateD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\IndexBufferViewD3D12.h" />
+    <ClInclude Include="..\..\..\Source\API\D3D12\PipelineLayoutD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\PipelineStateD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\QueryHeapD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\RayTracingPipelineStateD3D12.h" />
@@ -161,6 +162,7 @@
     <ClCompile Include="..\..\..\Source\API\D3D12\FramebufferD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\GraphicsPipelineStateD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\IndexBufferViewD3D12.cpp" />
+    <ClCompile Include="..\..\..\Source\API\D3D12\PipelineLayoutD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\PipelineStateD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\QueryHeapD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\RayTracingPipelineStateD3D12.cpp" />

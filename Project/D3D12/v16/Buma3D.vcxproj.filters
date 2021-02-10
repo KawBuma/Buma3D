@@ -176,6 +176,9 @@
     <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSetLayoutD3D12.cpp">
       <Filter>Source\D3D12\Descriptor</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\PipelineLayoutD3D12.cpp">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Debug_x64.props">
@@ -323,6 +326,9 @@
       <Filter>Source\D3D12\View</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSetLayoutD3D12.h">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\PipelineLayoutD3D12.h">
       <Filter>Source\D3D12\Descriptor</Filter>
     </ClInclude>
   </ItemGroup>

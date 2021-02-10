@@ -20,6 +20,8 @@ public:
     };
     struct BINDINGS_INFO
     {
+        bool                                                            is_zero_layout;     // ルートパラメーター数が0の場合trueです。 
+
         util::DyArray<VkDescriptorSetLayoutBinding>                     vk_bindings;
 
         uint32_t                                                        max_base_shader_register;

@@ -163,6 +163,12 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::CopyDesc(const DESCRIPTOR_SET_LAYOUT_DESC
 void
 B3D_APIENTRY DescriptorSetLayoutD3D12::CalcParameterAndRangeCounts(ROOT_PARAMETERS12_INFO& _root_params12_info)
 {
+    if (desc.num_bindings == 0)
+    {
+        _root_params12_info.is_zero_layout = true;
+        return;
+    }
+
     for (uint32_t i = 0; i < desc.num_bindings; i++)
     {
         auto&& b = desc.bindings[i];
@@ -186,9 +192,12 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareRootParametersInfo()
 {
     auto&& info = *parameters12_info;
 
-    if (info.num_static_samplers    != 0) (info.static_samplers   = B3DMakeUnique(util::DyArray<STATIC_SAMPLER_BINDING>))->resize(info.num_static_samplers);
-    if (info.num_cbv_srv_uav_ranges != 0) (info.descriptor_ranges = B3DMakeUnique(util::DyArray<D3D12_DESCRIPTOR_RANGE1>))->resize(info.num_cbv_srv_uav_ranges);
-    if (info.num_sampler_ranges     != 0) (info.sampler_ranges    = B3DMakeUnique(util::DyArray<D3D12_DESCRIPTOR_RANGE1>))->resize(info.num_sampler_ranges);
+    if (info.is_zero_layout)
+        return BMRESULT_SUCCEED;
+
+    if (info.num_static_samplers    != 0) info.static_samplers   = B3DMakeUniqueArgs(util::DyArray<STATIC_SAMPLER_BINDING >, info.num_static_samplers);
+    if (info.num_cbv_srv_uav_ranges != 0) info.descriptor_ranges = B3DMakeUniqueArgs(util::DyArray<D3D12_DESCRIPTOR_RANGE1>, info.num_cbv_srv_uav_ranges);
+    if (info.num_sampler_ranges     != 0) info.sampler_ranges    = B3DMakeUniqueArgs(util::DyArray<D3D12_DESCRIPTOR_RANGE1>, info.num_sampler_ranges);
     info.root_parameters.resize(info.num_dynamic_parameters
                                 + (info.num_cbv_srv_uav_ranges != 0 ? 1 : 0)
                                 + (info.num_sampler_ranges     != 0 ? 1 : 0));

@@ -195,7 +195,7 @@ DECLARE_D3D12_SHARED_PTR(AccelerationStructureD3D12);
 #include "DescriptorSetD3D12.h"
 
 #include "DescriptorSetLayoutD3D12.h"
-//#include "PipelineLayoutD3D12.h"
+#include "PipelineLayoutD3D12.h"
 
 #include "ShaderModuleD3D12.h"
 #include "PipelineStateD3D12.h"

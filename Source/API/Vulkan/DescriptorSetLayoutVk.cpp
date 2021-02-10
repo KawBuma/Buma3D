@@ -174,6 +174,12 @@ B3D_APIENTRY DescriptorSetLayoutVk::CalcBindingsInfoParameterCounts()
 {
     auto&& info = *bindings_info;
 
+    if (desc.num_bindings == 0)
+    {
+        info.is_zero_layout = true;
+        return;
+    }
+
     for (uint32_t i = 0; i < desc.num_bindings; i++)
     {
         auto&& b = desc.bindings[i];
@@ -198,17 +204,17 @@ B3D_APIENTRY DescriptorSetLayoutVk::CalcBindingsInfoParameterCounts()
 void
 B3D_APIENTRY DescriptorSetLayoutVk::PrepareBindingsInfo(util::DyArray<VkDescriptorBindingFlags>* _binding_flags)
 {
-    if (desc.num_bindings == 0)
-        return;
-
     auto&& info = *bindings_info;
+
+    if (info.is_zero_layout)
+        return;
 
     info.vk_bindings.resize(desc.num_bindings);
     _binding_flags->resize(desc.num_bindings);
     info.binding_infos.resize(std::max(1u, info.max_base_shader_register));
-    if (info.num_static_samplers      != 0) (info.static_samplers      = B3DMakeUnique(util::DyArray<STATIC_SAMPLER_BINDING>))->resize(info.num_static_samplers);
-    if (info.num_non_dynamic_bindings != 0) (info.non_dynamic_bindings = B3DMakeUnique(util::DyArray<const BINDING_INFO*>)   )->resize(info.num_non_dynamic_bindings);
-    if (info.num_dynamic_bindings     != 0) (info.dynamic_bindings     = B3DMakeUnique(util::DyArray<const BINDING_INFO*>)   )->resize(info.num_dynamic_bindings);
+    if (info.num_static_samplers      != 0) info.static_samplers      = B3DMakeUniqueArgs(util::DyArray<STATIC_SAMPLER_BINDING>, info.num_static_samplers);
+    if (info.num_non_dynamic_bindings != 0) info.non_dynamic_bindings = B3DMakeUniqueArgs(util::DyArray<const BINDING_INFO*>   , info.num_non_dynamic_bindings);
+    if (info.num_dynamic_bindings     != 0) info.dynamic_bindings     = B3DMakeUniqueArgs(util::DyArray<const BINDING_INFO*>   , info.num_dynamic_bindings);
 
     auto                    vk_bindings_data     = info.vk_bindings.data();
     auto                    binding_flags_data   = _binding_flags->data();
@@ -279,7 +285,7 @@ B3D_APIENTRY DescriptorSetLayoutVk::CreateVkDescriptorSetLayout(const util::DyAr
     ci.pBindings    = bindings_info->vk_bindings.data();
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo flags_ci{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
-    if (desc.num_bindings != 0)
+    if (!bindings_info->is_zero_layout)
     {
         flags_ci.bindingCount   = desc.num_bindings;
         flags_ci.pBindingFlags  = _binding_flags->data();

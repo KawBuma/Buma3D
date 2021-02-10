@@ -206,7 +206,7 @@ DECLARE_VK_SHARED_PTR(AccelerationStructureVk);
 #include "DescriptorSetVk.h"
 
 #include "DescriptorSetLayoutVk.h"
-//#include "PipelineLayoutVk.h"
+#include "PipelineLayoutVk.h"
 
 #include "ShaderModuleVk.h"
 #include "PipelineStateVk.h"

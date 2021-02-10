@@ -176,6 +176,9 @@
     <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetLayoutVk.cpp">
       <Filter>Source\Vulkan\Descriptor</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\PipelineLayoutVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Debug_x64.props">
@@ -319,6 +322,9 @@
       <Filter>Source\Vulkan\View</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetLayoutVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\PipelineLayoutVk.h">
       <Filter>Source\Vulkan\Descriptor</Filter>
     </ClInclude>
   </ItemGroup>
