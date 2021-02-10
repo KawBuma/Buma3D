@@ -51,6 +51,9 @@
     <Filter Include="Source\D3D12\Query">
       <UniqueIdentifier>{3da7fa12-f3a8-428c-a0d6-e68326842a7f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\D3D12\Descriptor\Deprecated">
+      <UniqueIdentifier>{444cce2e-bd03-481d-9cb1-afb60d15795f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\API\D3D12\DeviceFactoryD3D12.cpp">
@@ -178,6 +181,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\Source\API\D3D12\PipelineLayoutD3D12.cpp">
       <Filter>Source\D3D12\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorPool0D3D12.cpp">
+      <Filter>Source\D3D12\Descriptor\Deprecated</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSet0D3D12.cpp">
+      <Filter>Source\D3D12\Descriptor\Deprecated</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -330,6 +339,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\API\D3D12\PipelineLayoutD3D12.h">
       <Filter>Source\D3D12\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorPool0D3D12.h">
+      <Filter>Source\D3D12\Descriptor\Deprecated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSet0D3D12.h">
+      <Filter>Source\D3D12\Descriptor\Deprecated</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

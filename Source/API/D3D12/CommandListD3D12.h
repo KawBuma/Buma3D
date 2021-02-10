@@ -445,8 +445,8 @@ private:
             current_pool    = nullptr;
             current_set     = nullptr;
         }
-        DescriptorPoolD3D12*    current_pool;
-        DescriptorSetD3D12*     current_set;
+        DescriptorPool0D3D12*   current_pool;
+        DescriptorSet0D3D12*    current_set;
     };
 
     struct STREAM_OUTPUT_STATE_DATA

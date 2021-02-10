@@ -95,8 +95,8 @@ DECLARE_D3D12_SHARED_PTR(StreamOutputBufferViewD3D12);
 
 DECLARE_D3D12_SHARED_PTR(FramebufferD3D12);
 DECLARE_D3D12_SHARED_PTR(RenderPassD3D12);
-DECLARE_D3D12_SHARED_PTR(DescriptorPoolD3D12);
-DECLARE_D3D12_SHARED_PTR(DescriptorSetD3D12);
+DECLARE_D3D12_SHARED_PTR(DescriptorPool0D3D12);
+DECLARE_D3D12_SHARED_PTR(DescriptorSet0D3D12);
 DECLARE_D3D12_SHARED_PTR(RootSignatureD3D12);
 
 DECLARE_D3D12_SHARED_PTR(DescriptorSetLayoutD3D12);
@@ -191,9 +191,11 @@ DECLARE_D3D12_SHARED_PTR(AccelerationStructureD3D12);
 #include "FramebufferD3D12.h"
 
 #include "RootSignatureD3D12.h"
+#include "DescriptorPool0D3D12.h"
+#include "DescriptorSet0D3D12.h"
+
 #include "DescriptorPoolD3D12.h"
 #include "DescriptorSetD3D12.h"
-
 #include "DescriptorSetLayoutD3D12.h"
 #include "PipelineLayoutD3D12.h"
 

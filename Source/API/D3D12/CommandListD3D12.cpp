@@ -509,12 +509,12 @@ B3D_APIENTRY CommandListD3D12::BindDescriptorSet(PIPELINE_BIND_POINT _bind_point
         auto incoming_pool = _args.descriptor_set->GetPool();
         if (incoming_pool != descriptor.current_pool)
         {
-            descriptor.current_pool = incoming_pool->As<DescriptorPoolD3D12>();
+            descriptor.current_pool = incoming_pool->As<DescriptorPool0D3D12>();
 
             auto&& new_pools = descriptor.current_pool->GetD3D12DescriptorHeaps();
             cmd.l->SetDescriptorHeaps((UINT)new_pools.size(), new_pools.data());
         }
-        descriptor.current_set = _args.descriptor_set->As<DescriptorSetD3D12>();
+        descriptor.current_set = _args.descriptor_set->As<DescriptorSet0D3D12>();
     }
 
     // ディスクリプタテーブル
@@ -534,7 +534,7 @@ B3D_APIENTRY CommandListD3D12::BindDescriptorSet(PIPELINE_BIND_POINT _bind_point
 void
 B3D_APIENTRY CommandListD3D12::Push32BitConstants(PIPELINE_BIND_POINT _bind_point, const CMD_PUSH_32BIT_CONSTANTS& _args)
 {
-    if constexpr (false) // NOTE: DescriptorSetD3D12::SetConstantsBatchによるディスクリプタの設定メソッド抽象化のメリットは、現状存在しません。 
+    if constexpr (false) // NOTE: DescriptorSet0D3D12::SetConstantsBatchによるディスクリプタの設定メソッド抽象化のメリットは、現状存在しません。 
     {
         auto&& batch = cmd_states->descriptor.current_set->GetDescriptorBatch();
         batch.descriptor_batch.data()[_args.root_parameter_index]->Set(_bind_point, cmd.l, &_args);

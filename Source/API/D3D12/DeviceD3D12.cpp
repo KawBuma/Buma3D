@@ -821,8 +821,8 @@ B3D_APIENTRY DeviceD3D12::CreateRootSignature(const ROOT_SIGNATURE_DESC& _desc, 
 BMRESULT
 B3D_APIENTRY DeviceD3D12::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC& _desc, IDescriptorPool** _dst)
 {
-    util::Ptr<DescriptorPoolD3D12> ptr;
-    B3D_RET_IF_FAILED(DescriptorPoolD3D12::Create(this, _desc, &ptr));
+    util::Ptr<DescriptorPool0D3D12> ptr;
+    B3D_RET_IF_FAILED(DescriptorPool0D3D12::Create(this, _desc, &ptr));
 
     *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;
@@ -834,12 +834,12 @@ B3D_APIENTRY DeviceD3D12::UpdateDescriptorSets(const UPDATE_DESCRIPTOR_SET_DESC&
     for (uint32_t i = 0; i < _update_desc.num_write_descriptor_sets; i++)
     {
         auto&& write = _update_desc.write_descriptor_sets[i];
-        B3D_RET_IF_FAILED(write.dst_set->As<DescriptorSetD3D12>()->WriteDescriptors(write));
+        B3D_RET_IF_FAILED(write.dst_set->As<DescriptorSet0D3D12>()->WriteDescriptors(write));
     }
     for (uint32_t i = 0; i < _update_desc.num_copy_descriptor_sets; i++)
     {
         auto&& copy = _update_desc.copy_descriptor_sets[i];
-        B3D_RET_IF_FAILED(copy.dst_set->As<DescriptorSetD3D12>()->CopyDescriptors(copy));
+        B3D_RET_IF_FAILED(copy.dst_set->As<DescriptorSet0D3D12>()->CopyDescriptors(copy));
     }
 
     return BMRESULT_SUCCEED;
