@@ -208,7 +208,7 @@ B3D_APIENTRY DescriptorPool0Vk::ResetPoolAndInvalidateAllocatedSets()
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorPool0Vk::AllocateDescriptorSet(IRootSignature* _root_signature, IDescriptorSet** _dst)
+B3D_APIENTRY DescriptorPool0Vk::AllocateDescriptorSet(IRootSignature* _root_signature, IDescriptorSet0** _dst)
 {
     std::lock_guard lock(allocation_mutex);
 

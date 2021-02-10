@@ -189,7 +189,7 @@ B3D_APIENTRY DescriptorSet0D3D12::GetRootSignature() const
     return signature;
 }
 
-IDescriptorPool*
+IDescriptorPool0*
 B3D_APIENTRY DescriptorSet0D3D12::GetPool() const
 {
     return pool;
@@ -202,7 +202,7 @@ B3D_APIENTRY DescriptorSet0D3D12::IsValid() const
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSet0D3D12::CopyDescriptorSet(IDescriptorSet* _src)
+B3D_APIENTRY DescriptorSet0D3D12::CopyDescriptorSet(IDescriptorSet0* _src)
 {
     if (signature != _src->GetRootSignature())
         return BMRESULT_FAILED_INVALID_PARAMETER;

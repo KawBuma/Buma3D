@@ -173,7 +173,7 @@ B3D_APIENTRY DescriptorSet0Vk::GetRootSignature() const
     return signature;
 }
 
-IDescriptorPool*
+IDescriptorPool0*
 B3D_APIENTRY DescriptorSet0Vk::GetPool() const
 {
     return pool;
@@ -186,7 +186,7 @@ B3D_APIENTRY DescriptorSet0Vk::IsValid() const
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSet0Vk::CopyDescriptorSet(IDescriptorSet* _src)
+B3D_APIENTRY DescriptorSet0Vk::CopyDescriptorSet(IDescriptorSet0* _src)
 {
     auto src = _src->As<DescriptorSet0Vk>();
     if (signature == src->GetRootSignature())

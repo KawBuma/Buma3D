@@ -161,8 +161,8 @@ struct IStreamOutputBufferView;     DECLARE_SHARED_PTR(StreamOutputBufferView);
 
 struct IFramebuffer;                DECLARE_SHARED_PTR(Framebuffer);
 struct IRenderPass;                 DECLARE_SHARED_PTR(RenderPass);
-struct IDescriptorPool;             DECLARE_SHARED_PTR(DescriptorPool);
-struct IDescriptorSet;              DECLARE_SHARED_PTR(DescriptorSet);
+struct IDescriptorPool0;            DECLARE_SHARED_PTR(DescriptorPool0);
+struct IDescriptorSet0;             DECLARE_SHARED_PTR(DescriptorSet0);
 struct IRootSignature;              DECLARE_SHARED_PTR(RootSignature);
 struct IPipelineState;              DECLARE_SHARED_PTR(PipelineState);
 
@@ -2778,7 +2778,7 @@ enum DESCRIPTOR_POOL_FLAG : EnumT
 
     /**
      * @brief コピー可能ディスクリプタヒープであることを指定します。 
-     *        このフラグが指定されたヒープから割り当てられたディスクリプタセットは、COPY_DESCRIPTOR_SET::src_setまたはIDescriptorSet::CopyDescriptorSet::_srcでコピー元ディスクリプタとして利用可能です。
+     *        このフラグが指定されたヒープから割り当てられたディスクリプタセットは、COPY_DESCRIPTOR_SET::src_setまたはIDescriptorSet0::CopyDescriptorSet::_srcでコピー元ディスクリプタとして利用可能です。
     */
     DESCRIPTOR_POOL_FLAG_COPY_SRC               = 0x4
 };
@@ -2838,7 +2838,7 @@ struct WRITE_DYNAMIC_DESCRIPTOR
 
 struct WRITE_DESCRIPTOR_SET
 {
-    IDescriptorSet*                 dst_set;                    // 書き込み先のディスクリプタセットです。
+    IDescriptorSet0*                dst_set;                    // 書き込み先のディスクリプタセットです。
     uint32_t                        num_descriptor_tables;      // descriptor_tablesの要素数です。
     const WRITE_DESCRIPTOR_TABLE*   descriptor_tables;          // 宛先ルートパラメータとソースビューを指定するWRITE_DESCRIPTOR_TABLE構造の配列です。
     uint32_t                        num_dynamic_descriptors;    // dynamic_descriptorsの要素数です。
@@ -2869,8 +2869,8 @@ struct COPY_DYNAMIC_DESCRIPTOR
 
 struct COPY_DESCRIPTOR_SET
 {
-    IDescriptorSet*                 src_set;                    // コピーするディスクリプタセットです。 src_setのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
-    IDescriptorSet*                 dst_set;                    // 宛先のディスクリプタセットです。
+    IDescriptorSet0*                 src_set;                    // コピーするディスクリプタセットです。 src_setのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
+    IDescriptorSet0*                 dst_set;                    // 宛先のディスクリプタセットです。
     uint32_t                        num_descriptor_tables;      // descriptor_tables配列の要素数です。
     const COPY_DESCRIPTOR_TABLE*    descriptor_tables;          // コピーするディスクリプタテーブルを指定するCOPY_DESCRIPTOR_TABLE構造の配列です。
     uint32_t                        num_dynamic_descriptors;    // dynamic_descriptors配列の要素数です。
@@ -3762,7 +3762,7 @@ struct DYNAMIC_DESCRIPTOR_OFFSET
 
 struct CMD_BIND_DESCRIPTOR_SET
 {
-    IDescriptorSet*                     descriptor_set;
+    IDescriptorSet0*                    descriptor_set;
     uint32_t                            num_dynamic_descriptor_offsets; // 更新する動的ディスクリプタのオフセットの配列の要素数です。 
     const DYNAMIC_DESCRIPTOR_OFFSET*    dynamic_descriptor_offsets;     // 更新する動的ディスクリプタのオフセットの配列です。 
 };
@@ -4565,7 +4565,7 @@ public:
     virtual BMRESULT
         B3D_APIENTRY CreateDescriptorPool(
               const DESCRIPTOR_POOL_DESC& _desc
-            , IDescriptorPool**           _dst) = 0;
+            , IDescriptorPool0**           _dst) = 0;
 
     /**
      * @brief 指定のリソースでディスクリプタセットを更新します。 
@@ -5071,10 +5071,10 @@ public:
 
 };
 
-B3D_INTERFACE IDescriptorPool : public IDeviceChild
+B3D_INTERFACE IDescriptorPool0 : public IDeviceChild
 {
 protected:
-    B3D_APIENTRY ~IDescriptorPool() {}
+    B3D_APIENTRY ~IDescriptorPool0() {}
 
 public:
     virtual const DESCRIPTOR_POOL_DESC&
@@ -5097,7 +5097,7 @@ public:
     /**
      * @brief 指定のシグネチャに必要なディスクリプタを割り当てたディスクリプタセットを作成します。成功した場合、割り当てカウントが増加します。
      * @param[in] _root_signature _dstのシグネチャを指定します。
-     * @param[out] _dst 作成されたIDescriptorSetを取得します。 DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SETを使用して作成されたプールの場合、IDescriptorSetが解放される時、割り当てられていたディスクリプタはプールに返還されます。
+     * @param[out] _dst 作成されたIDescriptorSet0を取得します。 DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SETを使用して作成されたプールの場合、IDescriptorSet0が解放される時、割り当てられていたディスクリプタはプールに返還されます。
      *                   そうでない場合返還はされず、ResetPoolAndInvalidateAllocatedSets()を介してのみ割り当てカウントを減少させることができます。
      * @return 断片化、またはディスクリプタセットの割り当て回数の上限を超える場合、BMRESULT_FAILED以下を返します。
      * @remark プールの作成時または最後にリセットされてからプールから割り当てられたすべてのセットが、(各タイプの)同じ数のディスクリプタを使用し、要求された割り当ても同じ数の(各タイプの)ディスクリプタを使用する場合、断片化によって割り当てが失敗することはありません。 
@@ -5105,15 +5105,15 @@ public:
     */
     virtual BMRESULT
         B3D_APIENTRY AllocateDescriptorSet(
-              IRootSignature*   _root_signature
-            , IDescriptorSet**  _dst) = 0;
+              IRootSignature*    _root_signature
+            , IDescriptorSet0**  _dst) = 0;
 
 };
 
-B3D_INTERFACE IDescriptorSet : public IDeviceChild
+B3D_INTERFACE IDescriptorSet0 : public IDeviceChild
 {
 protected:
-    B3D_APIENTRY ~IDescriptorSet() {}
+    B3D_APIENTRY ~IDescriptorSet0() {}
 
 public:
     /**
@@ -5125,9 +5125,9 @@ public:
 
     /**
      * @brief 割り当て元のプールを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
-     * @return IDescriptorPool* 
+     * @return IDescriptorPool0* 
     */
-    virtual IDescriptorPool*
+    virtual IDescriptorPool0*
         B3D_APIENTRY GetPool() const = 0;
 
     /**
@@ -5145,7 +5145,7 @@ public:
     */
     virtual BMRESULT
         B3D_APIENTRY CopyDescriptorSet(
-            IDescriptorSet* _src) = 0;
+            IDescriptorSet0* _src) = 0;
 
 };
 

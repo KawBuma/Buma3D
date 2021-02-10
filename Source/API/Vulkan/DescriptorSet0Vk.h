@@ -3,7 +3,7 @@
 namespace buma3d
 {
 
-class B3D_API DescriptorSet0Vk : public IDeviceChildVk<IDescriptorSet>, public util::details::NEW_DELETE_OVERRIDE
+class B3D_API DescriptorSet0Vk : public IDeviceChildVk<IDescriptorSet0>, public util::details::NEW_DELETE_OVERRIDE
 {
     friend class DescriptorPool0Vk;
 protected:
@@ -50,14 +50,14 @@ public:
     IRootSignature*
         B3D_APIENTRY GetRootSignature() const override;
 
-    IDescriptorPool*
+    IDescriptorPool0*
         B3D_APIENTRY GetPool() const override;
 
     bool
         B3D_APIENTRY IsValid() const override;
 
     BMRESULT
-        B3D_APIENTRY CopyDescriptorSet(IDescriptorSet* _src) override;
+        B3D_APIENTRY CopyDescriptorSet(IDescriptorSet0* _src) override;
 
     const util::DyArray<VkDescriptorSet>&
         B3D_APIENTRY GetVkDescriptorSets() const;

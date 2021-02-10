@@ -3,7 +3,7 @@
 namespace buma3d
 {
 
-class B3D_API DescriptorSet0D3D12 : public IDeviceChildD3D12<IDescriptorSet>, public util::details::NEW_DELETE_OVERRIDE
+class B3D_API DescriptorSet0D3D12 : public IDeviceChildD3D12<IDescriptorSet0>, public util::details::NEW_DELETE_OVERRIDE
 {
     friend class DescriptorPool0D3D12;
 
@@ -253,7 +253,7 @@ public:
     IRootSignature*
         B3D_APIENTRY GetRootSignature() const override;
 
-    IDescriptorPool*
+    IDescriptorPool0*
         B3D_APIENTRY GetPool() const override;
 
     bool
@@ -261,7 +261,7 @@ public:
 
     BMRESULT
         B3D_APIENTRY CopyDescriptorSet(
-            IDescriptorSet* _src) override;
+            IDescriptorSet0* _src) override;
 
     const util::StArray<GPU_DESCRIPTOR_ALLOCATION, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>&
         B3D_APIENTRY GetAllocations() const;

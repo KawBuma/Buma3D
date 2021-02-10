@@ -3,7 +3,7 @@
 namespace buma3d
 {
 
-class B3D_API DescriptorPool0D3D12 : public IDeviceChildD3D12<IDescriptorPool>, public util::details::NEW_DELETE_OVERRIDE
+class B3D_API DescriptorPool0D3D12 : public IDeviceChildD3D12<IDescriptorPool0>, public util::details::NEW_DELETE_OVERRIDE
 {
 public:
     /*
@@ -70,7 +70,7 @@ public:
         B3D_APIENTRY ResetPoolAndInvalidateAllocatedSets() override;
 
     BMRESULT
-        B3D_APIENTRY AllocateDescriptorSet(IRootSignature* _root_signature, IDescriptorSet** _dst) override;
+        B3D_APIENTRY AllocateDescriptorSet(IRootSignature* _root_signature, IDescriptorSet0** _dst) override;
 
     util::StArray<GPUDescriptorAllocator*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>&
         B3D_APIENTRY GetDescHeapAllocators();
