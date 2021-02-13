@@ -2924,6 +2924,56 @@ struct UPDATE_DESCRIPTOR_SET_DESC0
     const COPY_DESCRIPTOR_SET0*     copy_descriptor_sets;
 };
 
+
+struct WRITE_DESCRIPTOR_BINDING
+{
+    uint32_t                                dst_binding_index;          // 宛先ディスクリプタセットが使用するレイアウトのbindings配列に対応するインデックスです。
+    uint32_t                                dst_first_array_element;    // 宛先バインディングの、ディスクリプタの書き込み先配列オフセットです。
+    uint32_t                                num_descriptors;            // src_viewsの要素数です。 
+    IView*const *                           src_views;                  // 関連付けるビューの配列です。 ビューのタイプはバインディングで指定されたディスクリプタタイプとの互換性が必要です。 
+};
+
+struct WRITE_DYNAMIC_DESCRIPTOR_BINDING
+{
+    uint32_t                                dst_binding_index;          // 宛先バインディングのインデックスです。
+    IView*                                  src_view;                   // 宛先バインディングに関連付けるバッファーリソースのビューです。 テクスチャリソース、型付きバッファのビューを含めることはできません。
+    uint64_t                                src_view_buffer_offset;     // 指定のビューを基準にしたオフセットです。 
+};
+
+struct WRITE_DESCRIPTOR_SET
+{
+    IDescriptorSet*                         dst_set;
+    uint32_t                                num_bindings;
+    const WRITE_DESCRIPTOR_BINDING*         bindings;
+    uint32_t                                num_dynamic_bindings;
+    const WRITE_DYNAMIC_DESCRIPTOR_BINDING* dynamic_bindings;
+};
+
+struct COPY_DESCRIPTOR_BINDING
+{
+    uint32_t                                src_binding_index;          // ソースバインディングのインデックスです。
+    uint32_t                                src_first_array_element;    // ソースバインディングの、ディスクリプタのコピー元配列オフセットです。
+    uint32_t                                dst_binding_index;          // 宛先バインディングのインデックスです。
+    uint32_t                                dst_first_array_element;    // 宛先バインディングの、ディスクリプタのコピー先配列オフセットです。
+    uint32_t                                num_descriptors;
+};
+
+struct COPY_DESCRIPTOR_SET
+{
+    IDescriptorSet*                         src_set;
+    IDescriptorSet*                         dst_set;
+    uint32_t                                num_bindings;
+    const COPY_DESCRIPTOR_BINDING*          bindings;
+};
+
+struct UPDATE_DESCRIPTOR_SET_DESC
+{
+    uint32_t                                num_write_descriptor_sets;
+    const WRITE_DESCRIPTOR_SET*             write_descriptor_sets;
+    uint32_t                                num_copy_descriptor_sets;
+    const COPY_DESCRIPTOR_SET*              copy_descriptor_sets;
+};
+
 #pragma endregion descriptor updates
 
 #pragma region root signature
@@ -4614,6 +4664,32 @@ public:
     virtual BMRESULT
         B3D_APIENTRY UpdateDescriptorSets0(
             const UPDATE_DESCRIPTOR_SET_DESC0& _update_desc) = 0;
+
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateDescriptorSetLayout(
+              const DESCRIPTOR_SET_LAYOUT_DESC& _desc
+            , IDescriptorSetLayout**            _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY CreatePipelineLayout(
+              const PIPELINE_LAYOUT_DESC&   _desc
+            , IPipelineLayout**             _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateDescriptorHeap(
+              const DESCRIPTOR_HEAP_DESC&  _desc
+            , IDescriptorHeap**            _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateDescriptorPool(
+              const DESCRIPTOR_POOL_DESC&  _desc
+            , IDescriptorPool**            _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY UpdateDescriptorSets(
+            const UPDATE_DESCRIPTOR_SET_DESC& _update_desc) = 0;
+
 
     /**
      * @brief シェーダーモジュールを作成します。
