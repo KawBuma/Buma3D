@@ -72,6 +72,8 @@ B3D_APIENTRY DescriptorSetLayoutVk::Init(DeviceVk* _device, const DESCRIPTOR_SET
     PrepareBindingsInfo(&binding_flags);
     B3D_RET_IF_FAILED(CreateVkDescriptorSetLayout(&binding_flags));
 
+    PrepareDescriptorPoolSizes();
+
     return BMRESULT_SUCCEED;
 }
 
@@ -296,6 +298,26 @@ B3D_APIENTRY DescriptorSetLayoutVk::CreateVkDescriptorSetLayout(const util::DyAr
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
 
     return BMRESULT_SUCCEED;
+}
+
+void
+B3D_APIENTRY DescriptorSetLayoutVk::PrepareDescriptorPoolSizes()
+{
+    // 各タイプのディスクリプタ数を計算
+    auto&& pool_sizes = bindings_info->pool_sizes;
+    for (auto& i : desc_data->bindings)
+    {
+        auto it_find = std::find_if(pool_sizes.begin(), pool_sizes.end(),
+                                    [&i](const DESCRIPTOR_POOL_SIZE& _pool_size) { return _pool_size.type == i.descriptor_type; });
+        if (it_find != pool_sizes.end())
+        {
+            it_find->num_descriptors += i.num_descriptors;
+        }
+        else
+        {
+            pool_sizes.emplace_back(DESCRIPTOR_POOL_SIZE{ i.descriptor_type, i.num_descriptors });
+        }
+    }
 }
 
 void

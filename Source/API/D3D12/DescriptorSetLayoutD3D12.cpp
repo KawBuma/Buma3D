@@ -63,6 +63,8 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::Init(DeviceD3D12* _device, const DESCRIPT
     CalcParameterAndRangeCounts(*parameters12_info);
     B3D_RET_IF_FAILED(PrepareRootParametersInfo());
 
+    PrepareDescriptorPoolSizes();
+
     return BMRESULT_SUCCEED;
 }
 
@@ -187,6 +189,35 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::CalcParameterAndRangeCounts(ROOT_PARAMETE
     }
 }
 
+void
+B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareDescriptorPoolSizes()
+{
+    /* NOTE: *_DYNAMIC タイプのディスクリプタは、D3D12におけるD3D12_ROOT_PARAMETER_TYPE_CBV/_SRV/_UAV にマップします。
+             そのため実際にディスクリプタを消費することはありませんが、動作を共通化する目的で仮想的にアロケーションを行います。 */
+
+    // 各タイプのディスクリプタ数を計算
+    auto&& i = *parameters12_info;
+    auto&& pool_sizes = i.pool_sizes;
+    for (auto& i : desc_data->bindings)
+    {
+        auto it_find = std::find_if(pool_sizes.begin(), pool_sizes.end(),
+                                    [&i](const DESCRIPTOR_POOL_SIZE& _pool_size) { return _pool_size.type == i.descriptor_type; });
+        if (it_find != pool_sizes.end())
+        {
+            it_find->num_descriptors += i.num_descriptors;
+        }
+        else
+        {
+            pool_sizes.emplace_back(DESCRIPTOR_POOL_SIZE{ i.descriptor_type, i.num_descriptors });
+        }
+    }
+
+    util::CalcDescriptorCounts(pool_sizes.size(), pool_sizes.data(), &i.num_cbv_srv_uav_descrptors, &i.num_sampler_descrptors);
+
+    // D3D12の場合、静的サンプラはディスクリプタを消費しません。
+    i.num_sampler_descrptors -= i.num_static_samplers;
+}
+
 BMRESULT
 B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareRootParametersInfo()
 {
@@ -256,18 +287,72 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareRootParametersInfo()
 
     if (info.num_cbv_srv_uav_ranges != 0)
     {
-        auto&& root = root_parameters_data[num_root_parameters++];
+        info.descriptor_table_index = num_root_parameters++;
+        auto&& root = root_parameters_data[info.descriptor_table_index];
         root.DescriptorTable = { info.num_cbv_srv_uav_ranges, info.descriptor_ranges->data() };
         info.descriptor_table = &root;
     }
     if (info.num_sampler_ranges != 0)
     {
-        auto&& root = root_parameters_data[num_root_parameters++];
+        info.sampler_table_index = num_root_parameters++;
+        auto&& root = root_parameters_data[info.sampler_table_index];
         root.DescriptorTable = { info.num_sampler_ranges, info.sampler_ranges->data() };
         info.sampler_table = &root;
     }
 
+    PrepareBindingParameters();
+
     return BMRESULT_SUCCEED;
+}
+
+void
+B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareBindingParameters()
+{
+    auto&& info = *parameters12_info;
+
+    // カウンティング用にもう一度初期化
+    info.num_static_samplers    = 0;
+    info.num_dynamic_parameters = 0;
+    info.num_cbv_srv_uav_ranges = 0;
+    info.num_sampler_ranges     = 0;
+    uint32_t root_parameter_offset = 0;
+
+    uint32_t descriptor_offset          = 0;
+    uint32_t sampler_descriptor_offset  = 0;
+
+    info.parameter_bindings.resize(desc.num_bindings);
+    PARAMETER_BINDING*              parameter_bindings_data = info.parameter_bindings.data();
+    const STATIC_SAMPLER_BINDING*   static_samplers_data    = info.static_samplers ? info.static_samplers->data() : nullptr;
+    const D3D12_ROOT_PARAMETER1*    root_parameters_data    = info.root_parameters.data();
+    for (uint32_t i = 0; i < desc.num_bindings; i++)
+    {
+        auto&& b = desc.bindings[i];
+        auto&& pb = parameter_bindings_data[i];
+        auto NonDynamic = [&]() {
+            pb.range_index       = info.num_cbv_srv_uav_ranges++;
+            pb.descriptor_offset = descriptor_offset;
+            pb.parameter         = info.descriptor_table;
+            descriptor_offset   += b.num_descriptors;
+        };
+        auto Sampler = [&]() {
+            if (b.static_sampler != nullptr)
+            {
+                pb.static_sampler_binding = &static_samplers_data[info.num_static_samplers++];
+            }
+            else
+            {
+                pb.range_index       = info.num_sampler_ranges++;
+                pb.descriptor_offset = sampler_descriptor_offset;
+                pb.parameter         = info.sampler_table;
+                sampler_descriptor_offset += b.num_descriptors;
+            }
+        };
+        auto Dynamic = [&]() {
+            root_parameter_offset++;
+            pb.parameter = &root_parameters_data[info.num_dynamic_parameters++];
+        };
+        BindingsFunc<void>(b, NonDynamic, Sampler, Dynamic, []() {});
+    }
 }
 
 void

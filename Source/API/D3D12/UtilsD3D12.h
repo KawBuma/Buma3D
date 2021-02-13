@@ -951,6 +951,50 @@ inline D3D12_SAMPLE_POSITION* ConvertNativeSamplePosition(const buma3d::SAMPLE_P
 }
 
 
+template <typename T>
+inline void CalcDescriptorCounts(uint32_t _num_sizes, const T* _sizes, uint32_t* _dst_descriptor_count, uint32_t* _dst_sampler_descriptor_count)
+{
+    for (uint32_t i = 0; i < _num_sizes; i++)
+    {
+        auto&& ps = _sizes[i];
+        switch (ps.type)
+        {
+        case buma3d::DESCRIPTOR_TYPE_CBV:
+        case buma3d::DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case buma3d::DESCRIPTOR_TYPE_SRV_TEXTURE:
+        case buma3d::DESCRIPTOR_TYPE_SRV_TYPED_BUFFER:
+        case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER:
+        case buma3d::DESCRIPTOR_TYPE_SRV_ACCELERATION_STRUCTURE:
+        case buma3d::DESCRIPTOR_TYPE_UAV_TEXTURE:
+        case buma3d::DESCRIPTOR_TYPE_UAV_TYPED_BUFFER:
+        case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER:
+            *_dst_descriptor_count += ps.num_descriptors;
+            break;
+
+        case buma3d::DESCRIPTOR_TYPE_SAMPLER:
+            *_dst_sampler_descriptor_count += ps.num_descriptors;
+
+        default:
+            break;
+        }
+    }
+}
+
+template <typename T>
+inline bool HasSameDescriptorType(uint32_t _num_sizes, const T* _sizes)
+{
+    util::Set<DESCRIPTOR_TYPE> types;
+    for (uint32_t i = 0; i < _num_sizes; i++)
+    {
+        if (types.find(_sizes[i].type) != types.end())
+            return true;
+        types.insert(_sizes[i].type);
+    }
+
+    return false;
+}
+
+
 }// namespace util
 }// namespace buma3d
 

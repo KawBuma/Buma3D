@@ -33,6 +33,8 @@ public:
         util::UniquePtr<util::DyArray<STATIC_SAMPLER_BINDING>>          static_samplers;
         util::UniquePtr<util::DyArray<const BINDING_INFO*>>             non_dynamic_bindings;
         util::UniquePtr<util::DyArray<const BINDING_INFO*>>             dynamic_bindings;
+
+        util::DyArray<DESCRIPTOR_POOL_SIZE>                             pool_sizes;         // プール割り当て時に使用します。 
     };
 
 protected:
@@ -50,6 +52,7 @@ private:
     void B3D_APIENTRY CalcBindingsInfoParameterCounts();
     void B3D_APIENTRY PrepareBindingsInfo(util::DyArray<VkDescriptorBindingFlags>* _binding_flags);
     BMRESULT B3D_APIENTRY CreateVkDescriptorSetLayout(const util::DyArray<VkDescriptorBindingFlags>* _binding_flags);
+    void B3D_APIENTRY PrepareDescriptorPoolSizes();
     void B3D_APIENTRY Uninit();
 
 public:
@@ -99,16 +102,16 @@ private:
     };
 
 private:
-    std::atomic_uint32_t                    ref_count;
-    util::UniquePtr<util::NameableObjStr>   name;
-    DeviceVk*                               device;
-    DESCRIPTOR_SET_LAYOUT_DESC              desc;
-    util::UniquePtr<DESC_DATA>              desc_data;
-    VkDevice                                vkdevice;
-    const InstancePFN*                      inspfn;
-    const DevicePFN*                        devpfn;
-    VkDescriptorSetLayout                   layout;
-    util::UniquePtr<BINDINGS_INFO>          bindings_info;
+    std::atomic_uint32_t                        ref_count;
+    util::UniquePtr<util::NameableObjStr>       name;
+    DeviceVk*                                   device;
+    DESCRIPTOR_SET_LAYOUT_DESC                  desc;
+    util::UniquePtr<DESC_DATA>                  desc_data;
+    VkDevice                                    vkdevice;
+    const InstancePFN*                          inspfn;
+    const DevicePFN*                            devpfn;
+    VkDescriptorSetLayout                       layout;
+    util::UniquePtr<BINDINGS_INFO>              bindings_info;    
 
 };
 

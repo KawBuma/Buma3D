@@ -229,6 +229,13 @@ B3D_APIENTRY DescriptorSet0D3D12::CopyDescriptorSet(IDescriptorSet0* _src)
         CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]              , src_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]           , D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     }
 
+    // 動的ディスクリプタをコピー
+    auto   dst_batch = descriptor_batch.root_descriptor_batch.data();
+    auto&& src_batch = _src->As<DescriptorSet0D3D12>()->descriptor_batch;
+    uint32_t cnt = 0;
+    for (auto& i_src : src_batch.root_descriptor_batch)
+        dst_batch[cnt++]->CopyRootDescriptor(i_src);
+
     return BMRESULT_SUCCEED;
 }
 

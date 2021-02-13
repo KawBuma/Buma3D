@@ -188,6 +188,9 @@
     <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSet0D3D12.cpp">
       <Filter>Source\D3D12\Descriptor\Deprecated</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorHeapD3D12.cpp">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Debug_x64.props">
@@ -345,6 +348,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSet0D3D12.h">
       <Filter>Source\D3D12\Descriptor\Deprecated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorHeapD3D12.h">
+      <Filter>Source\D3D12\Descriptor</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

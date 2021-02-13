@@ -110,6 +110,7 @@
     <ClInclude Include="..\..\..\Source\API\D3D12\DebugMessageD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DebugMessageQueueD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DepthStencilViewD3D12.h" />
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorHeapD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorPool0D3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorPoolD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSet0D3D12.h" />
@@ -167,6 +168,7 @@
     <ClCompile Include="..\..\..\Source\API\D3D12\DebugMessageD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DebugMessageQueueD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DepthStencilViewD3D12.cpp" />
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorHeapD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorPool0D3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorPoolD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSet0D3D12.cpp" />

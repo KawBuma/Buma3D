@@ -166,6 +166,9 @@ struct IDescriptorSet0;             DECLARE_SHARED_PTR(DescriptorSet0);
 struct IRootSignature;              DECLARE_SHARED_PTR(RootSignature);
 struct IPipelineState;              DECLARE_SHARED_PTR(PipelineState);
 
+struct IDescriptorHeap;             DECLARE_SHARED_PTR(DescriptorHeap);
+struct IDescriptorPool;             DECLARE_SHARED_PTR(DescriptorPool);
+struct IDescriptorSet;              DECLARE_SHARED_PTR(DescriptorSet);
 struct IDescriptorSetLayout;        DECLARE_SHARED_PTR(IDescriptorSetLayout);
 struct IPipelineLayout;             DECLARE_SHARED_PTR(IPipelineLayout);
 
@@ -2794,6 +2797,42 @@ struct DESCRIPTOR_POOL_DESC0
     NodeMask                    node_mask;                  // ディスクリプタが作成されるノードを指定します。TODO: D3D12で、複数のノードを指定可能にするかどうか。(VulkanではディスクリプタプールにNodeMaskの制約が無く、D3D12のCreationNodeMaskの為にVkDescriptorPoolが複数作成されることは避けたい。)
 };
 
+struct DESCRIPTOR_HEAP_SIZE
+{
+    DESCRIPTOR_TYPE type;
+    uint32_t        num_descriptors;
+};
+
+enum DESCRIPTOR_HEAP_FLAG : EnumT
+{
+    DESCRIPTOR_HEAP_FLAG_NONE = 0x0
+};
+using DESCRIPTOR_HEAP_FLAGS = EnumFlagsT;
+
+struct DESCRIPTOR_HEAP_DESC
+{
+    DESCRIPTOR_HEAP_FLAGS       flags;
+    uint32_t                    num_heap_sizes;
+    const DESCRIPTOR_HEAP_SIZE* heap_sizes;
+    NodeMask                    node_mask;          // ディスクリプタが作成されるノードを指定します。TODO: D3D12で、複数のノードを指定可能にするかどうか。(VulkanではディスクリプタプールにNodeMaskの制約が無く、D3D12のCreationNodeMaskの為にVkDescriptorPoolが複数作成されることは避けたい。)
+};
+
+struct DESCRIPTOR_POOL_DESC
+{
+    IDescriptorHeap*            heap;                       // このプールがディスクリプタセットの割り当てに使用する親ヒープを指定します。
+    DESCRIPTOR_POOL_FLAGS       flags;
+    uint32_t                    max_sets_allocation_count;  // ディスクリプタセットを割り当て出来る回数の最大値を指定します。
+    uint32_t                    num_pool_sizes;
+    const DESCRIPTOR_POOL_SIZE* pool_sizes;
+};
+
+struct DESCRIPTOR_SET_ALLOCATE_DESC
+{
+    IDescriptorPool*                descriptor_pool;
+    uint32_t                        num_descriptor_sets;
+    IDescriptorSetLayout*const *    set_layouts;
+};
+
 enum DESCRIPTOR_FLAG : EnumT
 {
       DESCRIPTOR_FLAG_NONE                                              = 0x0   // コマンドリストにセットされた後、ディスクリプタ自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。 これは、コマンドリストにセットされた後、ディスクリプタが指すリソースの参照を、CopyDescriptors等によって変更できない事を示します。
@@ -5176,6 +5215,94 @@ public:
 
 };
 
+B3D_INTERFACE IDescriptorHeap : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorHeap() {}
+
+public:
+    virtual const DESCRIPTOR_HEAP_DESC&
+        B3D_APIENTRY GetDesc() const = 0;
+
+};
+
+B3D_INTERFACE IDescriptorPool : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorPool() {}
+
+public:
+    virtual const DESCRIPTOR_POOL_DESC&
+        B3D_APIENTRY GetDesc() const = 0;
+
+    /**
+     * @brief 現在このプールから割り当てられているディスクリプタセットの数を取得します。
+     * @return ディスクリプタセットの割り当てカウントです。
+    */
+    virtual uint32_t
+        B3D_APIENTRY GetCurrentAllocationCount() = 0;
+
+    /**
+     * @brief 割り当ての管理をリセットし、このプールから以前に割り当てた全てのディスクリプタセットの使用を無効化します。
+     * @remark 無効となったディスクリプタセットは、アプリケーションで増加させた参照カウントを解放する必要があります。
+    */
+    virtual void
+        B3D_APIENTRY ResetPoolAndInvalidateAllocatedSets() = 0;
+
+    /**
+     * @brief 指定のレイアウトに必要なディスクリプタを割り当てたディスクリプタセットを作成します。
+     * @param[in] _desc _dst_descriptor_setsを割り当てる際の情報を指定します。
+     * @param[out] _dst_descriptor_sets 作成されたIDescriptorSetを取得するの配列です。 DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SETを使用して作成されたプールの場合、IDescriptorSetが解放される時、割り当てられていたディスクリプタはプールに返還されます。
+     *                                  そうでない場合返還はされず、ResetPoolAndInvalidateAllocatedSets()を介してのみ割り当てカウントを減少させることができます。
+     * @return 断片化、またはディスクリプタセットの割り当て回数の上限を超える場合、BMRESULT_FAILED以下を返します。
+    */
+    virtual BMRESULT
+        B3D_APIENTRY AllocateDescriptorSets(
+            const DESCRIPTOR_SET_ALLOCATE_DESC& _desc
+            , IDescriptorSet**                  _dst_descriptor_sets) = 0;
+
+};
+
+B3D_INTERFACE IDescriptorSet : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorSet() {}
+
+public:
+    /**
+     * @brief このセットに対応するディスクリプタセットレイアウトを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
+     * @return IRootSignature* 
+    */
+    virtual IDescriptorSetLayout*
+        B3D_APIENTRY GetDescriptorSetLayout() const = 0;
+
+    /**
+     * @brief 割り当て元のプールを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
+     * @return IDescriptorPool* 
+    */
+    virtual IDescriptorPool*
+        B3D_APIENTRY GetPool() const = 0;
+
+    /**
+     * @brief 現在のプールからの割り当てが有効かどうかを返します。
+     * @return 割り当てが有効な場合true、無効な場合falseを返します。
+     * @remark セットを割り当てた後にプールがリセットされた場合、このオブジェクトは無効になります。
+    */
+    virtual bool
+        B3D_APIENTRY IsValid() const = 0;
+
+    /**
+     * @brief 同じレイアウトで割り当てられたディスクリプタセットの全てのディスクリプタをコピーします。
+     * @param _src コピーするディスクリプタセットです。 ディスクリプタセットレイアウトは同一である必要があります。
+     * @return 正常にコピーされた場合BMRESULT_SUCCEEDが返ります。
+     * @remark _srcのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
+    */
+    virtual BMRESULT
+        B3D_APIENTRY CopyDescriptorSet(
+            IDescriptorSet* _src) = 0;
+
+};
+
 B3D_INTERFACE IDescriptorSetLayout : public IDeviceChild
 {
 protected:
@@ -5184,6 +5311,18 @@ protected:
 public:
     virtual const DESCRIPTOR_SET_LAYOUT_DESC&
         B3D_APIENTRY GetDesc() const = 0;
+
+    ///**
+    // * @brief このレイアウトに対応するディスクリプタプール、セットを作成する際に必要なプールサイズの情報を取得します。
+    // * @param _num_descriptor_sets 割り当てるディスクリプタセットの数を指定します。
+    // * @param[out] _dst_sizes 必要なプールサイズを取得します。nullptrの場合値は書き込まれません。
+    // * @return _dst_sizesに必要なDESCRIPTOR_POOL_SIZE構造の配列要素数を返します。
+    // * @remark _dst_sizes配列に書き込まれるDESCRIPTOR_TYPEの順序は不定です。必要な割り当てが存在しないDESCRIPTOR_TYPEはスキップされます。
+    //*/
+    //virtual uint32_t
+    //    B3D_APIENTRY GetDescriptorPoolRequirementSizes(
+    //          uint32_t              _num_descriptor_sets
+    //        , DESCRIPTOR_POOL_SIZE* _dst_sizes) const = 0;
 
 };
 
@@ -5195,21 +5334,6 @@ protected:
 public:
     //virtual const PIPELINE_LAYOUT_DESC& 
     //    B3D_APIENTRY GetDesc() const = 0;
-
-    ///**
-    // * @brief このルートシグネチャに対応するディスクリプタプール、セットを作成する際に必要なプールサイズの情報を取得します。
-    // * @param _num_descriptor_sets 割り当てるディスクリプタセットの数を指定します。
-    // * @param[out] _dst_num_register_space ルートシグネチャ内に含まれるregister_spaceの数を取得します。(register_space番号自体の最大値ではありません。) nullptrの場合値は書き込まれません。
-    // * @param[out] _dst_sizes 必要なプールサイズを取得します。nullptrの場合値は書き込まれません。
-    // * @return _dst_sizesに必要なDESCRIPTOR_POOL_SIZE構造の配列要素数を返します。
-    // * @remark この関数はROOT_SIGNATURE_DESCと_num_descriptor_setsに基づきプールサイズを計算するヘルパー関数です。 プールサイズを指定する際、この関数を必ず使用する必要はありません。
-    // * @note 複数のルートシグネチャを1つのプールで割り当てる際のサイズを取得する場合、IDevice::GetDescriptorPoolSizesAllocationInfoの利用を検討してください。
-    // *       _dst_sizes配列に書き込まれるDESCRIPTOR_TYPEの順序は不定です。必要な割り当てが存在しないDESCRIPTOR_TYPEはスキップされます。
-    //*/
-    //virtual uint32_t
-    //    B3D_APIENTRY GetDescriptorPoolRequirementSizes(
-    //          uint32_t              _num_descriptor_sets
-    //        , DESCRIPTOR_POOL_SIZE* _dst_sizes) const = 0;
 
 };
 

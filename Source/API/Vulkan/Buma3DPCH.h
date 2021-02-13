@@ -205,6 +205,7 @@ DECLARE_VK_SHARED_PTR(AccelerationStructureVk);
 #include "DescriptorPool0Vk.h"
 #include "DescriptorSet0Vk.h"
 
+#include "DescriptorHeapVk.h"
 #include "DescriptorPoolVk.h"
 #include "DescriptorSetVk.h"
 #include "DescriptorSetLayoutVk.h"

@@ -101,9 +101,35 @@ B3D_APIENTRY PipelineLayoutD3D12::ConvertPushDescriptors(DESC_DATA12* _dd12, D3D
 void
 B3D_APIENTRY PipelineLayoutD3D12::PopulateRootDescriptorAndTables(DESC_DATA12* _dd12, D3D12_VERSIONED_ROOT_SIGNATURE_DESC* _vdesc12)
 {
+    /*
+    NOTE: ルートパラメータは以下のように配置されます:
+        D3D12_ROOT_SIGNATURE_DESC::pParameters {
+            // PUSH_CONSATNTを優先的にパラメータの先頭に配置します。
+            D3D12_ROOT_PARAMETER{ D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS },
+            ...
+    
+            // DescriptorSetLayoutのインデックスをRegisterSpaceにマップします。
+            // DescriptorSetLayout[0]
+            // ディスクリプタテーブルはルートディスクリプタ要素の終了後に配置します。
+            // また、リソースバインディングはDescriptorSet単位で行うため、各ディスクリプタレンジを一つのディスクリプタテーブルに集約しSet*RootDescriptorTableの呼び出し回数を削減します。
+            D3D12_ROOT_PARAMETER{ D3D12_ROOT_PARAMETER_TYPE_CBV },
+            D3D12_ROOT_PARAMETER{ D3D12_ROOT_PARAMETER_TYPE_UAV },
+            ...
+            D3D12_ROOT_PARAMETER{ D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE },
+    
+            // DescriptorSetLayout[1]
+            // ***現在のDescriptorSetLayoutにbindingが存在しない場合、現在のRegisterSpace(1)にパラメータは追加されません。***
+    
+            // DescriptorSetLayout[2]
+            // サンプラーはCBV,SRV,UAVタイプのテーブルから独立したテーブルに配置する必要があります。
+            // CBV_SRV_UAVとSAMPLERタイプが両方存在する場合、CBV_SRV_UAVを優先的に配置します。
+            D3D12_ROOT_PARAMETER{ D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE }, // CBV_SRV_UAV
+            D3D12_ROOT_PARAMETER{ D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE }, // SAMPLER
+        };
+    */
+
     uint32_t param_offset = desc.num_push_constants;
-    auto parameters      = _dd12->parameters.data();
-    auto parameters_data = _dd12->parameters_data.data();
+    auto parameters = _dd12->parameters.data();
     for (uint32_t i = 0; i < desc.num_set_layouts; i++)
     {
         auto&& parameters_info = desc.set_layouts[i]->As<DescriptorSetLayoutD3D12>()->GetRootParameters12Info();
@@ -113,41 +139,50 @@ B3D_APIENTRY PipelineLayoutD3D12::PopulateRootDescriptorAndTables(DESC_DATA12* _
 
         util::MemCopyArray(parameters + param_offset, parameters_info.root_parameters.data(), parameters_info.root_parameters.size());
 
-        uint32_t num_parameters = 0; // 現在のセットにおけるパラメーター数
-        for (auto& it_param : parameters_info.root_parameters)
-        {
-            auto&& p  = parameters     [param_offset + num_parameters];
-            auto&& pd = parameters_data[param_offset + num_parameters];
-            switch (it_param.ParameterType)
-            {
-            case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
-            {
-                pd.descriptor_ranges = B3DMakeUniqueArgs(util::DyArray<D3D12_DESCRIPTOR_RANGE1>, it_param.DescriptorTable.NumDescriptorRanges);
-                p.DescriptorTable.pDescriptorRanges = util::MemCopyArray(pd.descriptor_ranges->data(), it_param.DescriptorTable.pDescriptorRanges, it_param.DescriptorTable.NumDescriptorRanges);
-
-                // DescriptorSetLayout毎に共通のRegisterSpaceを使用します。
-                for (auto& it_range : *pd.descriptor_ranges)
-                    it_range.RegisterSpace = i;
-            }
-            break;
-
-            case D3D12_ROOT_PARAMETER_TYPE_CBV:
-            case D3D12_ROOT_PARAMETER_TYPE_SRV:
-            case D3D12_ROOT_PARAMETER_TYPE_UAV:
-                p.Descriptor.RegisterSpace = i;
-                break;
-
-            default:
-                break;
-            }
-            num_parameters++;
-        }
-
+        auto num_parameters = PopulateRootDescriptorAndTablesPerSetLayout(_dd12, parameters_info.root_parameters, param_offset, i);
         param_offset += num_parameters;
     }
 
     _vdesc12->Desc_1_1.NumParameters = param_offset;
     _vdesc12->Desc_1_1.pParameters   = parameters;
+}
+
+uint32_t
+B3D_APIENTRY PipelineLayoutD3D12::PopulateRootDescriptorAndTablesPerSetLayout(DESC_DATA12* _dd12, const util::DyArray<D3D12_ROOT_PARAMETER1>& _parameters, uint32_t _param_offset, uint32_t _register_space)
+{
+    uint32_t num_parameters = 0; // 現在のセットにおけるパラメーター数
+    auto parameters      = _dd12->parameters.data();
+    auto parameters_data = _dd12->parameters_data.data();
+    for (auto& it_param : _parameters)
+    {
+        auto&& p  = parameters     [_param_offset + num_parameters];
+        auto&& pd = parameters_data[_param_offset + num_parameters];
+        switch (it_param.ParameterType)
+        {
+        case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
+        {
+            pd.descriptor_ranges = B3DMakeUniqueArgs(util::DyArray<D3D12_DESCRIPTOR_RANGE1>, it_param.DescriptorTable.NumDescriptorRanges);
+            p.DescriptorTable.pDescriptorRanges = util::MemCopyArray(pd.descriptor_ranges->data(), it_param.DescriptorTable.pDescriptorRanges, it_param.DescriptorTable.NumDescriptorRanges);
+
+            // DescriptorSetLayout毎に共通のRegisterSpaceを使用します。
+            for (auto& it_range : *pd.descriptor_ranges)
+                it_range.RegisterSpace = _register_space;
+        }
+        break;
+
+        case D3D12_ROOT_PARAMETER_TYPE_CBV:
+        case D3D12_ROOT_PARAMETER_TYPE_SRV:
+        case D3D12_ROOT_PARAMETER_TYPE_UAV:
+            p.Descriptor.RegisterSpace = _register_space;
+            break;
+
+        default:
+            break;
+        }
+        num_parameters++;
+    }
+
+    return num_parameters;
 }
 
 void

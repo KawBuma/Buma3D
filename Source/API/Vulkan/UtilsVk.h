@@ -1180,6 +1180,20 @@ inline VkViewport* ConvertNativeViewport(const VIEWPORT& _src_viewport, VkViewpo
     return _dst_result;
 }
 
+template <typename T>
+inline bool HasSameDescriptorType(uint32_t _num_sizes, const T* _sizes)
+{
+    util::Set<DESCRIPTOR_TYPE> types;
+    for (uint32_t i = 0; i < _num_sizes; i++)
+    {
+        if (types.find(_sizes[i].type) != types.end())
+            return true;
+        types.insert(_sizes[i].type);
+    }
+
+    return false;
+}
+
 
 }// namespace util
 }// namespace buma3d

@@ -11,6 +11,19 @@ public:
         util::Ptr<SamplerViewD3D12> static_sampler;
         uint32_t                    binding_index;
     };
+    struct PARAMETER_BINDING
+    {
+        uint32_t                        range_index;            // parameterがディスクリプタテーブルの場合に使用する、このバインディングがマッピングされているレンジへのオフセットです。
+        uint32_t                        descriptor_offset;      // parameterがディスクリプタテーブルの場合に使用する、指定のレンジに割り当てられるディスクリプタハンドルの開始オフセットです(OffsetInDescriptorsFromTableStart)。
+        const D3D12_ROOT_PARAMETER1*    parameter;              // nullptrの場合、このバインディングは静的サンプラです。
+        const STATIC_SAMPLER_BINDING*   static_sampler_binding; // このバインディングが静的サンプラの場合に設定されます。
+    };
+    struct ROOT_PARAMETER_DETAILS
+    {
+        uint32_t                                    binding_index;         // *_DYNAMICタイプの場合に対応するバインディングインデックスです。
+        util::UniquePtr<util::DyArray<uint32_t>>    range_binding_indices; // ディスクリプタテーブルの場合に使用する各レンジへのインデックスです。
+        uint32_t                                    heap_type;             // ディスクリプタテーブルの場合に使用するヒープタイプです。
+    };
     struct ROOT_PARAMETERS12_INFO
     {
         bool                                                            is_zero_layout;                 // ルートパラメーター数が0の場合trueです。 VulkanのVkDescriptorSetLayoutをエミュレートします。
@@ -20,10 +33,18 @@ public:
         uint32_t                                                        num_sampler_ranges;
         util::UniquePtr<util::DyArray<STATIC_SAMPLER_BINDING>>          static_samplers;
         util::UniquePtr<util::DyArray<D3D12_DESCRIPTOR_RANGE1>>         descriptor_ranges;
-        util::UniquePtr<util::DyArray<D3D12_DESCRIPTOR_RANGE1>>         sampler_ranges;                 // has_sampler_table
-        util::DyArray<D3D12_ROOT_PARAMETER1>                            root_parameters;                // CBV_SRV_UAVテーブルとSAMPLERテーブルの要素を最初に追加し対応するbindingsを*_rangesに格納します(存在する場合)、それ以外のbindingsの要素(_DYNAMIC等)は以降の要素にDESCRIPTOR_SET_LAYOUT_DESC::bindingsの順序を考慮して格納します。
-        const D3D12_ROOT_PARAMETER1*                                    descriptor_table;
-        const D3D12_ROOT_PARAMETER1*                                    sampler_table;
+        util::UniquePtr<util::DyArray<D3D12_DESCRIPTOR_RANGE1>>         sampler_ranges;
+        util::DyArray<D3D12_ROOT_PARAMETER1>                            root_parameters;
+        uint32_t                                                        descriptor_table_index;
+        uint32_t                                                        sampler_table_index;
+        const D3D12_ROOT_PARAMETER1*                                    descriptor_table;               // root_parameters配列内のテーブルです。 
+        const D3D12_ROOT_PARAMETER1*                                    sampler_table;                  // root_parameters配列内のサンプラーテーブルです。 descriptor_tableが存在する場合、 descriptor_table+1 に配置されています。
+        //util::DyArray<ROOT_PARAMETER_DETAILS>                           parameter_details;              // root_parameters毎の追加の情報です。
+        util::DyArray<PARAMETER_BINDING>                                parameter_bindings;             // bindings毎のルートパラメータまたは静的サンプラの情報です。
+
+        util::DyArray<DESCRIPTOR_POOL_SIZE>                             pool_sizes;                     // 仮想的な割り当てを含む、各タイプのディスクリプタの数です、プール割り当て時に使用します。
+        uint32_t                                                        num_cbv_srv_uav_descrptors;     // 実際に必要なディスクリプタヒープの数です、プール割り当て時に使用します。
+        uint32_t                                                        num_sampler_descrptors;         // 実際に必要なサンプラーディスクリプタヒープの数です、プール割り当て時に使用します。
 
         /*
             ROOT_PARAMETERS : space X { 
@@ -61,7 +82,9 @@ private:
     BMRESULT B3D_APIENTRY VerifyDesc(const DESCRIPTOR_SET_LAYOUT_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyDesc(const DESCRIPTOR_SET_LAYOUT_DESC& _desc);
     BMRESULT B3D_APIENTRY PrepareRootParametersInfo();
+    void B3D_APIENTRY PrepareBindingParameters();
     void B3D_APIENTRY CalcParameterAndRangeCounts(ROOT_PARAMETERS12_INFO& _root_params12_info);
+    void B3D_APIENTRY PrepareDescriptorPoolSizes();
     void B3D_APIENTRY Uninit();
 
 public:
@@ -105,7 +128,7 @@ private:
     DESCRIPTOR_SET_LAYOUT_DESC                  desc;
     util::UniquePtr<DESC_DATA>                  desc_data;
     ID3D12Device*                               device12;
-    util::UniquePtr<ROOT_PARAMETERS12_INFO>     parameters12_info;
+    util::UniquePtr<ROOT_PARAMETERS12_INFO>     parameters12_info;    
 
 };
 

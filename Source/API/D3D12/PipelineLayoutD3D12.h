@@ -20,6 +20,7 @@ private:
     BMRESULT B3D_APIENTRY PrepareD3D12RootSignatureDesc(DESC_DATA12* _dd12, D3D12_VERSIONED_ROOT_SIGNATURE_DESC* _vdesc12);
     void     B3D_APIENTRY ConvertPushDescriptors(DESC_DATA12* _dd12, D3D12_VERSIONED_ROOT_SIGNATURE_DESC* _vdesc12);
     void     B3D_APIENTRY PopulateRootDescriptorAndTables(DESC_DATA12* _dd12, D3D12_VERSIONED_ROOT_SIGNATURE_DESC* _vdesc12);
+    uint32_t B3D_APIENTRY PopulateRootDescriptorAndTablesPerSetLayout(DESC_DATA12* _dd12, const util::DyArray<D3D12_ROOT_PARAMETER1>& _parameters, uint32_t _param_offset, uint32_t _register_space);
     void     B3D_APIENTRY ConvertStaticSamplers(DESC_DATA12* _dd12, D3D12_VERSIONED_ROOT_SIGNATURE_DESC* _vdesc12);
     BMRESULT B3D_APIENTRY CreateD3D12RootSignature(const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& _vdesc12);
     void B3D_APIENTRY Uninit();

@@ -47,14 +47,21 @@ B3D_APIENTRY DescriptorPool0D3D12::Init(DeviceD3D12* _device, const DESCRIPTOR_P
     (device = _device)->AddRef();
     device12 = device->GetD3D12Device();
 
+    if (util::HasSameDescriptorType(_desc.num_pool_sizes, _desc.pool_sizes))
+    {
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
+                          , "DESCRIPTOR_POOL_DESC0::pool_sizesの各要素のtypeは一意である必要があります。");
+        return BMRESULT_FAILED_INVALID_PARAMETER;
+    }
     CopyDesc(_desc);
 
-    uint32_t num_descs         = GetCbvSrvUavCountsInPoolSizes();
-    uint32_t num_sampler_descs = GetSamplerCountsInPoolSizes();
+    uint32_t num_descs         = 0;
+    uint32_t num_sampler_descs = 0;
+    util::CalcDescriptorCounts(desc.num_pool_sizes, desc.pool_sizes, &num_descs, &num_sampler_descs);
     B3D_RET_IF_FAILED(CreateDescriptorHeaps(num_descs, num_sampler_descs));
 
     for (auto& i : desc_data.pool_sizes)
-        pool_remains[i.type] = i.num_descriptors;
+        pool_remains[i.type] += i.num_descriptors;
     
     return BMRESULT_SUCCEED;
 }
@@ -69,65 +76,25 @@ B3D_APIENTRY DescriptorPool0D3D12::CopyDesc(const DESCRIPTOR_POOL_DESC0& _desc)
     desc.pool_sizes = desc_data.pool_sizes.data();
 }
 
-uint32_t
-B3D_APIENTRY DescriptorPool0D3D12::GetCbvSrvUavCountsInPoolSizes()
-{
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < desc.num_pool_sizes; i++)
-    {
-        auto&& ps = desc.pool_sizes[i];
-        switch (ps.type)
-        {
-        case buma3d::DESCRIPTOR_TYPE_CBV:
-        case buma3d::DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-        case buma3d::DESCRIPTOR_TYPE_SRV_TEXTURE:
-        case buma3d::DESCRIPTOR_TYPE_SRV_TYPED_BUFFER:
-        case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER:
-        case buma3d::DESCRIPTOR_TYPE_SRV_ACCELERATION_STRUCTURE:
-        case buma3d::DESCRIPTOR_TYPE_UAV_TEXTURE:
-        case buma3d::DESCRIPTOR_TYPE_UAV_TYPED_BUFFER:
-        case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER:
-            result += ps.num_descriptors;
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    return result;
-}
-
-uint32_t
-B3D_APIENTRY DescriptorPool0D3D12::GetSamplerCountsInPoolSizes()
-{
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < desc.num_pool_sizes; i++)
-    {
-        auto&& ps = desc.pool_sizes[i];
-        switch (ps.type)
-        {
-        case buma3d::DESCRIPTOR_TYPE_SAMPLER:
-            result += ps.num_descriptors;
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    return result;
-}
-
 BMRESULT
 B3D_APIENTRY DescriptorPool0D3D12::CreateDescriptorHeaps(uint32_t _num_descs, uint32_t _num_sampler_descs)
 {
     auto Create = [&](auto _heap_type, auto _num)
     {
-        auto hr = (dh_allocators[_heap_type] = B3DNewArgs(GPUDescriptorAllocator, device12, _heap_type, _num, desc.node_mask))->Init();
+        D3D12_DESCRIPTOR_HEAP_DESC heap_desc{};
+        heap_desc.Type              = _heap_type;
+        heap_desc.NumDescriptors    = _num;
+        heap_desc.Flags             = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        heap_desc.NodeMask          = desc.node_mask;
+        auto&& heap = desc_heaps12.emplace_back();
+        auto hr = device12->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&heap));
         B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
-        desc_heaps12.emplace_back(dh_allocators[_heap_type]->GetD3D12DescriptorHeap())->AddRef();
 
+        dh_allocators[_heap_type] = B3DNewArgs(GPUDescriptorAllocator
+                                               , device12->GetDescriptorHandleIncrementSize(_heap_type), _num
+                                               , heap->GetCPUDescriptorHandleForHeapStart()
+                                               , heap->GetGPUDescriptorHandleForHeapStart()
+                                               , desc.flags & DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SET);
         if (desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
         {
             auto&& copy_src_heap = copy_src_heaps->emplace_back();

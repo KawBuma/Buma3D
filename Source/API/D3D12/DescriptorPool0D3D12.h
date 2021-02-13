@@ -33,8 +33,6 @@ protected:
 private:
     BMRESULT B3D_APIENTRY Init(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC0& _desc);
     void B3D_APIENTRY CopyDesc(const DESCRIPTOR_POOL_DESC0& _desc);
-    uint32_t B3D_APIENTRY GetCbvSrvUavCountsInPoolSizes();
-    uint32_t B3D_APIENTRY GetSamplerCountsInPoolSizes();
     BMRESULT B3D_APIENTRY CreateDescriptorHeaps(uint32_t _num_descs, uint32_t _num_sampler_descs);
     void B3D_APIENTRY Uninit();
 

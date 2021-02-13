@@ -7,6 +7,8 @@
 #define B3D_ENABLE_CUSTOM_ALLOCATOR
 #define B3D_ENABLE_ALLOCATOR_DEBUG
 
+// マクロ引数のカンマが識別されることを回避します。
+// e.g. B3DMakeUnique( B3D_T(util::StArray<int, 5>) )
 #define B3D_T(...) __VA_ARGS__
 
 #ifdef B3D_ENABLE_ALLOCATOR_DEBUG

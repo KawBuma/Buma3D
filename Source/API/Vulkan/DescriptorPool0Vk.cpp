@@ -35,12 +35,18 @@ B3D_APIENTRY DescriptorPool0Vk::Init(DeviceVk* _device, const DESCRIPTOR_POOL_DE
     devpfn = &device->GetDevicePFN();
     vkdevice = device->GetVkDevice();
 
+    if (util::HasSameDescriptorType(_desc.num_pool_sizes, _desc.pool_sizes))
+    {
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
+                          , "DESCRIPTOR_HEAP_DESC::heap_sizesの各要素のtypeは一意である必要があります。");
+        return BMRESULT_FAILED_INVALID_PARAMETER;
+    }
     CopyDesc(_desc);
 
     B3D_RET_IF_FAILED(CreateVkDescriptorPool());
 
     for (auto& i : desc_data.pool_sizes)
-        pool_remains[i.type] = i.num_descriptors;
+        pool_remains[i.type] += i.num_descriptors;
     
     return BMRESULT_SUCCEED;
 }
