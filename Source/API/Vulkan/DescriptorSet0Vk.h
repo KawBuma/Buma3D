@@ -69,10 +69,10 @@ public:
         B3D_APIENTRY GetResetID() const;
 
     BMRESULT
-        B3D_APIENTRY AddWriteDescriptors(const WRITE_DESCRIPTOR_SET& _writes);
+        B3D_APIENTRY AddWriteDescriptors(const WRITE_DESCRIPTOR_SET0& _writes);
 
     BMRESULT
-        B3D_APIENTRY AddCopyDescriptors(const COPY_DESCRIPTOR_SET& _copies);
+        B3D_APIENTRY AddCopyDescriptors(const COPY_DESCRIPTOR_SET0& _copies);
 
     void
         B3D_APIENTRY UpdateDescriptors();
@@ -171,7 +171,7 @@ private:
         }
 
         BMRESULT AddWriteRange(uint32_t _root_param_index, const WRITE_DESCRIPTOR_RANGE& _range);
-        BMRESULT AddWriteDynamicDescriptor(const WRITE_DYNAMIC_DESCRIPTOR& _dynamic_descriptor);
+        BMRESULT AddWriteDynamicDescriptor(const WRITE_DYNAMIC_DESCRIPTOR0& _dynamic_descriptor);
         BMRESULT AddCopyRange(uint32_t _root_param_index
                               , const COPY_DESCRIPTOR_RANGE& _src_range, const COPY_DESCRIPTOR_RANGE& _dst_range
                               , const UpdateDescriptorsCache& _src_cache, uint32_t _num_descriptors);

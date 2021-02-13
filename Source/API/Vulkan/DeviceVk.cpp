@@ -1166,7 +1166,7 @@ B3D_APIENTRY DeviceVk::CreateRootSignature(const ROOT_SIGNATURE_DESC& _desc, IRo
 }
 
 BMRESULT
-B3D_APIENTRY DeviceVk::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC0& _desc, IDescriptorPool0** _dst)
+B3D_APIENTRY DeviceVk::CreateDescriptorPool0(const DESCRIPTOR_POOL_DESC0& _desc, IDescriptorPool0** _dst)
 {
     util::Ptr<DescriptorPool0Vk> ptr;
     B3D_RET_IF_FAILED(DescriptorPool0Vk::Create(this, _desc, &ptr));
@@ -1176,7 +1176,7 @@ B3D_APIENTRY DeviceVk::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC0& _desc, 
 }
 
 BMRESULT
-B3D_APIENTRY DeviceVk::UpdateDescriptorSets(const UPDATE_DESCRIPTOR_SET_DESC& _update_desc)
+B3D_APIENTRY DeviceVk::UpdateDescriptorSets0(const UPDATE_DESCRIPTOR_SET_DESC0& _update_desc)
 {
     for (uint32_t i = 0; i < _update_desc.num_write_descriptor_sets; i++)
     {

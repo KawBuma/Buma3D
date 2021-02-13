@@ -276,10 +276,10 @@ public:
         B3D_APIENTRY GetDescriptorBatch() const;
 
     BMRESULT
-        B3D_APIENTRY WriteDescriptors(const WRITE_DESCRIPTOR_SET& _writes);
+        B3D_APIENTRY WriteDescriptors(const WRITE_DESCRIPTOR_SET0& _writes);
 
     BMRESULT
-        B3D_APIENTRY CopyDescriptors(const COPY_DESCRIPTOR_SET& _copies);
+        B3D_APIENTRY CopyDescriptors(const COPY_DESCRIPTOR_SET0& _copies);
 
 private:
     class UpdateDescriptorsCache

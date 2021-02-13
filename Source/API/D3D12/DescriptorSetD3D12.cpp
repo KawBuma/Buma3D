@@ -290,7 +290,7 @@ B3D_APIENTRY DescriptorSetD3D12::GetDescriptorBatch() const
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSetD3D12::WriteDescriptors(const WRITE_DESCRIPTOR_SET& _writes)
+B3D_APIENTRY DescriptorSetD3D12::WriteDescriptors(const WRITE_DESCRIPTOR_SET0& _writes)
 {
     auto AddCopyRanges = [&](auto& _dst_allocations)
     {
@@ -347,7 +347,7 @@ B3D_APIENTRY DescriptorSetD3D12::WriteDescriptors(const WRITE_DESCRIPTOR_SET& _w
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSetD3D12::CopyDescriptors(const COPY_DESCRIPTOR_SET& _copies)
+B3D_APIENTRY DescriptorSetD3D12::CopyDescriptors(const COPY_DESCRIPTOR_SET0& _copies)
 {
     auto src_set = _copies.src_set->As<DescriptorSetD3D12>();
     if (!(src_set->GetPool()->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))

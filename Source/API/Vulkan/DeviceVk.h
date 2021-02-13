@@ -176,13 +176,13 @@ public:
             , IRootSignature**           _dst) override;
 
     BMRESULT
-        B3D_APIENTRY CreateDescriptorPool(
+        B3D_APIENTRY CreateDescriptorPool0(
               const DESCRIPTOR_POOL_DESC0& _desc
             , IDescriptorPool0**           _dst) override;
 
     BMRESULT
-        B3D_APIENTRY UpdateDescriptorSets(
-            const UPDATE_DESCRIPTOR_SET_DESC& _update_desc) override;
+        B3D_APIENTRY UpdateDescriptorSets0(
+            const UPDATE_DESCRIPTOR_SET_DESC0& _update_desc) override;
 
     BMRESULT
         B3D_APIENTRY CreateShaderModule(

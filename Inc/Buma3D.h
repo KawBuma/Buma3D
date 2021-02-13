@@ -2868,20 +2868,20 @@ struct WRITE_DESCRIPTOR_TABLE
     const WRITE_DESCRIPTOR_RANGE*   ranges;                     // テーブル内のレンジを指定するWRITE_DESCRIPTOR_RANGE配列です。
 };
 
-struct WRITE_DYNAMIC_DESCRIPTOR
+struct WRITE_DYNAMIC_DESCRIPTOR0
 {
     uint32_t                        dst_root_parameter_index;   // 宛先ルートパラメータのインデックスです。
     IView*                          src_view;                   // 宛先ディスクリプタに関連付けるバッファーリソースのビューです。 テクスチャリソース、型付きバッファのビューを含めることはできません。
     uint64_t                        src_view_buffer_offset;     // 指定のビューを基準にしたオフセットです。 
 };
 
-struct WRITE_DESCRIPTOR_SET
+struct WRITE_DESCRIPTOR_SET0
 {
     IDescriptorSet0*                dst_set;                    // 書き込み先のディスクリプタセットです。
     uint32_t                        num_descriptor_tables;      // descriptor_tablesの要素数です。
     const WRITE_DESCRIPTOR_TABLE*   descriptor_tables;          // 宛先ルートパラメータとソースビューを指定するWRITE_DESCRIPTOR_TABLE構造の配列です。
     uint32_t                        num_dynamic_descriptors;    // dynamic_descriptorsの要素数です。
-    const WRITE_DYNAMIC_DESCRIPTOR* dynamic_descriptors;        // 宛先ルートパラメータとソースビューを指定するWRITE_DYNAMIC_DESCRIPTOR構造の配列です。
+    const WRITE_DYNAMIC_DESCRIPTOR0* dynamic_descriptors;       // 宛先ルートパラメータとソースビューを指定するWRITE_DYNAMIC_DESCRIPTOR0構造の配列です。
 };
 
 struct COPY_DESCRIPTOR_RANGE
@@ -2906,22 +2906,22 @@ struct COPY_DYNAMIC_DESCRIPTOR
     uint32_t                        dst_root_parameter_index;   // 宛先のディスクリプタを指定するルートパラメータインデックスです。
 };
 
-struct COPY_DESCRIPTOR_SET
+struct COPY_DESCRIPTOR_SET0
 {
-    IDescriptorSet0*                 src_set;                    // コピーするディスクリプタセットです。 src_setのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
-    IDescriptorSet0*                 dst_set;                    // 宛先のディスクリプタセットです。
+    IDescriptorSet0*                src_set;                    // コピーするディスクリプタセットです。 src_setのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
+    IDescriptorSet0*                dst_set;                    // 宛先のディスクリプタセットです。
     uint32_t                        num_descriptor_tables;      // descriptor_tables配列の要素数です。
     const COPY_DESCRIPTOR_TABLE*    descriptor_tables;          // コピーするディスクリプタテーブルを指定するCOPY_DESCRIPTOR_TABLE構造の配列です。
     uint32_t                        num_dynamic_descriptors;    // dynamic_descriptors配列の要素数です。
     const COPY_DYNAMIC_DESCRIPTOR*  dynamic_descriptors;        // コピーする動的ディスクリプタを指定するCOPY_DYNAMIC_DESCRIPTOR構造の配列です。
 };
 
-struct UPDATE_DESCRIPTOR_SET_DESC
+struct UPDATE_DESCRIPTOR_SET_DESC0
 {
     uint32_t                        num_write_descriptor_sets;
-    const WRITE_DESCRIPTOR_SET*     write_descriptor_sets;
+    const WRITE_DESCRIPTOR_SET0*    write_descriptor_sets;
     uint32_t                        num_copy_descriptor_sets;
-    const COPY_DESCRIPTOR_SET*      copy_descriptor_sets;
+    const COPY_DESCRIPTOR_SET0*     copy_descriptor_sets;
 };
 
 #pragma endregion descriptor updates
@@ -4602,18 +4602,18 @@ public:
             , IRootSignature**           _dst) = 0;
 
     virtual BMRESULT
-        B3D_APIENTRY CreateDescriptorPool(
+        B3D_APIENTRY CreateDescriptorPool0(
               const DESCRIPTOR_POOL_DESC0& _desc
             , IDescriptorPool0**           _dst) = 0;
 
     /**
      * @brief 指定のリソースでディスクリプタセットを更新します。 
-     * @param _update_desc UPDATE_DESCRIPTOR_SET_DESC
+     * @param _update_desc UPDATE_DESCRIPTOR_SET_DESC0
      * @return BMRESULT
     */
     virtual BMRESULT
-        B3D_APIENTRY UpdateDescriptorSets(
-            const UPDATE_DESCRIPTOR_SET_DESC& _update_desc) = 0;
+        B3D_APIENTRY UpdateDescriptorSets0(
+            const UPDATE_DESCRIPTOR_SET_DESC0& _update_desc) = 0;
 
     /**
      * @brief シェーダーモジュールを作成します。

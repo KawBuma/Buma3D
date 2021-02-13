@@ -221,7 +221,7 @@ B3D_APIENTRY DescriptorSetVk::GetResetID() const
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSetVk::AddWriteDescriptors(const WRITE_DESCRIPTOR_SET& _writes)
+B3D_APIENTRY DescriptorSetVk::AddWriteDescriptors(const WRITE_DESCRIPTOR_SET0& _writes)
 {
     for (uint32_t i_table = 0; i_table < _writes.num_descriptor_tables; i_table++)
     {
@@ -238,7 +238,7 @@ B3D_APIENTRY DescriptorSetVk::AddWriteDescriptors(const WRITE_DESCRIPTOR_SET& _w
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSetVk::AddCopyDescriptors(const COPY_DESCRIPTOR_SET& _copies)
+B3D_APIENTRY DescriptorSetVk::AddCopyDescriptors(const COPY_DESCRIPTOR_SET0& _copies)
 {
     auto src_set = _copies.src_set->As<DescriptorSetVk>();
     if (!(src_set->GetPool()->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))
@@ -292,7 +292,7 @@ BMRESULT DescriptorSetVk::UpdateDescriptorsCache::AddWriteRange(uint32_t _root_p
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT DescriptorSetVk::UpdateDescriptorsCache::AddWriteDynamicDescriptor(const WRITE_DYNAMIC_DESCRIPTOR& _dynamic_descriptor)
+BMRESULT DescriptorSetVk::UpdateDescriptorsCache::AddWriteDynamicDescriptor(const WRITE_DYNAMIC_DESCRIPTOR0& _dynamic_descriptor)
 {
     auto&& dst_dynamic_descriptor = *update_root_parameters_data[_dynamic_descriptor.dst_root_parameter_index].dynamic_descriptor;
     auto&& write = write_descriptor_sets_data[write_set_count];
