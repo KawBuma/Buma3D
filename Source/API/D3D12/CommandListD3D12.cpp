@@ -1566,15 +1566,15 @@ void CommandListD3D12::NativeSubpassBarrierBuffer::Set(const util::DyArray<util:
     // バリアデータを設定
     resource_barriers_count = 0;
     auto native_resource_barriers = resource_barriers.data();
-    for (size_t i = 0, size = _subpass_barrier.barriers_at_begin.size(); i < size; i++)
+    for (uint32_t i = 0, size = (uint32_t)_subpass_barrier.barriers_at_begin.size(); i < size; i++)
     {
         auto&& barriers     = barriers_at_begin[i];
         auto&& params       = attachments_data[barriers.attachment_index]->GetParams();
         auto&& subres_range = *params.range;
 
-        for (uint32_t i_ary = 0; i < subres_range.array_size; i++)
+        for (uint32_t i_ary = 0; i_ary < subres_range.array_size; i_ary++)
         {
-            for (uint32_t i_mip = 0; i < subres_range.mip_levels; i++)
+            for (uint32_t i_mip = 0; i_mip < subres_range.mip_levels; i_mip++)
             {
 
                 // TODO: OPTIMIZE: beforeとafterが一致するバリアの除外を事前に処理する。
