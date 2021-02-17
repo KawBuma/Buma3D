@@ -13,6 +13,7 @@ protected:
 private:
     struct DESC_DATA;
     struct DESC_DATA_D3D12;
+    BMRESULT B3D_APIENTRY Init0(DeviceD3D12* _device, RootSignatureD3D12* _signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY Init(DeviceD3D12* _device, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyDesc(const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyShaderStages      (DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
@@ -43,6 +44,9 @@ private:
     void B3D_APIENTRY Uninit();
 
 public:
+    static BMRESULT
+        B3D_APIENTRY Create0(DeviceD3D12* _device, RootSignatureD3D12* _signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc, GraphicsPipelineStateD3D12** _dst);
+
     static BMRESULT
         B3D_APIENTRY Create(DeviceD3D12* _device, const GRAPHICS_PIPELINE_STATE_DESC& _desc, GraphicsPipelineStateD3D12** _dst);
 
@@ -90,10 +94,9 @@ private:
         ~SHADER_STAGE_DESC_DATA()
         {
             hlp::SafeRelease(module);
-            hlp::SwapClear(entry_point_name);
         }
-        ShaderModuleD3D12* module;
-        util::String    entry_point_name;
+        ShaderModuleD3D12*  module;
+        util::String        entry_point_name;
     };
 
     struct SHADER_STAGE_DESCS_DATA
@@ -155,26 +158,13 @@ private:
         ~DESC_DATA()
         {
             hlp::SafeRelease(root_signature);
+            hlp::SafeRelease(pipeline_layout);
             hlp::SafeRelease(render_pass);
-
-            shader_stages = {};
-
-            /* NOTE: unique_ptrのデストラクタは、リソースの破棄のみ行います。 破棄されたメモリを参照するポインタはnullptrにしません。
-                     そのため、unique_ptrをメンバとして持つ構造等のデストラクタを明示的に呼び出したい場合は、以下のようにポインタもnullptrとする実装を行う必要があります。
-                     そうしないと、自動でデストラクタが呼び出される際に、破棄されたはずのポインタに対して再び破棄が行われてしまいます。 */
-            input_layout             .reset();
-            input_assembly_state_desc.reset();
-            tessellation_state_desc  .reset();
-            viewport_state           .reset();
-            rasterization_state_desc .reset();
-            stream_output            .reset();
-            multisample_state        .reset();
-            depth_stencil_state_desc .reset();
-            blend_state              .reset();
-            dynamic_state            .reset();
         }
 
         RootSignatureD3D12*                             root_signature;
+
+        PipelineLayoutD3D12*                            pipeline_layout;
         RenderPassD3D12*                                render_pass;
         SHADER_STAGE_DESCS_DATA                         shader_stages;
         util::UniquePtr<INPUT_LAYOUT_DESC_DATA>         input_layout;
@@ -218,7 +208,7 @@ private:
     util::UniquePtr<util::NameableObjStr>                   name;
     DeviceD3D12*                                            device;
     GRAPHICS_PIPELINE_STATE_DESC                            desc;
-    DESC_DATA                                               desc_data;
+    util::UniquePtr<DESC_DATA>                              desc_data;
     ID3D12Device*                                           device12;
     ID3D12PipelineState*                                    pipeline;
     util::DyArray<util::UniquePtr<INonDynamicStateSetter>>  non_dynamic_state_setters;

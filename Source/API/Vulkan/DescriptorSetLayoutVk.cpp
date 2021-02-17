@@ -486,6 +486,7 @@ B3D_APIENTRY DescriptorSetLayoutVk::SetName(const char* _name)
         return BMRESULT_FAILED;
 
     B3D_RET_IF_FAILED(device->SetVkObjectName(layout, _name));
+    B3D_RET_IF_FAILED(device->SetVkObjectName(update_template_layout->update_template, _name));
 
     if (name && !_name)
         name.reset();

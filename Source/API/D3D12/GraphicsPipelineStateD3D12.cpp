@@ -246,7 +246,7 @@ public:
         , num_viewports     { _owner.desc.viewport_state->num_viewports }
         , viewports_data    {}
     {
-        auto vps = _owner.desc_data.viewport_state->viewports.data();
+        auto vps = _owner.desc_data->viewport_state->viewports.data();
         viewports.resize(num_viewports);
         viewports_data = viewports.data();
         for (uint32_t i = 0; i < num_viewports; i++)
@@ -277,7 +277,7 @@ public:
         , num_rects  { _owner.desc.viewport_state->num_scissor_rects }
         , rects_data {}
     {
-        auto rcs = _owner.desc_data.viewport_state->scissor_rects.data();
+        auto rcs = _owner.desc_data->viewport_state->scissor_rects.data();
         rects.resize(num_rects);
         rects_data = rects.data();
         for (uint32_t i = 0; i < num_rects; i++)
@@ -304,7 +304,7 @@ class GraphicsPipelineStateD3D12::NonDynamicStateSetterBlendConstants : public G
 {
 public:
     NonDynamicStateSetterBlendConstants(GraphicsPipelineStateD3D12& _owner)
-        : blend_constants{ _owner.desc_data.blend_state->desc.blend_constants }
+        : blend_constants{ _owner.desc_data->blend_state->desc.blend_constants }
     {
     }
     ~NonDynamicStateSetterBlendConstants()
@@ -326,7 +326,7 @@ class GraphicsPipelineStateD3D12::NonDynamicStateSetterDepthBounds : public Grap
 {
 public:
     NonDynamicStateSetterDepthBounds(GraphicsPipelineStateD3D12& _owner)
-        : states{ *_owner.desc_data.depth_stencil_state_desc }
+        : states{ *_owner.desc_data->depth_stencil_state_desc }
     {
     }
     ~NonDynamicStateSetterDepthBounds()
@@ -350,8 +350,8 @@ public:
     NonDynamicStateSetterStencilReference(GraphicsPipelineStateD3D12& _owner)
         : reference{}
     {
-        auto&& ds = *_owner.desc_data.depth_stencil_state_desc;
-        switch (_owner.desc_data.rasterization_state_desc->cull_mode)
+        auto&& ds = *_owner.desc_data->depth_stencil_state_desc;
+        switch (_owner.desc_data->rasterization_state_desc->cull_mode)
         {
         case buma3d::CULL_MODE_FRONT:
             reference = ds.stencil_back_face.reference;
@@ -384,7 +384,7 @@ class GraphicsPipelineStateD3D12::NonDynamicStateSetterSamplePositions : public 
 {
 public:
     NonDynamicStateSetterSamplePositions(GraphicsPipelineStateD3D12& _owner)
-        : state                 { *_owner.desc_data.multisample_state->desc.sample_position_state.desc }
+        : state                 { *_owner.desc_data->multisample_state->desc.sample_position_state.desc }
         , num_pixels            {}
         , sample_positions      {}
         , sample_positions_data {}
@@ -454,6 +454,27 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::~GraphicsPipelineStateD3D12()
 }
 
 BMRESULT
+B3D_APIENTRY GraphicsPipelineStateD3D12::Init0(DeviceD3D12* _device, RootSignatureD3D12* _signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc)
+{
+    (device = _device)->AddRef();
+    device12 = device->GetD3D12Device();
+
+    if (_desc.pipeline_layout)
+    {
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
+                          , "IDevice::CreateGraphicsPipelineState0から作成する場合、GRAPHICS_PIPELINE_STATE_DESC::pipeline_layoutはnullptrである必要があります。");
+        return BMRESULT_FAILED;
+    }
+    B3D_RET_IF_FAILED(CopyDesc(_desc));
+    (desc_data->root_signature = _signature)->AddRef();
+
+    B3D_RET_IF_FAILED(CreateGraphicsD3D12PipelineState());
+    B3D_RET_IF_FAILED(CreateNonDynamicStateSetters());
+
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY GraphicsPipelineStateD3D12::Init(DeviceD3D12* _device, const GRAPHICS_PIPELINE_STATE_DESC& _desc)
 {
     (device = _device)->AddRef();
@@ -473,40 +494,45 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyDesc(const GRAPHICS_PIPELINE_STATE_
 {
     desc = _desc;
 
-    (desc_data.root_signature   = _desc.root_signature->As<RootSignatureD3D12>())->AddRef();
-    (desc_data.render_pass      = _desc.render_pass->As<RenderPassD3D12>())->AddRef();
+    desc_data = B3DMakeUnique(DESC_DATA);
+    auto&& dd = desc_data.get();
 
-    B3D_RET_IF_FAILED(CopyShaderStages(&desc_data, _desc));
+    if (_desc.pipeline_layout)
+        (dd->pipeline_layout = _desc.pipeline_layout->As<PipelineLayoutD3D12>())->AddRef();
+
+    (dd->render_pass = _desc.render_pass->As<RenderPassD3D12>())->AddRef();
+
+    B3D_RET_IF_FAILED(CopyShaderStages(dd, _desc));
 
     if (_desc.dynamic_state)
-        B3D_RET_IF_FAILED(CopyDynamicState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyDynamicState(dd, _desc));
 
     if (_desc.input_layout)
-        B3D_RET_IF_FAILED(CopyInputLayout(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyInputLayout(dd, _desc));
 
     if (_desc.input_assembly_state)
-        B3D_RET_IF_FAILED(CopyInputAssemblyState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyInputAssemblyState(dd, _desc));
 
     if (_desc.tessellation_state)
-        B3D_RET_IF_FAILED(CopyTessellationState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyTessellationState(dd, _desc));
 
     if (_desc.viewport_state)
-        B3D_RET_IF_FAILED(CopyViewportState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyViewportState(dd, _desc));
 
     if (_desc.rasterization_state)
-        B3D_RET_IF_FAILED(CopyRasterizationState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyRasterizationState(dd, _desc));
 
     if (_desc.stream_output)
-        B3D_RET_IF_FAILED(CopyStreamOutput(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyStreamOutput(dd, _desc));
 
     if (_desc.multisample_state)
-        B3D_RET_IF_FAILED(CopyMultisampleState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyMultisampleState(dd, _desc));
 
     if (_desc.depth_stencil_state)
-        B3D_RET_IF_FAILED(CopyDepthStencilState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyDepthStencilState(dd, _desc));
 
     if (_desc.blend_state)
-        B3D_RET_IF_FAILED(CopyBlendState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyBlendState(dd, _desc));
 
     return BMRESULT_SUCCEED;
 }
@@ -625,9 +651,9 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyViewportState(DESC_DATA* _dd, const
 
     bool is_viewport_dynamic = false;
     bool is_scissor_dynamic = false;
-    if (desc_data.dynamic_state)
+    if (desc_data->dynamic_state)
     {
-        auto&& ds = desc_data.dynamic_state->states;
+        auto&& ds = desc_data->dynamic_state->states;
         auto&& begin = ds.begin();
         auto&& end = ds.end();
         is_viewport_dynamic = std::find(begin, end, DYNAMIC_STATE_VIEWPORT) != end;
@@ -858,9 +884,12 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
 
     stream.Flags                 = D3D12_PIPELINE_STATE_FLAG_NONE;
     stream.NodeMask              = desc.node_mask;
-    stream.pRootSignature        = desc_data.root_signature->GetD3D12RootSignature();
     stream.IBStripCutValue       = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
     stream.PrimitiveTopologyType = util::GetNativePrimitiveTopologyType(desc.input_assembly_state->topology);
+
+    stream.pRootSignature = desc_data->root_signature
+        ? desc_data->root_signature->GetD3D12RootSignature()
+        : desc_data->pipeline_layout->GetD3D12RootSignature();
 
     // ID3D12GraphicsCommandList::IASetPrimitiveTopology用
     topologyd3d12 = util::GetNativePrimitiveTopology(desc.input_assembly_state->topology);
@@ -876,21 +905,21 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
         else
             *_dst_bytecode = {};
     };
-    FindShaderBytecode(&stream.VS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VS, desc_data.shader_stages);
-    FindShaderBytecode(&stream.GS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_GS, desc_data.shader_stages);
-    FindShaderBytecode(&stream.HS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_HS, desc_data.shader_stages);
-    FindShaderBytecode(&stream.DS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DS, desc_data.shader_stages);
-    FindShaderBytecode(&stream.PS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PS, desc_data.shader_stages);
-    FindShaderBytecode(&stream.AS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_AS, desc_data.shader_stages);
-    FindShaderBytecode(&stream.MS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_MS, desc_data.shader_stages);
-    //PrepareShaderBytecode(&stream.CS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_CS, desc_data.shader_stages);
+    FindShaderBytecode(&stream.VS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VS, desc_data->shader_stages);
+    FindShaderBytecode(&stream.GS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_GS, desc_data->shader_stages);
+    FindShaderBytecode(&stream.HS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_HS, desc_data->shader_stages);
+    FindShaderBytecode(&stream.DS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DS, desc_data->shader_stages);
+    FindShaderBytecode(&stream.PS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PS, desc_data->shader_stages);
+    FindShaderBytecode(&stream.AS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_AS, desc_data->shader_stages);
+    FindShaderBytecode(&stream.MS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_MS, desc_data->shader_stages);
+    //PrepareShaderBytecode(&stream.CS, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_CS, desc_data->shader_stages);
 
     // CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT;
     util::DyArray<D3D12_INPUT_ELEMENT_DESC> input_elements12;
     if (desc.input_layout)
     {
         auto&& il = *desc.input_layout;
-        auto&& ild = *desc_data.input_layout;
+        auto&& ild = *desc_data->input_layout;
 
         auto&& InputLayout = GetRef(stream.InputLayout);
         input_elements12.resize(ild.input_elements.size());
@@ -1158,13 +1187,10 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
         }
     }
 
-    stream.pRootSignature   = desc_data.root_signature->GetD3D12RootSignature();
-    stream.NodeMask         = desc.node_mask;
-    stream.Flags            = D3D12_PIPELINE_STATE_FLAG_NONE;
     // TODO: stream.CachedPSO = {};
 
-    util::ComPtr<ID3D12Device2> d1;
-    auto hr = device12->QueryInterface(IID_PPV_ARGS(&d1));
+    util::ComPtr<ID3D12Device2> d2;
+    auto hr = device12->QueryInterface(IID_PPV_ARGS(&d2));
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
 
     /*Windows10 ビルド 19041未満の場合、stream.MS、stream.ASのSUBOBJECT_TYPEがドライバー側で定義されておらず、無効なSUBOBJECT_TYPEと識別されてしまいます。
@@ -1175,7 +1201,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
         size -= sizeof(stream.AS) + sizeof(stream.MS);
 
     D3D12_PIPELINE_STATE_STREAM_DESC desc12{ size , &stream };
-    hr = d1->CreatePipelineState(&desc12, IID_PPV_ARGS(&pipeline));
+    hr = d2->CreatePipelineState(&desc12, IID_PPV_ARGS(&pipeline));
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
 
     return BMRESULT_SUCCEED;
@@ -1186,7 +1212,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
 BMRESULT
 B3D_APIENTRY GraphicsPipelineStateD3D12::CreateNonDynamicStateSetters()
 {
-    auto&& dynamic_state = *desc_data.dynamic_state;
+    auto&& dynamic_state = *desc_data->dynamic_state;
     non_dynamic_state_setters.reserve(DYNAMIC_STATE_END - dynamic_state.desc.num_dynamic_states);
 
     // 動的｢ではない｣状態を設定するためのオブジェクトを作成。
@@ -1198,9 +1224,9 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateNonDynamicStateSetters()
     if (std::find(begin, end, DYNAMIC_STATE_SCISSOR) == end)
         non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterScissor, *this));
 
-    if (!desc_data.blend_state->desc.is_enabled_logic_op && std::find(begin, end, DYNAMIC_STATE_DEPTH_BOUNDS) == end)
+    if (!desc_data->blend_state->desc.is_enabled_logic_op && std::find(begin, end, DYNAMIC_STATE_DEPTH_BOUNDS) == end)
     {
-        for (auto& i : desc_data.blend_state->attachments)
+        for (auto& i : desc_data->blend_state->attachments)
         {
             // いずれかの1つの要素にでもブレンド係数が使用される場合、コマンド記録時にブレンド係数のセットが必要です。
             if (i.is_enabled_blend &&
@@ -1215,17 +1241,17 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateNonDynamicStateSetters()
         }
     }
 
-    auto is_enabled_depth   = desc_data.depth_stencil_state_desc && desc_data.depth_stencil_state_desc->is_enabled_depth_test;
-    auto is_enabled_stencil = desc_data.depth_stencil_state_desc && desc_data.depth_stencil_state_desc->is_enabled_stencil_test;
+    auto is_enabled_depth   = desc_data->depth_stencil_state_desc && desc_data->depth_stencil_state_desc->is_enabled_depth_test;
+    auto is_enabled_stencil = desc_data->depth_stencil_state_desc && desc_data->depth_stencil_state_desc->is_enabled_stencil_test;
     if (is_enabled_depth && std::find(begin, end, DYNAMIC_STATE_DEPTH_BOUNDS) == end)
     {        
-        if (desc_data.depth_stencil_state_desc->is_enabled_depth_bounds_test)
+        if (desc_data->depth_stencil_state_desc->is_enabled_depth_bounds_test)
             non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterDepthBounds, *this));
     }
 
     if (is_enabled_stencil || std::find(begin, end, DYNAMIC_STATE_STENCIL_REFERENCE) == end)
     {
-        if (desc_data.depth_stencil_state_desc->min_depth_bounds != 0.f || desc_data.depth_stencil_state_desc->max_depth_bounds != 1.f)
+        if (desc_data->depth_stencil_state_desc->min_depth_bounds != 0.f || desc_data->depth_stencil_state_desc->max_depth_bounds != 1.f)
             non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterStencilReference, *this));
     }
 
@@ -1251,16 +1277,28 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateNonDynamicStateSetters()
 void
 B3D_APIENTRY GraphicsPipelineStateD3D12::Uninit()
 {
-    name.reset();
+    hlp::SafeRelease(pipeline);
 
     hlp::SwapClear(non_dynamic_state_setters);
     desc = {};
-    desc_data.~DESC_DATA();
+    desc_data.reset();
 
-    hlp::SafeRelease(pipeline);
     hlp::SafeRelease(device);
     device12 = nullptr;
     topologyd3d12 = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+
+    name.reset();
+}
+
+BMRESULT
+B3D_APIENTRY GraphicsPipelineStateD3D12::Create0(DeviceD3D12* _device, RootSignatureD3D12* _signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc, GraphicsPipelineStateD3D12** _dst)
+{
+    util::Ptr<GraphicsPipelineStateD3D12> ptr;
+    ptr.Attach(B3DCreateImplementationClass(GraphicsPipelineStateD3D12));
+    B3D_RET_IF_FAILED(ptr->Init0(_device, _signature, _desc));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
 }
 
 BMRESULT

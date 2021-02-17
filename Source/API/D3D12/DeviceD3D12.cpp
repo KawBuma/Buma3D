@@ -846,10 +846,80 @@ B3D_APIENTRY DeviceD3D12::UpdateDescriptorSets0(const UPDATE_DESCRIPTOR_SET_DESC
 }
 
 BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateDescriptorSetLayout(const DESCRIPTOR_SET_LAYOUT_DESC& _desc, IDescriptorSetLayout** _dst)
+{
+    util::Ptr<DescriptorSetLayoutD3D12> ptr;
+    B3D_RET_IF_FAILED(DescriptorSetLayoutD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreatePipelineLayout(const PIPELINE_LAYOUT_DESC& _desc, IPipelineLayout** _dst)
+{
+    util::Ptr<PipelineLayoutD3D12> ptr;
+    B3D_RET_IF_FAILED(PipelineLayoutD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateDescriptorHeap(const DESCRIPTOR_HEAP_DESC& _desc, IDescriptorHeap** _dst)
+{
+    util::Ptr<DescriptorHeapD3D12> ptr;
+    B3D_RET_IF_FAILED(DescriptorHeapD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC& _desc, IDescriptorPool** _dst)
+{
+    util::Ptr<DescriptorPoolD3D12> ptr;
+    B3D_RET_IF_FAILED(DescriptorPoolD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateDescriptorUpdate(const DESCRIPTOR_UPDATE_DESC& _desc, IDescriptorUpdate** _dst)
+{
+    util::Ptr<DescriptorUpdateD3D12> ptr;
+    B3D_RET_IF_FAILED(DescriptorUpdateD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY DeviceD3D12::CreateShaderModule(const SHADER_MODULE_DESC& _desc, IShaderModule** _dst)
 {
     util::Ptr<ShaderModuleD3D12> ptr;
     B3D_RET_IF_FAILED(ShaderModuleD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateGraphicsPipelineState0(IRootSignature* _root_signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc, IPipelineState** _dst)
+{
+    util::Ptr<GraphicsPipelineStateD3D12> ptr;
+    B3D_RET_IF_FAILED(GraphicsPipelineStateD3D12::Create0(this, _root_signature->As<RootSignatureD3D12>(), _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateComputePipelineState0(IRootSignature* _root_signature, const COMPUTE_PIPELINE_STATE_DESC& _desc, IPipelineState** _dst)
+{
+    util::Ptr<ComputePipelineStateD3D12> ptr;
+    B3D_RET_IF_FAILED(ComputePipelineStateD3D12::Create0(this, _root_signature->As<RootSignatureD3D12>(), _desc, &ptr));
 
     *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;

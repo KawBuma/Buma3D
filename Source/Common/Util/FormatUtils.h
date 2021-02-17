@@ -12,7 +12,7 @@ void GetFormatBlockSize(RESOURCE_FORMAT _format, uint32_t* _dst_block_w, uint32_
 
 inline UINT2 GetFormatBlockSize(RESOURCE_FORMAT _format)
 {
-    UINT2 result;
+    UINT2 result{};
     GetFormatBlockSize(_format, &result.x, &result.y);
     return result;
 }

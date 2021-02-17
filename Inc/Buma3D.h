@@ -3804,7 +3804,7 @@ struct DYNAMIC_STATE_DESC
 
 struct GRAPHICS_PIPELINE_STATE_DESC
 {
-    IRootSignature*                             root_signature;
+    IPipelineLayout*                            pipeline_layout;
     IRenderPass*                                render_pass;
     uint32_t                                    subpass;
     NodeMask                                    node_mask; // パイプラインステートオブジェクトが構築されるノードを示す単一のビットを指定します。
@@ -3812,12 +3812,13 @@ struct GRAPHICS_PIPELINE_STATE_DESC
 
     uint32_t                                    num_shader_stages;
     const PIPELINE_SHADER_STAGE_DESC*           shader_stages;
+
     const INPUT_LAYOUT_DESC*                    input_layout;
     const INPUT_ASSEMBLY_STATE_DESC*            input_assembly_state;
     const TESSELLATION_STATE_DESC*              tessellation_state; // PRIMITIVE_TOPOLOGY_PATCH_LISTの場合に使用します。
     const VIEWPORT_STATE_DESC*                  viewport_state;
     const RASTERIZATION_STATE_DESC*             rasterization_state;
-    const STREAM_OUTPUT_DESC*                   stream_output;      // 現在はD3D12のみの対応です。
+    const STREAM_OUTPUT_DESC*                   stream_output;
     const MULTISAMPLE_STATE_DESC*               multisample_state;
     const DEPTH_STENCIL_STATE_DESC*             depth_stencil_state;
     const BLEND_STATE_DESC*                     blend_state;
@@ -3826,7 +3827,7 @@ struct GRAPHICS_PIPELINE_STATE_DESC
 
 struct COMPUTE_PIPELINE_STATE_DESC
 {
-    IRootSignature*             root_signature;
+    IPipelineLayout*            pipeline_layout;
     NodeMask                    node_mask;
     PIPELINE_SHADER_STAGE_DESC  shader_stage;
 };
@@ -4708,6 +4709,18 @@ public:
         B3D_APIENTRY CreateShaderModule(
               const SHADER_MODULE_DESC& _desc
             , IShaderModule**           _dst) = 0;    
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateGraphicsPipelineState0(
+              IRootSignature*                     _root_signature
+            , const GRAPHICS_PIPELINE_STATE_DESC& _desc
+            , IPipelineState**                    _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateComputePipelineState0(
+              IRootSignature*                    _root_signature
+            , const COMPUTE_PIPELINE_STATE_DESC& _desc
+            , IPipelineState**                   _dst) = 0;
 
     virtual BMRESULT
         B3D_APIENTRY CreateGraphicsPipelineState(
@@ -5618,6 +5631,23 @@ public:
         B3D_APIENTRY Push32BitConstants(
               PIPELINE_BIND_POINT               _bind_point
             , const CMD_PUSH_32BIT_CONSTANTS&   _args) = 0;
+
+
+    virtual void
+        B3D_APIENTRY SetPipelineLayout(
+              PIPELINE_BIND_POINT   _bind_point
+            , IPipelineLayout*      _pipeline_layout) = 0;
+
+    //virtual void
+    //    B3D_APIENTRY BindDescriptorSet(
+    //          PIPELINE_BIND_POINT               _bind_point
+    //        , const CMD_BIND_DESCRIPTOR_SET&    _args) = 0;
+    //
+    //virtual void
+    //    B3D_APIENTRY Push32BitConstantsx(
+    //          PIPELINE_BIND_POINT               _bind_point
+    //        , const CMD_PUSH_32BIT_CONSTANTS&   _args) = 0;
+
 
     virtual void
         B3D_APIENTRY BindIndexBufferView(

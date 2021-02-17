@@ -41,6 +41,28 @@ B3D_APIENTRY ComputePipelineStateVk::~ComputePipelineStateVk()
 }
 
 BMRESULT
+B3D_APIENTRY ComputePipelineStateVk::Init0(DeviceVk* _device, RootSignatureVk* _signature, const COMPUTE_PIPELINE_STATE_DESC& _desc)
+{
+    (device = _device)->AddRef();
+    inspfn = &device->GetInstancePFN();
+    devpfn = &device->GetDevicePFN();
+    vkdevice = device->GetVkDevice();
+
+    if (_desc.pipeline_layout)
+    {
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
+                          , "IDevice::CreateComputePipelineState0から作成する場合、COMPUTE_PIPELINE_STATE_DESC::pipeline_layoutはnullptrである必要があります。");
+        return BMRESULT_FAILED;
+    }
+    CopyDesc(_desc);
+    (desc_data->root_signature = _signature)->AddRef();
+
+    B3D_RET_IF_FAILED(CreateComputeVkPipeline());
+
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY ComputePipelineStateVk::Init(DeviceVk* _device, const COMPUTE_PIPELINE_STATE_DESC& _desc)
 {
     (device = _device)->AddRef();
@@ -64,13 +86,16 @@ B3D_APIENTRY ComputePipelineStateVk::CreateComputeVkPipeline()
     ci.flags = 0;
     //ci.flags = util::GetNativePipelineCreateFlags(desc.flags);
 
-    ci.layout               = desc_data.root_signature->GetVkPipelineLayout();
     ci.basePipelineHandle   = VK_NULL_HANDLE;
     ci.basePipelineIndex    = 0;
     ci.stage.flags    = util::GetNativePipelineShaderStageFlags(desc.shader_stage.flags);
     ci.stage.stage    = util::GetNativeShaderStageFlagBit(desc.shader_stage.stage);
-    ci.stage.module   = desc_data.module->GetVkShaderModule();
-    ci.stage.pName    = desc_data.entry_point_name;
+    ci.stage.module   = desc_data->module->GetVkShaderModule();
+    ci.stage.pName    = desc_data->entry_point_name;
+
+    ci.layout = desc_data->root_signature
+        ? desc_data->root_signature->GetVkPipelineLayout()
+        : desc_data->pipeline_layout->GetVkPipelineLayout();
 
     // auto last_pnext = &ci.pNext;
 
@@ -92,29 +117,46 @@ void
 B3D_APIENTRY ComputePipelineStateVk::CopyDesc(const COMPUTE_PIPELINE_STATE_DESC& _desc)
 {
     desc = _desc;
-    (desc_data.root_signature = _desc.root_signature->As<RootSignatureVk>())->AddRef();
-    (desc_data.module         = _desc.shader_stage.module->As<ShaderModuleVk>())->AddRef();
+
+    desc_data = B3DMakeUnique(DESC_DATA);
+
+    if (_desc.pipeline_layout)
+        (desc_data->pipeline_layout = _desc.pipeline_layout->As<PipelineLayoutVk>())->AddRef();
+
+    (desc_data->module = _desc.shader_stage.module->As<ShaderModuleVk>())->AddRef();
 
     auto l = std::strlen(_desc.shader_stage.entry_point_name) + 1;
-    desc_data.entry_point_name = util::MemCopyArray(B3DNewArray(char, l), _desc.shader_stage.entry_point_name, l);
+    desc_data->entry_point_name = util::MemCopyArray(B3DNewArray(char, l), _desc.shader_stage.entry_point_name, l);
+    desc.shader_stage.entry_point_name = desc_data->entry_point_name;
 }
 
 void
 B3D_APIENTRY ComputePipelineStateVk::Uninit()
 {
-    name.reset();
-
     if (pipeline)
         vkDestroyPipeline(vkdevice, pipeline, B3D_VK_ALLOC_CALLBACKS);
     pipeline = VK_NULL_HANDLE;
 
     desc = {};
-    desc_data.~DESC_DATA();
+    desc_data.reset();
 
     hlp::SafeRelease(device);
     vkdevice = VK_NULL_HANDLE;
     devpfn = nullptr;
     inspfn = nullptr;
+
+    name.reset();
+}
+
+BMRESULT
+B3D_APIENTRY ComputePipelineStateVk::Create0(DeviceVk* _device, RootSignatureVk* _signature, const COMPUTE_PIPELINE_STATE_DESC& _desc, ComputePipelineStateVk** _dst)
+{
+    util::Ptr<ComputePipelineStateVk> ptr;
+    ptr.Attach(B3DCreateImplementationClass(ComputePipelineStateVk));
+    B3D_RET_IF_FAILED(ptr->Init0(_device, _signature, _desc));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
 }
 
 BMRESULT

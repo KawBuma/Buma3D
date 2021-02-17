@@ -1197,10 +1197,80 @@ B3D_APIENTRY DeviceVk::UpdateDescriptorSets0(const UPDATE_DESCRIPTOR_SET_DESC0& 
 }
 
 BMRESULT
+B3D_APIENTRY DeviceVk::CreateDescriptorSetLayout(const DESCRIPTOR_SET_LAYOUT_DESC& _desc, IDescriptorSetLayout** _dst)
+{
+    util::Ptr<DescriptorSetLayoutVk> ptr;
+    B3D_RET_IF_FAILED(DescriptorSetLayoutVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreatePipelineLayout(const PIPELINE_LAYOUT_DESC& _desc, IPipelineLayout** _dst)
+{
+    util::Ptr<PipelineLayoutVk> ptr;
+    B3D_RET_IF_FAILED(PipelineLayoutVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreateDescriptorHeap(const DESCRIPTOR_HEAP_DESC& _desc, IDescriptorHeap** _dst)
+{
+    util::Ptr<DescriptorHeapVk> ptr;
+    B3D_RET_IF_FAILED(DescriptorHeapVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC& _desc, IDescriptorPool** _dst)
+{
+    util::Ptr<DescriptorPoolVk> ptr;
+    B3D_RET_IF_FAILED(DescriptorPoolVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreateDescriptorUpdate(const DESCRIPTOR_UPDATE_DESC& _desc, IDescriptorUpdate** _dst)
+{
+    util::Ptr<DescriptorUpdateVk> ptr;
+    B3D_RET_IF_FAILED(DescriptorUpdateVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY DeviceVk::CreateShaderModule(const SHADER_MODULE_DESC& _desc, IShaderModule** _dst)
 {
     util::Ptr<ShaderModuleVk> ptr;
     B3D_RET_IF_FAILED(ShaderModuleVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreateGraphicsPipelineState0(IRootSignature* _root_signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc, IPipelineState** _dst)
+{
+    util::Ptr<GraphicsPipelineStateVk> ptr;
+    B3D_RET_IF_FAILED(GraphicsPipelineStateVk::Create0(this, _root_signature->As<RootSignatureVk>(), _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreateComputePipelineState0(IRootSignature* _root_signature, const COMPUTE_PIPELINE_STATE_DESC& _desc, IPipelineState** _dst)
+{
+    util::Ptr<ComputePipelineStateVk> ptr;
+    B3D_RET_IF_FAILED(ComputePipelineStateVk::Create0(this, _root_signature->As<RootSignatureVk>(), _desc, &ptr));
 
     *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;

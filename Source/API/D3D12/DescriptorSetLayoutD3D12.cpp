@@ -212,7 +212,7 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareDescriptorPoolSizes()
         }
     }
 
-    util::CalcDescriptorCounts(pool_sizes.size(), pool_sizes.data(), &i.num_cbv_srv_uav_descrptors, &i.num_sampler_descrptors);
+    util::CalcDescriptorCounts((uint32_t)pool_sizes.size(), pool_sizes.data(), &i.num_cbv_srv_uav_descrptors, &i.num_sampler_descrptors);
 
     // D3D12の場合、静的サンプラはディスクリプタを消費しません。
     i.num_sampler_descrptors -= i.num_static_samplers;

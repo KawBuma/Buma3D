@@ -211,7 +211,7 @@ B3D_APIENTRY DescriptorSet0D3D12::CopyDescriptorSet(IDescriptorSet0* _src)
         return BMRESULT_FAILED_INVALID_PARAMETER;
 
     auto CopySimple = [this](auto& _dst_allocation, const DescriptorPool0D3D12::COPY_SRC_HANDLES& _src_allocation, D3D12_DESCRIPTOR_HEAP_TYPE _type)
-    { if (_src_allocation.num_descriptors) device12->CopyDescriptorsSimple(_src_allocation.num_descriptors, _dst_allocation.OffsetCPUHandle(0), _src_allocation.OffsetCPUHandle(0), _type); };
+    { if (_src_allocation.num_descriptors) device12->CopyDescriptorsSimple((UINT)_src_allocation.num_descriptors, _dst_allocation.OffsetCPUHandle(0), _src_allocation.OffsetCPUHandle(0), _type); };
 
     if (pool->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
     {
@@ -297,7 +297,7 @@ B3D_APIENTRY DescriptorSet0D3D12::WriteDescriptors(const WRITE_DESCRIPTOR_SET0& 
         AddCopyRanges(*copy_src_descriptors);
 
         auto CopySimple = [this](auto& _dst_allocation, const DescriptorPool0D3D12::COPY_SRC_HANDLES& _src_allocation, D3D12_DESCRIPTOR_HEAP_TYPE _type)
-        { if (_src_allocation.num_descriptors) device12->CopyDescriptorsSimple(_src_allocation.num_descriptors, _dst_allocation.OffsetCPUHandle(0), _src_allocation.OffsetCPUHandle(0), _type); };
+        { if (_src_allocation.num_descriptors) device12->CopyDescriptorsSimple((UINT)_src_allocation.num_descriptors, _dst_allocation.OffsetCPUHandle(0), _src_allocation.OffsetCPUHandle(0), _type); };
         CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], copy_src_descriptors->data()[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]    , copy_src_descriptors->data()[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]    , D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     }
@@ -364,7 +364,7 @@ B3D_APIENTRY DescriptorSet0D3D12::CopyDescriptors(const COPY_DESCRIPTOR_SET0& _c
         AddCopyRanges(*copy_src_descriptors);
 
         auto CopySimple = [this](auto& _dst_allocation, const DescriptorPool0D3D12::COPY_SRC_HANDLES& _src_allocation, D3D12_DESCRIPTOR_HEAP_TYPE _type)
-        { if (_src_allocation.num_descriptors) device12->CopyDescriptorsSimple(_src_allocation.num_descriptors, _dst_allocation.OffsetCPUHandle(0), _src_allocation.OffsetCPUHandle(0), _type); };
+        { if (_src_allocation.num_descriptors) device12->CopyDescriptorsSimple((UINT)_src_allocation.num_descriptors, _dst_allocation.OffsetCPUHandle(0), _src_allocation.OffsetCPUHandle(0), _type); };
         CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], copy_src_descriptors->data()[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]    , copy_src_descriptors->data()[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]    , D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     }
