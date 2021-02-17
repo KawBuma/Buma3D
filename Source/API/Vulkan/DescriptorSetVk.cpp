@@ -13,6 +13,7 @@ B3D_APIENTRY DescriptorSetVk::DescriptorSetVk()
     , vkdevice          {}
     , inspfn            {}
     , devpfn            {}
+    , heap              {}
     , pool              {}
     , set_layout        {}
     , descriptor_set    {}
@@ -34,8 +35,9 @@ B3D_APIENTRY DescriptorSetVk::Init(DescriptorSetLayoutVk* _layout, DescriptorPoo
     devpfn = &device->GetDevicePFN();
     vkdevice = device->GetVkDevice();
 
-    (pool = _pool)->AddRef();
-    (set_layout = _layout)->AddRef();
+    (heap          = _pool->GetDesc().heap->As<DescriptorHeapVk>())->AddRef();
+    (pool          = _pool)->AddRef();
+    (set_layout    = _layout)->AddRef();
     descriptor_set = _set;
 
     B3D_RET_IF_FAILED(pool->AllocateDescriptors(set_layout->GetBindingsInfo().pool_sizes));
@@ -59,6 +61,7 @@ B3D_APIENTRY DescriptorSetVk::Uninit()
     descriptor_set = VK_NULL_HANDLE;
 
     hlp::SafeRelease(pool);
+    hlp::SafeRelease(heap);
     hlp::SafeRelease(set_layout);
     hlp::SafeRelease(device);
     vkdevice = VK_NULL_HANDLE;
@@ -304,6 +307,12 @@ B3D_APIENTRY DescriptorSetVk::VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_SET
     }
 
     return BMRESULT_SUCCEED;
+}
+
+DescriptorHeapVk*
+B3D_APIENTRY DescriptorSetVk::GetHeap() const
+{
+    return heap;
 }
 
 inline BMRESULT DescriptorSetVk::CheckPoolCompatibility(const DESCRIPTOR_POOL_DESC& _src_desc, const DESCRIPTOR_POOL_DESC& _dst_desc)

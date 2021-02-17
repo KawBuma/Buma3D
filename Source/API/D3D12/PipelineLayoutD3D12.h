@@ -53,6 +53,9 @@ public:
     ID3D12RootSignature*
         B3D_APIENTRY GetD3D12RootSignature() const;
 
+    const uint32_t*
+        B3D_APIENTRY GetRootParameterOffsets() const;
+
 private:
     struct DESC_DATA
     {
@@ -84,6 +87,7 @@ private:
     util::UniquePtr<DESC_DATA>                  desc_data;
     ID3D12Device*                               device12;
     ID3D12RootSignature*                        root_signature;
+    util::DyArray<uint32_t>                     root_parameter_offsets; // 各ディスクリプタセットレイアウトに対応するルートパラメータの開始オフセットです。 コマンドリストで使用します。
 
 };
 

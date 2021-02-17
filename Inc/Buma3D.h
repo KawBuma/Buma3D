@@ -3842,7 +3842,7 @@ struct RAY_TRACING_PIPELINE_STATE_DESC
 
 #pragma region command list arguments
 
-struct CMD_PUSH_32BIT_CONSTANTS
+struct CMD_PUSH_32BIT_CONSTANTS0
 {
     uint32_t    root_parameter_index;
     uint32_t    num32_bit_values_to_set;
@@ -3856,11 +3856,28 @@ struct DYNAMIC_DESCRIPTOR_OFFSET
     uint32_t    offset;
 };
 
-struct CMD_BIND_DESCRIPTOR_SET
+struct CMD_BIND_DESCRIPTOR_SET0
 {
     IDescriptorSet0*                    descriptor_set;
     uint32_t                            num_dynamic_descriptor_offsets; // 更新する動的ディスクリプタのオフセットの配列の要素数です。 
     const DYNAMIC_DESCRIPTOR_OFFSET*    dynamic_descriptor_offsets;     // 更新する動的ディスクリプタのオフセットの配列です。 
+};
+
+struct CMD_PUSH_32BIT_CONSTANTS
+{
+    uint32_t    index; // パイプラインレイアウトに存在するプッシュ定数パラメータのインデックスです。
+    uint32_t    num32_bit_values_to_set;
+    const void* src_data;
+    uint32_t    dst_offset_in_32bit_values;
+};
+
+struct CMD_BIND_DESCRIPTOR_SETS
+{
+    uint32_t                            first_set;                      // バインドするディスクリプタの開始インデックスです。 パイプラインレイアウトに存在するレイアウトバインディングに対応します。
+    uint32_t                            num_descriptor_sets;            // first_setから開始する、バインドするディスクリプタセットの配列要素数です。
+    IDescriptorSet*const *              descriptor_sets;                // first_setから開始する、バインドするディスクリプタセットの配列です。
+    uint32_t                            num_dynamic_descriptor_offsets; // 更新する動的ディスクリプタのオフセットの配列の要素数です。 値はdescriptor_sets配列の各要素に関連付けられているレイアウトの動的ディスクリプタ数の合計である必要があります。
+    const uint32_t*                     dynamic_descriptor_offsets;     // 更新する動的ディスクリプタのオフセットの配列です。 descriptor_setsの持つ動的ディスクリプタ数に応じて順番に要素が使用されます。
 };
 
 struct QUERY_DESC
@@ -5625,12 +5642,12 @@ public:
     virtual void
         B3D_APIENTRY BindDescriptorSet0(
               PIPELINE_BIND_POINT               _bind_point
-            , const CMD_BIND_DESCRIPTOR_SET&    _args) = 0;
+            , const CMD_BIND_DESCRIPTOR_SET0&   _args) = 0;
 
     virtual void
-        B3D_APIENTRY Push32BitConstants(
+        B3D_APIENTRY Push32BitConstants0(
               PIPELINE_BIND_POINT               _bind_point
-            , const CMD_PUSH_32BIT_CONSTANTS&   _args) = 0;
+            , const CMD_PUSH_32BIT_CONSTANTS0&  _args) = 0;
 
 
     virtual void
@@ -5638,15 +5655,15 @@ public:
               PIPELINE_BIND_POINT   _bind_point
             , IPipelineLayout*      _pipeline_layout) = 0;
 
-    //virtual void
-    //    B3D_APIENTRY BindDescriptorSet(
-    //          PIPELINE_BIND_POINT               _bind_point
-    //        , const CMD_BIND_DESCRIPTOR_SET&    _args) = 0;
-    //
-    //virtual void
-    //    B3D_APIENTRY Push32BitConstantsx(
-    //          PIPELINE_BIND_POINT               _bind_point
-    //        , const CMD_PUSH_32BIT_CONSTANTS&   _args) = 0;
+    virtual void
+        B3D_APIENTRY BindDescriptorSets(
+              PIPELINE_BIND_POINT               _bind_point
+            , const CMD_BIND_DESCRIPTOR_SETS&   _args) = 0;
+    
+    virtual void
+        B3D_APIENTRY Push32BitConstants(
+              PIPELINE_BIND_POINT               _bind_point
+            , const CMD_PUSH_32BIT_CONSTANTS&   _args) = 0;
 
 
     virtual void

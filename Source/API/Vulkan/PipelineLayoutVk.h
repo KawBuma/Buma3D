@@ -1,20 +1,10 @@
 #pragma once
 
-#pragma once
-
 namespace buma3d
 {
 
 class B3D_API PipelineLayoutVk : public IDeviceChildVk<IPipelineLayout>, public util::details::NEW_DELETE_OVERRIDE
 {
-public:
-    struct PIPELINE_LAYOUT_INFO
-    {
-        uint32_t                                            total_push_constants_size = 0;
-        util::UniquePtr<util::DyArray<VkPushConstantRange>> push_constant_ranges;
-        util::DyArray<VkDescriptorSetLayout>                set_layouts; // ゼロレイアウトを含むレイアウト配列
-    };
-
 protected:
     B3D_APIENTRY PipelineLayoutVk();
     PipelineLayoutVk(const PipelineLayoutVk&) = delete;
@@ -65,6 +55,9 @@ public:
     VkPipelineLayout
         B3D_APIENTRY GetVkPipelineLayout() const;
 
+    const VkPushConstantRange*
+        B3D_APIENTRY GetVkPushConstantRanges() const;
+
 private:
     struct DESC_DATA
     {
@@ -78,15 +71,16 @@ private:
     };
 
 private:
-    std::atomic_uint32_t                    ref_count;
-    util::UniquePtr<util::NameableObjStr>   name;
-    DeviceVk*                               device;
-    PIPELINE_LAYOUT_DESC                    desc;
-    util::UniquePtr<DESC_DATA>              desc_data;
-    VkDevice                                vkdevice;
-    const InstancePFN*                      inspfn;
-    const DevicePFN*                        devpfn;
-    VkPipelineLayout                        pipeline_layout;
+    std::atomic_uint32_t                                ref_count;
+    util::UniquePtr<util::NameableObjStr>               name;
+    DeviceVk*                                           device;
+    PIPELINE_LAYOUT_DESC                                desc;
+    util::UniquePtr<DESC_DATA>                          desc_data;
+    VkDevice                                            vkdevice;
+    const InstancePFN*                                  inspfn;
+    const DevicePFN*                                    devpfn;
+    VkPipelineLayout                                    pipeline_layout;
+    util::UniquePtr<util::DyArray<VkPushConstantRange>> push_constants;
 
 };
 

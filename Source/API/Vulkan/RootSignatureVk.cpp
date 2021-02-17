@@ -4,7 +4,7 @@
 /*
 *
 * 
-*          TODO: Vulkanに対してより透明なルートシグネチャインターフェースを作成します。
+*          NOTE: IRootSignatureはIDescriptorSetLayoutとIPipelineLayoutに細分化されました。
 * 
 * 
 */

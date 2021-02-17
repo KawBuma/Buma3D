@@ -17,13 +17,17 @@ static constexpr const char* HEAP_TYPE_NAMES[] =
 }// namespace /*anonymous*/
 
 B3D_APIENTRY DescriptorHeapD3D12::DescriptorHeapD3D12()
-    : ref_count     { 1 }
-    , name          {}
-    , device        {}
-    , desc          {}
-    , desc_data     {}
-    , device12      {}
-    , desc_heaps12  {}
+    : ref_count         { 1 }
+    , name              {}
+    , device            {}
+    , desc              {}
+    , desc_data         {}
+    , heap_remains      {}
+    , device12          {}
+    , desc_heaps12      {}
+    , dh_allocators     {}
+    , num_heaps         {}
+    , heap_start_offset {}
 {
       
 }
@@ -54,7 +58,18 @@ B3D_APIENTRY DescriptorHeapD3D12::Init(DeviceD3D12* _device, const DESCRIPTOR_HE
 
     for (auto& i : desc_data->heap_sizes)
         heap_remains[i.type] += i.num_descriptors;
-    
+
+    if (num_descs != 0)
+    {
+        num_heaps++;
+        heap_start_offset = 0;
+    }
+    if (num_sampler_descs != 0)
+    {
+        num_heaps++;
+        heap_start_offset = num_heaps == 1 ? 1 : 0;
+    }
+
     return BMRESULT_SUCCEED;
 }
 
@@ -88,7 +103,6 @@ B3D_APIENTRY DescriptorHeapD3D12::CreateDescriptorHeaps(uint32_t _num_descs, uin
                                                , heap->GetCPUDescriptorHandleForHeapStart()
                                                , heap->GetGPUDescriptorHandleForHeapStart()
                                                , /*enabled free descriptor*/ true);
-
         return BMRESULT_SUCCEED;
     };
 
@@ -112,11 +126,12 @@ B3D_APIENTRY DescriptorHeapD3D12::Uninit()
 
     heap_remains.fill(0);
 
+    desc = {};
+    desc_data.reset();
+
     hlp::SafeRelease(device);
     device12 = nullptr;
 
-    desc = {};
-    desc_data.reset();
     name.reset();
 }
 
@@ -229,6 +244,20 @@ B3D_APIENTRY DescriptorHeapD3D12::FreeDescriptors(const util::DyArray<DESCRIPTOR
         dh_allocators[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]->Free(*_dst_descriptors);
     if (_dst_sampler_descriptors)
         dh_allocators[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]->Free(*_dst_sampler_descriptors);
+}
+
+const util::StArray<ID3D12DescriptorHeap*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>&
+B3D_APIENTRY DescriptorHeapD3D12::GetD3D12DescriptorHeaps() const
+{
+    return desc_heaps12;
+}
+
+const util::StArray<ID3D12DescriptorHeap*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>&
+B3D_APIENTRY DescriptorHeapD3D12::GetD3D12DescriptorHeaps(uint32_t* _dst_num_heaps, uint32_t* _dst_heap_start_offset) const
+{
+    *_dst_num_heaps         = num_heaps;
+    *_dst_heap_start_offset = heap_start_offset;
+    return desc_heaps12;
 }
 
 bool

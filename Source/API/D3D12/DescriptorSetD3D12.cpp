@@ -33,6 +33,7 @@ B3D_APIENTRY DescriptorSetD3D12::DescriptorSetD3D12()
     , allocation_id     {}
     , reset_id          {}
     , device12          {}
+    , heap              {}
     , pool              {}
     , set_layout        {}
     , allocations       {}
@@ -53,7 +54,8 @@ B3D_APIENTRY DescriptorSetD3D12::Init(DescriptorSetLayoutD3D12* _layout, Descrip
     (device = _pool->GetDevice()->As<DeviceD3D12>())->AddRef();
     device12 = device->GetD3D12Device();
 
-    (pool = _pool)->AddRef();
+    (heap       = _pool->GetDesc().heap->As<DescriptorHeapD3D12>())->AddRef();
+    (pool       = _pool)->AddRef();
     (set_layout = _layout)->AddRef();
 
     B3D_RET_IF_FAILED(AllocateDescriptors());
@@ -140,6 +142,7 @@ B3D_APIENTRY DescriptorSetD3D12::Uninit()
     reset_id      = 0;
 
     hlp::SafeRelease(pool);
+    hlp::SafeRelease(heap);
     hlp::SafeRelease(set_layout);
     hlp::SafeRelease(device);
     device12 = nullptr;
@@ -370,6 +373,12 @@ B3D_APIENTRY DescriptorSetD3D12::VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_
     }
 
     return BMRESULT_SUCCEED;
+}
+
+DescriptorHeapD3D12*
+B3D_APIENTRY DescriptorSetD3D12::GetHeap() const
+{
+    return heap;
 }
 
 inline BMRESULT DescriptorSetD3D12::CheckPoolCompatibility(const DESCRIPTOR_POOL_DESC& _src_desc, const DESCRIPTOR_POOL_DESC& _dst_desc)

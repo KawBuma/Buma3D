@@ -5,13 +5,14 @@ namespace buma3d
 {
 
 B3D_APIENTRY PipelineLayoutD3D12::PipelineLayoutD3D12()
-    : ref_count         { 1 }
-    , name              {}
-    , device            {}
-    , desc              {}
-    , desc_data         {}
-    , device12          {}
-    , root_signature    {}
+    : ref_count                 { 1 }
+    , name                      {}
+    , device                    {}
+    , desc                      {}
+    , desc_data                 {}
+    , device12                  {}
+    , root_signature            {}
+    , root_parameter_offsets    {}
 {     
       
 }
@@ -64,6 +65,9 @@ B3D_APIENTRY PipelineLayoutD3D12::CopyDesc(const PIPELINE_LAYOUT_DESC& _desc)
 BMRESULT
 B3D_APIENTRY PipelineLayoutD3D12::PrepareD3D12RootSignatureDesc(DESC_DATA12* _dd12, D3D12_VERSIONED_ROOT_SIGNATURE_DESC* _vdesc12)
 {
+    root_parameter_offsets.resize(desc.num_set_layouts);
+    auto offsets_data = root_parameter_offsets.data();
+
     uint32_t total_num_root_parameters = 0;
 
     // ルートパラメーターの合計数を計算
@@ -71,6 +75,7 @@ B3D_APIENTRY PipelineLayoutD3D12::PrepareD3D12RootSignatureDesc(DESC_DATA12* _dd
     for (uint32_t i = 0; i < desc.num_set_layouts; i++)
     {
         auto&& parameters_info = desc.set_layouts[i]->As<DescriptorSetLayoutD3D12>()->GetRootParameters12Info();
+        offsets_data[i] = total_num_root_parameters;
         if (!parameters_info.is_zero_layout)
             total_num_root_parameters += (uint32_t)parameters_info.root_parameters.size();
     }
@@ -257,12 +262,13 @@ B3D_APIENTRY PipelineLayoutD3D12::CreateD3D12RootSignature(const D3D12_VERSIONED
 void
 B3D_APIENTRY PipelineLayoutD3D12::Uninit()
 {
+    desc = {};
+    desc_data.reset();
+
     hlp::SafeRelease(root_signature);
     hlp::SafeRelease(device);
     device12 = nullptr;
 
-    desc = {};
-    desc_data.reset();
     name.reset();
 }
 
@@ -339,6 +345,12 @@ ID3D12RootSignature*
 B3D_APIENTRY PipelineLayoutD3D12::GetD3D12RootSignature() const
 {
     return root_signature;
+}
+
+const uint32_t*
+B3D_APIENTRY PipelineLayoutD3D12::GetRootParameterOffsets() const
+{
+    return root_parameter_offsets.data();
 }
 
 

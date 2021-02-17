@@ -53,6 +53,12 @@ public:
                                      , GPU_DESCRIPTOR_ALLOCATION*               _descriptors
                                      , GPU_DESCRIPTOR_ALLOCATION*               _sampler_descriptors);
 
+    const util::StArray<ID3D12DescriptorHeap*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER+1>&
+        B3D_APIENTRY GetD3D12DescriptorHeaps() const;
+
+    const util::StArray<ID3D12DescriptorHeap*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER+1>&
+        B3D_APIENTRY GetD3D12DescriptorHeaps(uint32_t* _dst_num_heaps, uint32_t* _dst_heap_start_offset) const;
+
 private:
     bool B3D_APIENTRY IsAllocatable(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes) const;
     void B3D_APIENTRY DecrementRemains(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes);
@@ -74,7 +80,9 @@ private:
     ID3D12Device*                                                                   device12;
     util::StArray<ID3D12DescriptorHeap*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER+1>      desc_heaps12;
     util::StArray<GPUDescriptorAllocator*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER+1>    dh_allocators;
-
+    uint32_t                                                                        num_heaps;          // コマンドリストにヒープをセットする際に必要な情報のキャッシュです。
+    uint32_t                                                                        heap_start_offset;  // コマンドリストにヒープをセットする際に必要な情報のキャッシュです。
+    
 };
 
 

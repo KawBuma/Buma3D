@@ -428,13 +428,14 @@ B3D_APIENTRY DescriptorSetLayoutVk::Uninit()
     }
     update_template_layout.reset();
 
+    desc = {};
+    desc_data.reset();
+
     hlp::SafeRelease(device);
     vkdevice = VK_NULL_HANDLE;
     inspfn   = VK_NULL_HANDLE;
     devpfn   = VK_NULL_HANDLE;
 
-    desc = {};
-    desc_data.reset();
     name.reset();
 }
 

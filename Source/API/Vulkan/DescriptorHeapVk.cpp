@@ -63,13 +63,14 @@ B3D_APIENTRY DescriptorHeapVk::Uninit()
 {
     heap_remains.fill(0);
 
+    desc = {};
+    desc_data.reset();
+
     hlp::SafeRelease(device);
     vkdevice = VK_NULL_HANDLE;
     inspfn = nullptr;
     devpfn = nullptr;
 
-    desc = {};
-    desc_data.reset();
     name.reset();
 }
 

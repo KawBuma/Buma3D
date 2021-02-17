@@ -152,11 +152,12 @@ B3D_APIENTRY DescriptorPoolD3D12::Uninit()
 
     hlp::SafeRelease(parent_heap);
 
+    desc = {};
+    desc_data.reset();
+
     hlp::SafeRelease(device);
     device12 = nullptr;
 
-    desc = {};
-    desc_data.reset();
     name.reset();
 }
 

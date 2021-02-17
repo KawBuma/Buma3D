@@ -32,7 +32,7 @@ public:
          * @param _bind_point 
          * @param _list 
          * @param [in] _data ルートパラメータタイプに応じたオプションのパラメータを指定します。
-         *             SetConstantsBatchの場合、const CMD_PUSH_32BIT_CONSTANTS* ;ICommandList::Push32BitConstantsの引数です。 
+         *             SetConstantsBatchの場合、const CMD_PUSH_32BIT_CONSTANTS0* ;ICommandList::Push32BitConstantsの引数です。 
          *             SetDescriptorTableBatchの場合、参照されません。 
          *             SetRootDescriptorBatchの場合、const uint32_t* ;D3D12_GPU_VIRTUAL_ADDRESSのオフセット値です。 
         */
@@ -54,7 +54,7 @@ public:
 
         void Set(PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data) override
         {
-            const CMD_PUSH_32BIT_CONSTANTS* constants = RCAST<const CMD_PUSH_32BIT_CONSTANTS*>(_data);
+            const CMD_PUSH_32BIT_CONSTANTS0* constants = RCAST<const CMD_PUSH_32BIT_CONSTANTS0*>(_data);
 
             switch (_bind_point)
             {

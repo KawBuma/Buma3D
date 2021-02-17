@@ -75,6 +75,9 @@ public:
     BMRESULT
         B3D_APIENTRY VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_SET& _copy);
 
+    DescriptorHeapVk*
+        B3D_APIENTRY GetHeap() const;
+
 private:
     BMRESULT CheckPoolCompatibility(const DESCRIPTOR_POOL_DESC& _src_desc, const DESCRIPTOR_POOL_DESC& _dst_desc);
     bool IsCompatibleView(const DESCRIPTOR_SET_LAYOUT_BINDING& _lb, IView* _view);
@@ -88,6 +91,7 @@ private:
     VkDevice                                    vkdevice;
     const InstancePFN*                          inspfn;
     const DevicePFN*                            devpfn;
+    DescriptorHeapVk*                           heap;
     DescriptorPoolVk*                           pool;
     DescriptorSetLayoutVk*                      set_layout;
     VkDescriptorSet                             descriptor_set;

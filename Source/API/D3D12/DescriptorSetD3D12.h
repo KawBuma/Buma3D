@@ -278,6 +278,9 @@ public:
     BMRESULT
         B3D_APIENTRY VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_SET& _copy);
 
+    DescriptorHeapD3D12*
+        B3D_APIENTRY GetHeap() const;
+
 private:
     BMRESULT CheckPoolCompatibility(const DESCRIPTOR_POOL_DESC& _src_desc, const DESCRIPTOR_POOL_DESC& _dst_desc);
     bool IsCompatibleView(const DESCRIPTOR_SET_LAYOUT_BINDING& _lb, IView* _view);
@@ -289,6 +292,7 @@ private:
     uint32_t                                                                                    allocation_id;
     uint64_t                                                                                    reset_id;
     ID3D12Device*                                                                               device12;
+    DescriptorHeapD3D12*                                                                        heap;
     DescriptorPoolD3D12*                                                                        pool;
     DescriptorSetLayoutD3D12*                                                                   set_layout;
     util::StArray<DescriptorPoolD3D12::POOL_ALLOCATION*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER+1>  allocations;

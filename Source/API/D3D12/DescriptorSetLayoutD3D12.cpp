@@ -362,11 +362,12 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::Uninit()
 {
     parameters12_info.reset();
 
+    desc = {};
+    desc_data.reset();
+
     hlp::SafeRelease(device);
     device12 = nullptr;
 
-    desc = {};
-    desc_data.reset();
     name.reset();
 }
 

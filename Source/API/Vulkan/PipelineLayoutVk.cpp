@@ -64,16 +64,17 @@ B3D_APIENTRY PipelineLayoutVk::CopyDesc(const PIPELINE_LAYOUT_DESC& _desc)
 BMRESULT
 B3D_APIENTRY PipelineLayoutVk::CreateVkPipelineLayout()
 {
-    util::DyArray<VkDescriptorSetLayout> set_layouts   (desc.num_set_layouts);
-    util::DyArray<VkPushConstantRange>   push_constants(desc.num_push_constants);
-    B3D_RET_IF_FAILED(PreparePipelineLayoutCI(&set_layouts, &push_constants));
+    util::DyArray<VkDescriptorSetLayout> set_layouts(desc.num_set_layouts);
+    if (desc.num_push_constants != 0)
+        push_constants = B3DMakeUnique(util::DyArray<VkPushConstantRange>, desc.num_push_constants);
+    B3D_RET_IF_FAILED(PreparePipelineLayoutCI(&set_layouts, push_constants.get()));
 
     VkPipelineLayoutCreateInfo ci{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     ci.flags                  = 0x0; // reserved
     ci.setLayoutCount         = desc.num_set_layouts;
     ci.pSetLayouts            = set_layouts.data();
     ci.pushConstantRangeCount = desc.num_push_constants;
-    ci.pPushConstantRanges    = push_constants.data();
+    ci.pPushConstantRanges    = push_constants ? push_constants->data() : nullptr;
     auto vkr = vkCreatePipelineLayout(vkdevice, &ci, B3D_VK_ALLOC_CALLBACKS, &pipeline_layout);
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
 
@@ -109,13 +110,15 @@ B3D_APIENTRY PipelineLayoutVk::Uninit()
         vkDestroyPipelineLayout(vkdevice, pipeline_layout, B3D_VK_ALLOC_CALLBACKS);
     pipeline_layout = VK_NULL_HANDLE;
 
+    desc = {};
+    desc_data.reset();
+    push_constants.reset();
+
     hlp::SafeRelease(device);
     vkdevice = VK_NULL_HANDLE;
     inspfn = VK_NULL_HANDLE;
     devpfn = VK_NULL_HANDLE;
 
-    desc = {};
-    desc_data.reset();
     name.reset();
 }
 
@@ -210,6 +213,12 @@ VkPipelineLayout
 B3D_APIENTRY PipelineLayoutVk::GetVkPipelineLayout() const
 {
     return pipeline_layout;
+}
+
+const VkPushConstantRange*
+B3D_APIENTRY PipelineLayoutVk::GetVkPushConstantRanges() const
+{
+    return push_constants ? push_constants->data() : nullptr;
 }
 
 

@@ -106,13 +106,14 @@ B3D_APIENTRY DescriptorPoolVk::Uninit()
         vkDestroyDescriptorPool(vkdevice, descriptor_pool, B3D_VK_ALLOC_CALLBACKS);
     descriptor_pool = VK_NULL_HANDLE;
 
+    desc = {};
+    desc_data.reset();
+
     hlp::SafeRelease(device);
     vkdevice = VK_NULL_HANDLE;
     inspfn = nullptr;
     devpfn = nullptr;
 
-    desc = {};
-    desc_data.reset();
     name.reset();
 }
 
