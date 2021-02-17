@@ -169,6 +169,7 @@ struct IPipelineState;              DECLARE_SHARED_PTR(PipelineState);
 struct IDescriptorHeap;             DECLARE_SHARED_PTR(DescriptorHeap);
 struct IDescriptorPool;             DECLARE_SHARED_PTR(DescriptorPool);
 struct IDescriptorSet;              DECLARE_SHARED_PTR(DescriptorSet);
+struct IDescriptorUpdate;           DECLARE_SHARED_PTR(DescriptorUpdate);
 struct IDescriptorSetLayout;        DECLARE_SHARED_PTR(IDescriptorSetLayout);
 struct IPipelineLayout;             DECLARE_SHARED_PTR(IPipelineLayout);
 
@@ -2937,7 +2938,7 @@ struct WRITE_DYNAMIC_DESCRIPTOR_BINDING
 {
     uint32_t                                dst_binding_index;          // 宛先バインディングのインデックスです。
     IView*                                  src_view;                   // 宛先バインディングに関連付けるバッファーリソースのビューです。 テクスチャリソース、型付きバッファのビューを含めることはできません。
-    uint64_t                                src_view_buffer_offset;     // 指定のビューを基準にしたオフセットです。 
+    int64_t                                 src_view_buffer_offset;     // 指定のビューを基準にしたオフセットです。 
 };
 
 struct WRITE_DESCRIPTOR_SET
@@ -2972,6 +2973,11 @@ struct UPDATE_DESCRIPTOR_SET_DESC
     const WRITE_DESCRIPTOR_SET*             write_descriptor_sets;
     uint32_t                                num_copy_descriptor_sets;
     const COPY_DESCRIPTOR_SET*              copy_descriptor_sets;
+};
+
+struct DESCRIPTOR_UPDATE_DESC
+{
+    /* currently reserved structure */ 
 };
 
 #pragma endregion descriptor updates
@@ -4687,8 +4693,9 @@ public:
             , IDescriptorPool**            _dst) = 0;
 
     virtual BMRESULT
-        B3D_APIENTRY UpdateDescriptorSets(
-            const UPDATE_DESCRIPTOR_SET_DESC& _update_desc) = 0;
+        B3D_APIENTRY CreateDescriptorUpdate(
+              const DESCRIPTOR_UPDATE_DESC& _desc
+            , IDescriptorUpdate**           _dst) = 0;
 
 
     /**
@@ -5376,6 +5383,22 @@ public:
     virtual BMRESULT
         B3D_APIENTRY CopyDescriptorSet(
             IDescriptorSet* _src) = 0;
+
+};
+
+/**
+ * @brief IDescriptorSetの各バインディングを更新します。
+ *        単一のIDescriptorUpdateインスタンスのUpdateDescriptorSets関数は複数のスレッドから呼び出してはなりません。
+*/
+B3D_INTERFACE IDescriptorUpdate : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorUpdate() {}
+
+public:
+    virtual BMRESULT
+        B3D_APIENTRY UpdateDescriptorSets(
+            const UPDATE_DESCRIPTOR_SET_DESC& _update_desc) = 0;
 
 };
 

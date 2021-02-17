@@ -194,6 +194,12 @@
     <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorHeapVk.cpp">
       <Filter>Source\Vulkan\Descriptor</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetUpdateCacheVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorUpdateVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Debug_x64.props">
@@ -349,6 +355,12 @@
       <Filter>Source\Vulkan\Descriptor</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorHeapVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetUpdateCacheVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorUpdateVk.h">
       <Filter>Source\Vulkan\Descriptor</Filter>
     </ClInclude>
   </ItemGroup>

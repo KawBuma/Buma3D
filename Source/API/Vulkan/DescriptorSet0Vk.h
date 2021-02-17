@@ -103,6 +103,7 @@ private:
         VkDescriptorSet                                     dst_set;
         uint32_t                                            dst_binding;
         VkDescriptorType                                    descriptor_type;
+        VkDescriptorBufferInfo                              buffer_info;
     };
     struct UPDATE_ROOT_PARAMETER_BUFFER
     {

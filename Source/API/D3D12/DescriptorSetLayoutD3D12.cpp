@@ -331,8 +331,9 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareBindingParameters()
         auto NonDynamic = [&]() {
             pb.range_index       = info.num_cbv_srv_uav_ranges++;
             pb.descriptor_offset = descriptor_offset;
+            pb.heap_type         = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
             pb.parameter         = info.descriptor_table;
-            descriptor_offset   += b.num_descriptors;
+            descriptor_offset += b.num_descriptors;
         };
         auto Sampler = [&]() {
             if (b.static_sampler != nullptr)
@@ -343,6 +344,7 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareBindingParameters()
             {
                 pb.range_index       = info.num_sampler_ranges++;
                 pb.descriptor_offset = sampler_descriptor_offset;
+                pb.heap_type         = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
                 pb.parameter         = info.sampler_table;
                 sampler_descriptor_offset += b.num_descriptors;
             }

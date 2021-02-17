@@ -294,13 +294,17 @@ BMRESULT DescriptorSet0Vk::UpdateDescriptorsCache::AddWriteRange(uint32_t _root_
 BMRESULT DescriptorSet0Vk::UpdateDescriptorsCache::AddWriteDynamicDescriptor(const WRITE_DYNAMIC_DESCRIPTOR0& _dynamic_descriptor)
 {
     auto&& dst_dynamic_descriptor = *update_root_parameters_data[_dynamic_descriptor.dst_root_parameter_index].dynamic_descriptor;
+    dst_dynamic_descriptor.descriptor_type;
     auto&& write = write_descriptor_sets_data[write_set_count];
     write.dstSet            = dst_dynamic_descriptor.dst_set;
     write.dstBinding        = dst_dynamic_descriptor.dst_binding;
     write.dstArrayElement   = 0;
     write.descriptorCount   = 1;
     write.descriptorType    = dst_dynamic_descriptor.descriptor_type;
-    write.pBufferInfo       = _dynamic_descriptor.src_view->DynamicCastFromThis<IViewVk>()->GetVkDescriptorBufferInfo();
+    write.pBufferInfo       = &dst_dynamic_descriptor.buffer_info;
+
+    dst_dynamic_descriptor.buffer_info = *_dynamic_descriptor.src_view->DynamicCastFromThis<IViewVk>()->GetVkDescriptorBufferInfo();
+    dst_dynamic_descriptor.buffer_info.offset += _dynamic_descriptor.src_view_buffer_offset;
 
     write_set_count++;
     return BMRESULT_SUCCEED;

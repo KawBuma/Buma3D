@@ -100,6 +100,10 @@ DECLARE_VK_SHARED_PTR(DescriptorPool0Vk);
 DECLARE_VK_SHARED_PTR(DescriptorSet0Vk);
 DECLARE_VK_SHARED_PTR(RootSignatureVk);
 
+DECLARE_VK_SHARED_PTR(DescriptorHeapVk);
+DECLARE_VK_SHARED_PTR(DescriptorPoolVk);
+DECLARE_VK_SHARED_PTR(DescriptorSetVk);
+DECLARE_VK_SHARED_PTR(DescriptorUpdateVk);
 DECLARE_VK_SHARED_PTR(DescriptorSetLayoutVk);
 DECLARE_VK_SHARED_PTR(PipelineLayoutVk);
 
@@ -205,9 +209,11 @@ DECLARE_VK_SHARED_PTR(AccelerationStructureVk);
 #include "DescriptorPool0Vk.h"
 #include "DescriptorSet0Vk.h"
 
+#include "DescriptorSetUpdateCacheVk.h"
 #include "DescriptorHeapVk.h"
 #include "DescriptorPoolVk.h"
 #include "DescriptorSetVk.h"
+#include "DescriptorUpdateVk.h"
 #include "DescriptorSetLayoutVk.h"
 #include "PipelineLayoutVk.h"
 

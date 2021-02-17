@@ -1194,6 +1194,42 @@ inline bool HasSameDescriptorType(uint32_t _num_sizes, const T* _sizes)
     return false;
 }
 
+inline uint32_t GetUpdateTemplateDataStride(VkDescriptorType _type)
+{
+    switch (_type)
+    {
+    case VK_DESCRIPTOR_TYPE_SAMPLER:
+    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        return sizeof(VkDescriptorImageInfo);
+
+    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        return sizeof(VkBufferView);
+
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+        return sizeof(VkDescriptorBufferInfo);
+
+    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        return sizeof(VkDescriptorImageInfo);
+
+
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        return sizeof(VkAccelerationStructureKHR);
+
+    case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+        return 1;
+
+    default:
+        return 0;
+    }
+}
+
 
 }// namespace util
 }// namespace buma3d

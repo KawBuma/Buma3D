@@ -257,7 +257,18 @@ B3D_APIENTRY DescriptorPoolD3D12::ResetPoolAndInvalidateAllocatedSets()
 BMRESULT
 B3D_APIENTRY DescriptorPoolD3D12::AllocateDescriptorSets(const DESCRIPTOR_SET_ALLOCATE_DESC& _desc, IDescriptorSet** _dst_descriptor_sets)
 {
+    util::DyArray<util::Ptr<DescriptorSetD3D12>> sets(_desc.num_descriptor_sets);
+    auto sets_data = sets.data();
+    for (uint32_t i = 0; i < _desc.num_descriptor_sets; i++)
+    {
+        auto l = _desc.set_layouts[i]->As<DescriptorSetLayoutD3D12>();
+        B3D_RET_IF_FAILED(DescriptorSetD3D12::Create(l, this, &sets_data[i]));
+    }
 
+    for (uint32_t i = 0; i < _desc.num_descriptor_sets; i++)
+    {
+        _dst_descriptor_sets[i] = sets_data[i].Detach();
+    }
     return BMRESULT_SUCCEED;
 }
 

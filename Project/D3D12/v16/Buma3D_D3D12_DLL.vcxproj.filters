@@ -194,6 +194,12 @@
     <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorHeapD3D12.cpp">
       <Filter>Source\D3D12\Descriptor</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSetUpdateCacheD3D12.cpp">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorUpdateD3D12.cpp">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Debug_x64.props">
@@ -353,6 +359,12 @@
       <Filter>Source\D3D12\Descriptor</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorHeapD3D12.h">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSetUpdateCacheD3D12.h">
+      <Filter>Source\D3D12\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorUpdateD3D12.h">
       <Filter>Source\D3D12\Descriptor</Filter>
     </ClInclude>
   </ItemGroup>

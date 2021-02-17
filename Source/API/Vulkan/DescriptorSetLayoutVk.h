@@ -37,6 +37,31 @@ public:
         util::DyArray<DESCRIPTOR_POOL_SIZE>                             pool_sizes;         // プール割り当て時に使用します。 
     };
 
+    struct UPDATE_TEMPLATE_RAW_DATA
+    {
+        UPDATE_TEMPLATE_RAW_DATA(size_t _size) : raw_data(_size) {}
+        util::DyArray<uint8_t> raw_data;
+        template <typename T>
+        T* GetEntryInfo(const VkDescriptorUpdateTemplateEntry& _entry) { return reinterpret_cast<T*>(raw_data.data() + _entry.offset); }
+        template <typename T>
+        T* GetEntryInfo(const VkDescriptorUpdateTemplateEntry& _entry, uint32_t _index) { return reinterpret_cast<T*>(raw_data.data() + _entry.offset + (_entry.stride * _index)); }
+        void* GetEntryInfo(const VkDescriptorUpdateTemplateEntry& _entry, uint32_t _index) { return reinterpret_cast<void*>(raw_data.data() + _entry.offset + (_entry.stride * _index)); }
+    };
+    /**
+     * @brief IDescriptorSet::CopyDescriptorSetを高速に行うためのテンプレート更新で使用する情報です。
+    */
+    struct UPDATE_TEMPLATE_LAYOUT
+    {
+        VkDescriptorUpdateTemplate                      update_template;
+        util::DyArray<VkDescriptorUpdateTemplateEntry>  entries;            // bindingsの順に格納します。
+        size_t                                          data_size;          // vkUpdateDescriptorSetWithTemplate::pDataに渡すデータを作成する際に必要サイズです。
+        uint32_t                                        total_num_image_infos;
+        uint32_t                                        total_num_buffer_infos;
+        uint32_t                                        total_num_buffer_views;
+        uint32_t                                        total_num_acceleration_structures;
+        util::UniquePtr<UPDATE_TEMPLATE_RAW_DATA> CreateRawData() const { return B3DMakeUniqueArgs(UPDATE_TEMPLATE_RAW_DATA, data_size); }
+    };
+
 protected:
     B3D_APIENTRY DescriptorSetLayoutVk();
     DescriptorSetLayoutVk(const DescriptorSetLayoutVk&) = delete;
@@ -52,6 +77,7 @@ private:
     void B3D_APIENTRY CalcBindingsInfoParameterCounts();
     void B3D_APIENTRY PrepareBindingsInfo(util::DyArray<VkDescriptorBindingFlags>* _binding_flags);
     BMRESULT B3D_APIENTRY CreateVkDescriptorSetLayout(const util::DyArray<VkDescriptorBindingFlags>* _binding_flags);
+    BMRESULT B3D_APIENTRY CreateDescriptorUpdateTemplate();
     void B3D_APIENTRY PrepareDescriptorPoolSizes();
     void B3D_APIENTRY Uninit();
 
@@ -95,6 +121,9 @@ public:
     const BINDINGS_INFO&
         B3D_APIENTRY GetBindingsInfo() const;
 
+    const UPDATE_TEMPLATE_LAYOUT&
+        B3D_APIENTRY GetUpdateTemplateLayout() const;
+
 private:
     struct DESC_DATA
     {
@@ -111,7 +140,8 @@ private:
     const InstancePFN*                          inspfn;
     const DevicePFN*                            devpfn;
     VkDescriptorSetLayout                       layout;
-    util::UniquePtr<BINDINGS_INFO>              bindings_info;    
+    util::UniquePtr<BINDINGS_INFO>              bindings_info;
+    util::UniquePtr<UPDATE_TEMPLATE_LAYOUT>     update_template_layout;
 
 };
 

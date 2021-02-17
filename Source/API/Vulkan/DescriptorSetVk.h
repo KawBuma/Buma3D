@@ -5,7 +5,6 @@ namespace buma3d
 
 class B3D_API DescriptorSetVk : public IDeviceChildVk<IDescriptorSet>, public util::details::NEW_DELETE_OVERRIDE
 {
-    friend class DescriptorPoolVk;
 protected:
     B3D_APIENTRY DescriptorSetVk();
     DescriptorSetVk(const DescriptorSetVk&) = delete;
@@ -67,20 +66,32 @@ public:
     uint64_t
         B3D_APIENTRY GetResetID() const;
 
-private:
+    DescriptorSetUpdateCache&
+        B3D_APIENTRY GetUpdateCache() const;
+
+    BMRESULT
+        B3D_APIENTRY VerifyWriteDescriptorSets(const WRITE_DESCRIPTOR_SET& _write);
+
+    BMRESULT
+        B3D_APIENTRY VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_SET& _copy);
 
 private:
-    std::atomic_uint32_t                    ref_count;
-    util::UniquePtr<util::NameableObjStr>   name;
-    DeviceVk*                               device;
-    uint32_t                                allocation_id;
-    uint64_t                                reset_id;
-    VkDevice                                vkdevice;
-    const InstancePFN*                      inspfn;
-    const DevicePFN*                        devpfn;
-    DescriptorPoolVk*                       pool;
-    DescriptorSetLayoutVk*                  set_layout;
-    VkDescriptorSet                         descriptor_set;
+    BMRESULT CheckPoolCompatibility(const DESCRIPTOR_POOL_DESC& _src_desc, const DESCRIPTOR_POOL_DESC& _dst_desc);
+    bool IsCompatibleView(const DESCRIPTOR_SET_LAYOUT_BINDING& _lb, IView* _view);
+
+private:
+    std::atomic_uint32_t                        ref_count;
+    util::UniquePtr<util::NameableObjStr>       name;
+    DeviceVk*                                   device;
+    uint32_t                                    allocation_id;
+    uint64_t                                    reset_id;
+    VkDevice                                    vkdevice;
+    const InstancePFN*                          inspfn;
+    const DevicePFN*                            devpfn;
+    DescriptorPoolVk*                           pool;
+    DescriptorSetLayoutVk*                      set_layout;
+    VkDescriptorSet                             descriptor_set;
+    util::UniquePtr<DescriptorSetUpdateCache>   update_cache;
 
 };
 

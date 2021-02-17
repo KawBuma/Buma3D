@@ -103,7 +103,9 @@
     <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetLayoutVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSet0Vk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetUpdateCacheVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.h" />
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorUpdateVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DeviceAdapterVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DeviceChildVk.h" />
     <ClInclude Include="..\..\..\Source\API\Vulkan\DeviceFactoryVk.h" />
@@ -157,7 +159,9 @@
     <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetLayoutVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSet0Vk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetUpdateCacheVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.cpp" />
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorUpdateVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DeviceAdapterVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DeviceFactoryVk.cpp" />
     <ClCompile Include="..\..\..\Source\API\Vulkan\DeviceVk.cpp" />

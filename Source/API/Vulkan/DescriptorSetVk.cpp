@@ -16,6 +16,7 @@ B3D_APIENTRY DescriptorSetVk::DescriptorSetVk()
     , pool              {}
     , set_layout        {}
     , descriptor_set    {}
+    , update_cache      {}
 {     
       
 }
@@ -41,6 +42,9 @@ B3D_APIENTRY DescriptorSetVk::Init(DescriptorSetLayoutVk* _layout, DescriptorPoo
 
     allocation_id = pool->GetCurrentAllocationCount();
     reset_id      = pool->GetResetID();
+
+    // ディスクリプタ書き込みやコピー時に使用するキャッシュオブジェクトを作成。
+    update_cache = B3DMakeUniqueArgs(DescriptorSetUpdateCache, _layout, this);
 
     return BMRESULT_SUCCEED;
 }
@@ -167,37 +171,17 @@ BMRESULT
 B3D_APIENTRY DescriptorSetVk::CopyDescriptorSet(IDescriptorSet* _src)
 {
     auto src = _src->As<DescriptorSetVk>();
-    if (set_layout == src->GetDescriptorSetLayout())
+    if (set_layout != src->GetDescriptorSetLayout())
         return BMRESULT_FAILED_INVALID_PARAMETER;
 
-    auto&& src_desc = src->GetPool()->GetDesc();
-    auto&& dst_desc = pool->GetDesc();
-    if ((src_desc.flags & DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOL) !=
-        (dst_desc.flags & DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOL))
-        return BMRESULT_FAILED_INVALID_PARAMETER;
+    if (util::IsEnabledDebug(this))
+    {
+        auto&& src_desc = src->GetPool()->GetDesc();
+        auto&& dst_desc = pool->GetDesc();
+        B3D_RET_IF_FAILED(CheckPoolCompatibility(src_desc, dst_desc));
+    }
 
-    if (!(src_desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))
-        return BMRESULT_FAILED_INVALID_PARAMETER;
-
-    VkDescriptorUpdateTemplateEntry entry{};
-    entry.dstBinding      = ;
-    entry.dstArrayElement = ;
-    entry.descriptorCount = ;
-    entry.descriptorType  = ;
-    entry.offset          = ;
-    entry.stride          = ;
-
-    VkDescriptorUpdateTemplateCreateInfo ci{ VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO };
-    ci.flags                      = 0x0; // reserved
-    ci.descriptorUpdateEntryCount = ;
-    ci.pDescriptorUpdateEntries   = ;
-    ci.templateType               = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
-    ci.descriptorSetLayout        = set_layout;
-
-    auto vkr = vkCreateDescriptorUpdateTemplate(vkdevice, &ci, B3D_VK_ALLOC_CALLBACKS, update_template);
-    B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
-
-    vkUpdateDescriptorSetWithTemplate(vkdevice, descriptor_set, set_layout->GetUpdateTemplate(), );
+    update_cache->CopyDescriptorSet(src);
 
     return BMRESULT_SUCCEED;
 }
@@ -220,253 +204,153 @@ B3D_APIENTRY DescriptorSetVk::GetResetID() const
     return reset_id;
 }
 
-BMRESULT
-B3D_APIENTRY DescriptorSetVk::AddWriteDescriptors(const WRITE_DESCRIPTOR_SET0& _writes)
+DescriptorSetUpdateCache&
+B3D_APIENTRY DescriptorSetVk::GetUpdateCache() const
 {
-    for (uint32_t i_table = 0; i_table < _writes.num_descriptor_tables; i_table++)
+    return *update_cache;
+}
+
+BMRESULT
+B3D_APIENTRY DescriptorSetVk::VerifyWriteDescriptorSets(const WRITE_DESCRIPTOR_SET& _write)
+{
+    auto&& l = set_layout->GetDesc();
+
+    auto CheckCommon = [&](const auto& _b)
     {
-        auto&& dt = _writes.descriptor_tables[i_table];
-        for (uint32_t i_range = 0; i_range < dt.num_ranges; i_range++)
-            B3D_RET_IF_FAILED(update_descriptors_cache->AddWriteRange(dt.dst_root_parameter_index, dt.ranges[i_range]));
+        if (_b.dst_binding_index >= l.num_bindings)
+            return BMRESULT_FAILED_OUT_OF_RANGE;
+
+        auto&& lb = l.bindings[_b.dst_binding_index];
+        if (lb.static_sampler)
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                              , "書き込み先のバインディングには静的サンプラが含まれていない必要があります。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
+        }
+        return BMRESULT_SUCCEED;
+    };
+    auto CheckViewCompatibility = [&](const DESCRIPTOR_SET_LAYOUT_BINDING& _lb, IView* _view)
+    {
+        if (!IsCompatibleView(_lb, _view))
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                              , "互換性の無いIViewが指定されました。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
+        }
+        return BMRESULT_SUCCEED;
+    };
+    for (uint32_t i_binding = 0; i_binding < _write.num_bindings; i_binding++)
+    {
+        auto&& b = _write.bindings[i_binding];
+        B3D_RET_IF_FAILED(CheckCommon(b));
+
+        auto&& lb = l.bindings[b.dst_binding_index];
+        if ((b.dst_first_array_element + b.num_descriptors) >= lb.num_descriptors)
+            return BMRESULT_FAILED_OUT_OF_RANGE;
+
+        for (uint32_t i = 0; i < b.num_descriptors; i++)
+        {
+            B3D_RET_IF_FAILED(CheckViewCompatibility(lb, b.src_views[i]));
+        }
     }
-    for (uint32_t i = 0; i < _writes.num_dynamic_descriptors; i++)
+    for (uint32_t i_binding = 0; i_binding < _write.num_dynamic_bindings; i_binding++)
     {
-        B3D_RET_IF_FAILED(update_descriptors_cache->AddWriteDynamicDescriptor(_writes.dynamic_descriptors[i]));
+        auto&& db = _write.dynamic_bindings[i_binding];
+        B3D_RET_IF_FAILED(CheckCommon(db));
+        B3D_RET_IF_FAILED(CheckViewCompatibility(l.bindings[db.dst_binding_index], db.src_view));
     }
 
     return BMRESULT_SUCCEED;
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSetVk::AddCopyDescriptors(const COPY_DESCRIPTOR_SET0& _copies)
+B3D_APIENTRY DescriptorSetVk::VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_SET& _copy)
 {
-    auto src_set = _copies.src_set->As<DescriptorSetVk>();
-    if (!(src_set->GetPool()->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))
+    auto src_set = _copy.src_set->As<DescriptorSetVk>();
+    auto dst_set = _copy.dst_set->As<DescriptorSetVk>();
+
+    auto&& src_desc = src_set->GetPool()->GetDesc();
+    auto&& dst_desc = dst_set->GetPool()->GetDesc();
+    B3D_RET_IF_FAILED(CheckPoolCompatibility(src_desc, dst_desc));
+
+    auto&& src_l = src_set->GetDescriptorSetLayout()->GetDesc();
+    auto&& dst_l = dst_set->GetDescriptorSetLayout()->GetDesc();
+    for (uint32_t i_binding = 0; i_binding < _copy.num_bindings; i_binding++)
+    {
+        auto&& b = _copy.bindings[i_binding];
+
+        if (b.src_binding_index >= src_l.num_bindings ||
+            b.dst_binding_index >= dst_l.num_bindings)
+            return BMRESULT_FAILED_OUT_OF_RANGE;
+
+        auto&& src_lb = src_l.bindings[b.src_binding_index];
+        auto&& dst_lb = dst_l.bindings[b.dst_binding_index];
+        if ((b.src_first_array_element + b.num_descriptors) >= src_lb.num_descriptors ||
+            (b.dst_first_array_element + b.num_descriptors) >= dst_lb.num_descriptors)
+            return BMRESULT_FAILED_OUT_OF_RANGE;
+
+        if (src_lb.descriptor_type != dst_lb.descriptor_type)
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                              , "コピー先、コピー元のバインディングのディスクリプタタイプは同一である必要があります。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
+        }
+        if (src_lb.static_sampler || dst_lb.static_sampler)
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                              , "コピー先、コピー元のバインディングには静的サンプラが含まれていない必要があります。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
+        }
+    }
+
+    return BMRESULT_SUCCEED;
+}
+
+inline BMRESULT DescriptorSetVk::CheckPoolCompatibility(const DESCRIPTOR_POOL_DESC& _src_desc, const DESCRIPTOR_POOL_DESC& _dst_desc)
+{
+    if ((_src_desc.flags & DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOL) !=
+        (_dst_desc.flags & DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOL))
+    {
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                          , "COPY_DESCRIPTOR_SET::src_setとdst_setが割り当てられたプールには同一のDESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOLフラグの状態が指定されている必要があります。");
         return BMRESULT_FAILED_INVALID_PARAMETER;
-
-    auto&& src_cache = *src_set->update_descriptors_cache;
-    for (uint32_t i_table = 0; i_table < _copies.num_descriptor_tables; i_table++)
-    {
-        auto&& dt = _copies.descriptor_tables[i_table];
-        for (uint32_t i_range = 0; i_range < dt.num_ranges; i_range++)
-            B3D_RET_IF_FAILED(update_descriptors_cache->AddCopyRange(dt.dst_root_parameter_index, dt.src_ranges[i_range], dt.dst_ranges[i_range], src_cache, dt.num_descriptors[i_range]));
     }
-    for (uint32_t i = 0; i < _copies.num_dynamic_descriptors; i++)
+    if (!(_src_desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))
     {
-        auto&& dynamic_descriptor = _copies.dynamic_descriptors[i];
-        B3D_RET_IF_FAILED(update_descriptors_cache->AddCopyDynamicDescriptor(dynamic_descriptor, src_cache));
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                          , "COPY_DESCRIPTOR_SET::src_setが割り当てられたプールにはDESCRIPTOR_POOL_FLAG_COPY_SRCフラグが指定されている必要があります。");
+        return BMRESULT_FAILED_INVALID_PARAMETER;
     }
-
     return BMRESULT_SUCCEED;
 }
 
-void
-B3D_APIENTRY DescriptorSetVk::UpdateDescriptors()
+inline bool DescriptorSetVk::IsCompatibleView(const DESCRIPTOR_SET_LAYOUT_BINDING& _lb, IView* _view)
 {
-    update_descriptors_cache->ApplyUpdate(vkdevice);
-    update_descriptors_cache->ResetWriteRangeCount();
-    update_descriptors_cache->ResetCopyRangeCount();
-}
-
-
-BMRESULT DescriptorSetVk::UpdateDescriptorsCache::AddWriteRange(uint32_t _root_param_index, const WRITE_DESCRIPTOR_RANGE& _range)
-{
-    auto&& dst_range_buffer = update_root_parameters_data[_root_param_index].descriptor_table->ranges[_range.dst_range_index];
-    auto&& write = write_descriptor_sets_data[write_set_count];
-    write.dstSet           = dst_range_buffer.dst_set;
-    write.dstBinding       = dst_range_buffer.dst_binding;
-    write.dstArrayElement  = _range.dst_first_array_element;
-    write.descriptorCount  = _range.num_descriptors;
-    write.descriptorType   = dst_range_buffer.descriptor_type;
-    write.pImageInfo       = dst_range_buffer.image_infos_data        ? dst_range_buffer.image_infos_data        + _range.dst_first_array_element : nullptr;
-    write.pBufferInfo      = dst_range_buffer.buffer_infos_data       ? dst_range_buffer.buffer_infos_data       + _range.dst_first_array_element : nullptr;
-    write.pTexelBufferView = dst_range_buffer.texel_buffer_views_data ? dst_range_buffer.texel_buffer_views_data + _range.dst_first_array_element : nullptr;
-
-    for (uint32_t i = 0; i < _range.num_descriptors; i++)
+    auto&& view_desc = _view->GetViewDesc();
+    auto IsInRange   = [](auto _tgt, auto _min, auto _max) { return _tgt >= _min && _tgt <= _max; };
+    auto IsBufferDim = [](auto _dim) { return (_dim == VIEW_DIMENSION_BUFFER_STRUCTURED || _dim == VIEW_DIMENSION_BUFFER_BYTEADDRESS); };
+    switch (_lb.descriptor_type)
     {
-        auto view = _range.src_views[i]->DynamicCastFromThis<IViewVk>();
-        B3D_RET_IF_FAILED(view->AddDescriptorWriteRange(&dst_range_buffer, _range.dst_first_array_element + i));
-    }
+    case buma3d::DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        return view_desc.type == VIEW_TYPE_SHADER_RESOURCE                                                &&
+               IsInRange(view_desc.dimension, VIEW_DIMENSION_TEXTURE_2D, VIEW_DIMENSION_TEXTURE_2D_ARRAY) &&
+               !(_view->As<IShaderResourceView>()->GetDesc().flags & SHADER_RESOURCE_VIEW_FLAG_DENY_INPUT_ATTACHMENT);
 
-    write_set_count++;
-    return BMRESULT_SUCCEED;
-}
+    case buma3d::DESCRIPTOR_TYPE_CBV                        : return view_desc.type == VIEW_TYPE_CONSTANT_BUFFER;
+    case buma3d::DESCRIPTOR_TYPE_CBV_DYNAMIC                : return view_desc.type == VIEW_TYPE_CONSTANT_BUFFER;
+    case buma3d::DESCRIPTOR_TYPE_SRV_TEXTURE                : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && IsInRange(view_desc.dimension, VIEW_DIMENSION_TEXTURE_1D, VIEW_DIMENSION_TEXTURE_CUBE_ARRAY);
+    case buma3d::DESCRIPTOR_TYPE_UAV_TEXTURE                : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && IsInRange(view_desc.dimension, VIEW_DIMENSION_TEXTURE_1D, VIEW_DIMENSION_TEXTURE_CUBE_ARRAY);
+    case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER                 : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && IsBufferDim(view_desc.dimension);
+    case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER                 : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && IsBufferDim(view_desc.dimension);
+    case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER_DYNAMIC         : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && IsBufferDim(view_desc.dimension);
+    case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER_DYNAMIC         : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && IsBufferDim(view_desc.dimension);
+    case buma3d::DESCRIPTOR_TYPE_SRV_TYPED_BUFFER           : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && view_desc.dimension == VIEW_DIMENSION_BUFFER_TYPED;
+    case buma3d::DESCRIPTOR_TYPE_UAV_TYPED_BUFFER           : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && view_desc.dimension == VIEW_DIMENSION_BUFFER_TYPED;
+    case buma3d::DESCRIPTOR_TYPE_SRV_ACCELERATION_STRUCTURE : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && view_desc.dimension == VIEW_DIMENSION_BUFFER_ACCELERATION_STRUCTURE;
+    case buma3d::DESCRIPTOR_TYPE_SAMPLER                    : return view_desc.type == VIEW_TYPE_SAMPLER;
 
-BMRESULT DescriptorSetVk::UpdateDescriptorsCache::AddWriteDynamicDescriptor(const WRITE_DYNAMIC_DESCRIPTOR0& _dynamic_descriptor)
-{
-    auto&& dst_dynamic_descriptor = *update_root_parameters_data[_dynamic_descriptor.dst_root_parameter_index].dynamic_descriptor;
-    auto&& write = write_descriptor_sets_data[write_set_count];
-    write.dstSet            = dst_dynamic_descriptor.dst_set;
-    write.dstBinding        = dst_dynamic_descriptor.dst_binding;
-    write.dstArrayElement   = 0;
-    write.descriptorCount   = 1;
-    write.descriptorType    = dst_dynamic_descriptor.descriptor_type;
-    write.pBufferInfo       = _dynamic_descriptor.src_view->DynamicCastFromThis<IViewVk>()->GetVkDescriptorBufferInfo();
-
-    write_set_count++;
-    return BMRESULT_SUCCEED;
-}
-
-BMRESULT DescriptorSetVk::UpdateDescriptorsCache::AddCopyRange(uint32_t _root_param_index
-                                                               , const COPY_DESCRIPTOR_RANGE& _src_range, const COPY_DESCRIPTOR_RANGE& _dst_range
-                                                               , const UpdateDescriptorsCache& _src_cache, uint32_t _num_descriptors)
-{
-    auto&& copy = copy_descriptor_sets_data[copy_set_count];
-
-    auto&& dst_range_buffer = update_root_parameters_data[_root_param_index].descriptor_table->ranges[_dst_range.range_index];
-    copy.dstSet             = dst_range_buffer.dst_set;
-    copy.dstBinding         = dst_range_buffer.dst_binding;
-    copy.dstArrayElement    = _dst_range.first_array_element;
-
-    auto&& _src_range_bufer = _src_cache.update_root_parameters_data[_root_param_index].descriptor_table->ranges[_src_range.range_index];
-    copy.srcSet             = _src_range_bufer.dst_set;
-    copy.srcBinding         = _src_range_bufer.dst_binding;
-    copy.srcArrayElement    = _src_range.first_array_element;
-
-    copy.descriptorCount    = _num_descriptors;
-
-    copy_set_count++;
-    return BMRESULT_SUCCEED;
-}
-
-BMRESULT DescriptorSetVk::UpdateDescriptorsCache::AddCopyDynamicDescriptor(const COPY_DYNAMIC_DESCRIPTOR& _dynamic_descriptor, const UpdateDescriptorsCache& _src_cache)
-{
-    auto&& copy = copy_descriptor_sets_data[copy_set_count];
-
-    auto&& dst_dynamic_descriptor = *update_root_parameters_data[_dynamic_descriptor.dst_root_parameter_index].dynamic_descriptor;
-    copy.dstSet           = dst_dynamic_descriptor.dst_set;
-    copy.dstBinding       = dst_dynamic_descriptor.dst_binding;
-    copy.dstArrayElement  = 0;
-
-    auto&& _src_dynamic_descriptor = *_src_cache.update_root_parameters_data[_dynamic_descriptor.dst_root_parameter_index].dynamic_descriptor;
-    copy.srcSet           = _src_dynamic_descriptor.dst_set;
-    copy.srcBinding       = _src_dynamic_descriptor.dst_binding;
-    copy.srcArrayElement  = 0;
-
-    copy.descriptorCount  = 1;
-
-    copy_set_count++;
-    return BMRESULT_SUCCEED;
-}
-
-void DescriptorSetVk::UpdateDescriptorsCache::PrepareCopyDescriptorSetParameters(const UpdateDescriptorsCache& _src_cache)
-{
-    ResetWriteRangeCount();
-    ResetCopyRangeCount();
-    for (uint32_t i_rp = 0, rp_size = (uint32_t)update_root_parameters.size(); i_rp < rp_size; i_rp++)
-    {
-        auto&& src_data = _src_cache.update_root_parameters_data[i_rp];
-        auto&& dst_data = update_root_parameters_data[i_rp];
-
-        switch (dst_data.root_parameter->type)
-        {
-        case buma3d::ROOT_PARAMETER_TYPE_DYNAMIC_DESCRIPTOR:
-        {
-            auto src_ranges_data = src_data.descriptor_table->ranges.data();
-            auto dst_ranges_data = dst_data.descriptor_table->ranges.data();
-            for (uint32_t i_dr = 0, dr_size = (uint32_t)dst_data.descriptor_table->ranges.size(); i_dr < dr_size; i_dr++)
-            {
-                auto&& src_dr = src_ranges_data[i_dr];
-                auto&& dst_dr = dst_ranges_data[i_dr];
-                auto&& dst_copy = copy_descriptor_sets_data[copy_set_count++];
-                dst_copy.srcSet          = src_dr.dst_set;
-                dst_copy.srcBinding      = src_dr.dst_binding;
-                dst_copy.srcArrayElement = 0;
-                dst_copy.dstSet          = dst_dr.dst_set;
-                dst_copy.dstBinding      = dst_dr.dst_binding;
-                dst_copy.dstArrayElement = 0;
-                dst_copy.descriptorCount = src_dr.descriptor_range->num_descriptors;
-            }
-            break;
-        }
-
-        case buma3d::ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
-        {
-            auto&& src_dd = *src_data.dynamic_descriptor;
-            auto&& dst_dd = *dst_data.dynamic_descriptor;
-            auto&& dst_copy = copy_descriptor_sets_data[copy_set_count++];
-            dst_copy.srcSet          = src_dd.dst_set;
-            dst_copy.srcBinding      = src_dd.dst_binding;
-            dst_copy.srcArrayElement = 0;
-            dst_copy.dstSet          = dst_dd.dst_set;
-            dst_copy.dstBinding      = dst_dd.dst_binding;
-            dst_copy.dstArrayElement = 0;
-            dst_copy.descriptorCount = 1;
-            copy_set_count++;
-            break;
-        }
-
-        //case buma3d::ROOT_PARAMETER_TYPE_PUSH_32BIT_CONSTANTS:
-        //    break;
-
-        default:
-            break;
-        }
-    }
-}
-
-void DescriptorSetVk::UpdateDescriptorsCache::ApplyUpdate(VkDevice _vkdevice)
-{
-    vkUpdateDescriptorSets(_vkdevice, write_set_count, write_descriptor_sets_data, copy_set_count, copy_descriptor_sets_data);
-}
-
-void DescriptorSetVk::UpdateDescriptorsCache::CreateCacheForDynamicDescriptor(const DescriptorSetLayoutVk::UPDATE_DESCRIPTORS_CACHE_CREATE_INFO& _cache_info, uint32_t _i_rp, UPDATE_ROOT_PARAMETER_BUFFER& _write_rp, const util::DyArray<VkDescriptorSet>& _dst_sets)
-{
-    auto&& data = _cache_info.root_param_infos[_i_rp].root_param_data[0];
-    _write_rp.dynamic_descriptor = B3DMakeUnique(UPDATE_DYNAMIC_DESCRIPTOR_BUFFER);
-    _write_rp.dynamic_descriptor->dst_set         = _dst_sets[data.dst_set_index];
-    _write_rp.dynamic_descriptor->dst_binding     = data.dst_binding;
-    _write_rp.dynamic_descriptor->descriptor_type = data.descriptor_type;
-}
-
-void DescriptorSetVk::UpdateDescriptorsCache::CreateCacheForDescriptorTable(const DescriptorSetLayoutVk::UPDATE_DESCRIPTORS_CACHE_CREATE_INFO& _cache_info, uint32_t _i_rp, UPDATE_ROOT_PARAMETER_BUFFER& _write_rp, const ROOT_PARAMETER& _rp, const util::DyArray<VkDescriptorSet>& _dst_sets)
-{
-    auto&& cache_rp = _cache_info.root_param_infos.data()[_i_rp];
-    auto&& write_ranges = (_write_rp.descriptor_table = B3DMakeUnique(UPDATE_DESCRIPTOR_TABLE_BUFFER))->ranges;
-    write_ranges.resize(_rp.descriptor_table.num_descriptor_ranges);
-    for (uint32_t i_dr = 0; i_dr < _rp.descriptor_table.num_descriptor_ranges; i_dr++)
-    {
-        auto&& dr   = _rp.descriptor_table.descriptor_ranges[i_dr];
-        auto&& data = cache_rp.root_param_data.data()[i_dr];
-        auto&& write_range = write_ranges.data()[i_dr];
-        write_range.descriptor_range_index = i_dr;
-        write_range.descriptor_range       = &_rp.descriptor_table.descriptor_ranges[i_dr];
-        write_range.dst_set                = _dst_sets.data()[data.dst_set_index];
-        write_range.dst_binding            = data.dst_binding;
-        write_range.descriptor_type        = data.descriptor_type;
-
-        switch (write_range.descriptor_type)
-        {
-        case VK_DESCRIPTOR_TYPE_SAMPLER:
-        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            write_range.image_infos = B3DMakeUnique(util::DyArray<VkDescriptorImageInfo>);
-            write_range.image_infos->resize(dr.num_descriptors);
-            write_range.image_infos_data = write_range.image_infos->data();
-            break;
-
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            write_range.texel_buffer_views = B3DMakeUnique(util::DyArray<VkBufferView>);
-            write_range.texel_buffer_views->resize(dr.num_descriptors);
-            write_range.texel_buffer_views_data = write_range.texel_buffer_views->data();
-            break;
-
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            write_range.buffer_infos = B3DMakeUnique(util::DyArray<VkDescriptorBufferInfo>);
-            write_range.buffer_infos->resize(dr.num_descriptors);
-            write_range.buffer_infos_data = write_range.buffer_infos->data();
-            break;
-
-        default:
-            B3D_ASSERT(false && "Invalid write_range.descriptor_type");
-            break;
-        }
+    default:
+        return false;
     }
 }
 

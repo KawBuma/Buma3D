@@ -14,7 +14,8 @@ public:
     struct PARAMETER_BINDING
     {
         uint32_t                        range_index;            // parameterがディスクリプタテーブルの場合に使用する、このバインディングがマッピングされているレンジへのオフセットです。
-        uint32_t                        descriptor_offset;      // parameterがディスクリプタテーブルの場合に使用する、指定のレンジに割り当てられるディスクリプタハンドルの開始オフセットです(OffsetInDescriptorsFromTableStart)。
+        uint32_t                        descriptor_offset;      // parameterがディスクリプタテーブルの場合に使用する、指定のレンジに割り当てられる、heap_typeディスクリプタハンドルの開始オフセットです(OffsetInDescriptorsFromTableStart)。
+        D3D12_DESCRIPTOR_HEAP_TYPE      heap_type;              // parameterがディスクリプタテーブルの場合に使用する、指定のレンジが消費するディスクリプタヒープのタイプです。
         const D3D12_ROOT_PARAMETER1*    parameter;              // nullptrの場合、このバインディングは静的サンプラです。
         const STATIC_SAMPLER_BINDING*   static_sampler_binding; // このバインディングが静的サンプラの場合に設定されます。
     };

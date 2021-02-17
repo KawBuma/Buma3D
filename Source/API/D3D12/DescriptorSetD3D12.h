@@ -269,39 +269,18 @@ public:
     const DESCRIPTOR_BATCH&
         B3D_APIENTRY GetDescriptorBatch() const;
 
+    DescriptorSetUpdateCache&
+        B3D_APIENTRY GetUpdateCache() const;
+
+    BMRESULT
+        B3D_APIENTRY VerifyWriteDescriptorSets(const WRITE_DESCRIPTOR_SET& _write);
+
+    BMRESULT
+        B3D_APIENTRY VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_SET& _copy);
+
 private:
-    class UpdateDescriptorsCache
-    {
-    public:
-        UpdateDescriptorsCache();
-        ~UpdateDescriptorsCache();
-
-        void ResetRangeCount();
-        void ResizeIf(uint32_t _dst_num_descriptors, uint32_t _src_num_descriptors);
-        void AddWriteRange(const WRITE_DESCRIPTOR_RANGE& _write_range, D3D12_CPU_DESCRIPTOR_HANDLE _dst_handle);
-        void AddCopyRange(uint32_t _num_descriptors, D3D12_CPU_DESCRIPTOR_HANDLE _dst_handle, D3D12_CPU_DESCRIPTOR_HANDLE _src_handle);
-        void ApplyCopy(ID3D12Device* _device, D3D12_DESCRIPTOR_HEAP_TYPE _type);
-
-    private:
-        void AddRangeSrc(uint32_t _num_descriptors, D3D12_CPU_DESCRIPTOR_HANDLE _src_handle);
-        void AddRangeDst(uint32_t _num_descriptors, D3D12_CPU_DESCRIPTOR_HANDLE _dst_handle);
-
-    private:
-        uint32_t                                    src_cache_size;
-        uint32_t                                    dst_cache_size;
-        util::DyArray<uint32_t>                     src_sizees;
-        util::DyArray<uint32_t>                     dst_sizees;
-        util::DyArray<D3D12_CPU_DESCRIPTOR_HANDLE>  copy_src;
-        util::DyArray<D3D12_CPU_DESCRIPTOR_HANDLE>  copy_dst;
-
-        uint32_t                                    current_src_size;
-        uint32_t                                    current_dst_size;
-        uint32_t*                                   src_sizees_data;
-        uint32_t*                                   dst_sizees_data;
-        D3D12_CPU_DESCRIPTOR_HANDLE*                copy_src_data;
-        D3D12_CPU_DESCRIPTOR_HANDLE*                copy_dst_data;
-
-    };
+    BMRESULT CheckPoolCompatibility(const DESCRIPTOR_POOL_DESC& _src_desc, const DESCRIPTOR_POOL_DESC& _dst_desc);
+    bool IsCompatibleView(const DESCRIPTOR_SET_LAYOUT_BINDING& _lb, IView* _view);
 
 private:
     std::atomic_uint32_t                                                                        ref_count;
@@ -314,6 +293,7 @@ private:
     DescriptorSetLayoutD3D12*                                                                   set_layout;
     util::StArray<DescriptorPoolD3D12::POOL_ALLOCATION*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER+1>  allocations;
     util::UniquePtr<DESCRIPTOR_BATCH>                                                           descriptor_batch;
+    util::UniquePtr<DescriptorSetUpdateCache>                                                   update_cache;
 
 };
 

@@ -102,6 +102,7 @@ DECLARE_D3D12_SHARED_PTR(RootSignatureD3D12);
 DECLARE_D3D12_SHARED_PTR(DescriptorHeapD3D12);
 DECLARE_D3D12_SHARED_PTR(DescriptorPoolD3D12);
 DECLARE_D3D12_SHARED_PTR(DescriptorSetD3D12);
+DECLARE_D3D12_SHARED_PTR(DescriptorUpdateD3D12);
 DECLARE_D3D12_SHARED_PTR(DescriptorSetLayoutD3D12);
 DECLARE_D3D12_SHARED_PTR(PipelineLayoutD3D12);
 
@@ -199,7 +200,9 @@ DECLARE_D3D12_SHARED_PTR(AccelerationStructureD3D12);
 
 #include "DescriptorHeapD3D12.h"
 #include "DescriptorPoolD3D12.h"
+#include "DescriptorSetUpdateCacheD3D12.h"
 #include "DescriptorSetD3D12.h"
+#include "DescriptorUpdateD3D12.h"
 #include "DescriptorSetLayoutD3D12.h"
 #include "PipelineLayoutD3D12.h"
 

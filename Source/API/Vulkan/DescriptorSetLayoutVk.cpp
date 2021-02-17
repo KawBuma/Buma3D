@@ -4,6 +4,54 @@
 namespace buma3d
 {
 
+namespace util
+{
+namespace /*anonymous*/
+{
+
+inline void AddTemplateDataCounts(VkDescriptorType _type, DescriptorSetLayoutVk::UPDATE_TEMPLATE_LAYOUT& _l, uint32_t _num_descriptors)
+{
+    switch (_type)
+    {
+    case VK_DESCRIPTOR_TYPE_SAMPLER:
+    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        _l.total_num_image_infos += _num_descriptors;
+        break;
+
+    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        _l.total_num_buffer_views += _num_descriptors;
+        break;
+
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+        _l.total_num_buffer_infos += _num_descriptors;
+        break;
+
+    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        _l.total_num_image_infos += _num_descriptors;
+        break;
+
+    case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+        break;
+
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        _l.total_num_acceleration_structures += _num_descriptors;
+        break;
+
+    default:
+        break;
+    }
+}
+
+}// namespace /*anonymous*/
+}// namespace util
+
 template<typename T, typename FuncNonDynamic, typename FuncSampler, typename FuncDynamic, typename FuncDefault>
 inline T DescriptorSetLayoutVk::BindingsFunc(const DESCRIPTOR_SET_LAYOUT_BINDING& _binding, FuncNonDynamic&& _func_non_dynamic, FuncSampler&& _func_sampler, FuncDynamic&& _func_dynamic, FuncDefault&& _func_default)
 {
@@ -73,6 +121,8 @@ B3D_APIENTRY DescriptorSetLayoutVk::Init(DeviceVk* _device, const DESCRIPTOR_SET
     B3D_RET_IF_FAILED(CreateVkDescriptorSetLayout(&binding_flags));
 
     PrepareDescriptorPoolSizes();
+
+    B3D_RET_IF_FAILED(CreateDescriptorUpdateTemplate());
 
     return BMRESULT_SUCCEED;
 }
@@ -300,6 +350,47 @@ B3D_APIENTRY DescriptorSetLayoutVk::CreateVkDescriptorSetLayout(const util::DyAr
     return BMRESULT_SUCCEED;
 }
 
+BMRESULT
+B3D_APIENTRY DescriptorSetLayoutVk::CreateDescriptorUpdateTemplate()
+{
+    update_template_layout = B3DMakeUnique(UPDATE_TEMPLATE_LAYOUT);
+    auto&& entries = update_template_layout->entries;
+    entries.resize(desc.num_bindings - bindings_info->num_static_samplers); // 不変サンプラが割り当てられているバインディングにコピーや書き込みを行うことは無効であり、これを回避します。
+    
+    auto entries_data = entries.data();
+    auto binding_infos = bindings_info->binding_infos.data();
+    auto&& data_size = update_template_layout->data_size;
+    uint32_t cnt = 0;
+    for (uint32_t i = 0; i < desc.num_bindings; i++)
+    {
+        if (desc.bindings[cnt].static_sampler)
+        { cnt++; continue; }
+
+        auto&& bvk = *binding_infos[desc.bindings[cnt].base_shader_register].vk_binding;
+        auto&& e = entries_data[cnt];
+        e.dstBinding      = bvk.binding;
+        e.dstArrayElement = 0;
+        e.descriptorCount = bvk.descriptorCount;
+        e.descriptorType  = bvk.descriptorType;
+        e.offset          = data_size;
+        e.stride          = util::GetUpdateTemplateDataStride(e.descriptorType);
+        data_size += e.stride * e.descriptorCount;
+        util::AddTemplateDataCounts(e.descriptorType, *update_template_layout, e.descriptorCount);
+    }
+
+    VkDescriptorUpdateTemplateCreateInfo ci{ VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO };
+    ci.flags                      = 0x0; // reserved
+    ci.descriptorUpdateEntryCount = (uint32_t)entries.size();
+    ci.pDescriptorUpdateEntries   = entries_data;
+    ci.templateType               = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    ci.descriptorSetLayout        = layout;
+
+    auto vkr = vkCreateDescriptorUpdateTemplate(vkdevice, &ci, B3D_VK_ALLOC_CALLBACKS, &update_template_layout->update_template);
+    B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
+
+    return BMRESULT_SUCCEED;
+}
+
 void
 B3D_APIENTRY DescriptorSetLayoutVk::PrepareDescriptorPoolSizes()
 {
@@ -328,6 +419,14 @@ B3D_APIENTRY DescriptorSetLayoutVk::Uninit()
     layout = VK_NULL_HANDLE;
 
     bindings_info.reset();
+
+    if (update_template_layout)
+    {
+        if (update_template_layout->update_template)
+            vkDestroyDescriptorUpdateTemplate(vkdevice, update_template_layout->update_template, B3D_VK_ALLOC_CALLBACKS);
+        update_template_layout->update_template = VK_NULL_HANDLE;
+    }
+    update_template_layout.reset();
 
     hlp::SafeRelease(device);
     vkdevice = VK_NULL_HANDLE;
@@ -436,6 +535,12 @@ const DescriptorSetLayoutVk::BINDINGS_INFO&
 B3D_APIENTRY DescriptorSetLayoutVk::GetBindingsInfo() const
 {
     return *bindings_info;
+}
+
+const DescriptorSetLayoutVk::UPDATE_TEMPLATE_LAYOUT&
+B3D_APIENTRY DescriptorSetLayoutVk::GetUpdateTemplateLayout() const
+{
+    return *update_template_layout;
 }
 
 
