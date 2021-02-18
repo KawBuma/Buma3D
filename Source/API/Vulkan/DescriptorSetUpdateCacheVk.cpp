@@ -1,6 +1,8 @@
 #include "Buma3DPCH.h"
 #include "DescriptorSetUpdateCacheVk.h"
 
+// TODO: DescriptorSetUpdateCacheVk: VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE
+
 namespace buma3d
 {
 
