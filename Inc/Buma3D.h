@@ -99,7 +99,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 10, 0);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 10, 1);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -5461,8 +5461,8 @@ protected:
     B3D_APIENTRY ~IPipelineLayout() {}
 
 public:
-    //virtual const PIPELINE_LAYOUT_DESC& 
-    //    B3D_APIENTRY GetDesc() const = 0;
+    virtual const PIPELINE_LAYOUT_DESC& 
+        B3D_APIENTRY GetDesc() const = 0;
 
 };
 

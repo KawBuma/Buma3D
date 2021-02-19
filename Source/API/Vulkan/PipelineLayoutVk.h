@@ -50,7 +50,7 @@ public:
         B3D_APIENTRY GetDevicePFN() const override;
 
     const PIPELINE_LAYOUT_DESC&
-        B3D_APIENTRY GetDesc() const /*override*/;
+        B3D_APIENTRY GetDesc() const override;
 
     VkPipelineLayout
         B3D_APIENTRY GetVkPipelineLayout() const;

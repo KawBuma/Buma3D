@@ -48,7 +48,7 @@ public:
         B3D_APIENTRY GetDevice() const override;
 
     const PIPELINE_LAYOUT_DESC&
-        B3D_APIENTRY GetDesc() const /*override*/;
+        B3D_APIENTRY GetDesc() const override;
 
     ID3D12RootSignature*
         B3D_APIENTRY GetD3D12RootSignature() const;
