@@ -248,7 +248,7 @@ B3D_APIENTRY DescriptorSetVk::VerifyWriteDescriptorSets(const WRITE_DESCRIPTOR_S
         B3D_RET_IF_FAILED(CheckCommon(b));
 
         auto&& lb = l.bindings[b.dst_binding_index];
-        if ((b.dst_first_array_element + b.num_descriptors) >= lb.num_descriptors)
+        if ((b.dst_first_array_element + b.num_descriptors) > lb.num_descriptors)
             return BMRESULT_FAILED_OUT_OF_RANGE;
 
         for (uint32_t i = 0; i < b.num_descriptors; i++)
@@ -288,8 +288,8 @@ B3D_APIENTRY DescriptorSetVk::VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_SET
 
         auto&& src_lb = src_l.bindings[b.src_binding_index];
         auto&& dst_lb = dst_l.bindings[b.dst_binding_index];
-        if ((b.src_first_array_element + b.num_descriptors) >= src_lb.num_descriptors ||
-            (b.dst_first_array_element + b.num_descriptors) >= dst_lb.num_descriptors)
+        if ((b.src_first_array_element + b.num_descriptors) > src_lb.num_descriptors ||
+            (b.dst_first_array_element + b.num_descriptors) > dst_lb.num_descriptors)
             return BMRESULT_FAILED_OUT_OF_RANGE;
 
         if (src_lb.descriptor_type != dst_lb.descriptor_type)

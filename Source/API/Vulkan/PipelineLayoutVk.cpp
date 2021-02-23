@@ -66,7 +66,7 @@ B3D_APIENTRY PipelineLayoutVk::CreateVkPipelineLayout()
 {
     util::DyArray<VkDescriptorSetLayout> set_layouts(desc.num_set_layouts);
     if (desc.num_push_constants != 0)
-        push_constants = B3DMakeUnique(util::DyArray<VkPushConstantRange>, desc.num_push_constants);
+        push_constants = B3DMakeUniqueArgs(util::DyArray<VkPushConstantRange>, desc.num_push_constants);
     B3D_RET_IF_FAILED(PreparePipelineLayoutCI(&set_layouts, push_constants.get()));
 
     VkPipelineLayoutCreateInfo ci{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
@@ -88,16 +88,19 @@ B3D_APIENTRY PipelineLayoutVk::PreparePipelineLayoutCI(util::DyArray<VkDescripto
     for (uint32_t i = 0; i < desc.num_set_layouts; i++)
         set_layouts_data[i] = desc.set_layouts[i]->As<DescriptorSetLayoutVk>()->GetVkDescriptorSetLayout();
 
-    auto push_constants_data = _push_constants->data();
-    uint32_t total_push_constants_size = 0;
-    for (uint32_t i = 0; i < desc.num_push_constants; i++)
+    if (_push_constants)
     {
-        auto&& pc = desc.push_constants[i];
-        auto&& pcvk = push_constants_data[i];
-        pcvk.stageFlags = util::GetNativeShaderVisibility(pc.visibility);
-        pcvk.offset     = total_push_constants_size;
-        pcvk.size       = sizeof(uint32_t) * pc.num_32bit_values;
-        total_push_constants_size += pcvk.size;
+        auto push_constants_data = _push_constants->data();
+        uint32_t total_push_constants_size = 0;
+        for (uint32_t i = 0; i < desc.num_push_constants; i++)
+        {
+            auto&& pc = desc.push_constants[i];
+            auto&& pcvk = push_constants_data[i];
+            pcvk.stageFlags = util::GetNativeShaderVisibility(pc.visibility);
+            pcvk.offset     = total_push_constants_size;
+            pcvk.size       = sizeof(uint32_t) * pc.num_32bit_values;
+            total_push_constants_size += pcvk.size;
+        }
     }
 
     return BMRESULT_SUCCEED;

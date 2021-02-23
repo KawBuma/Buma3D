@@ -263,7 +263,7 @@ B3D_APIENTRY DescriptorSetLayoutVk::PrepareBindingsInfo(util::DyArray<VkDescript
 
     info.vk_bindings.resize(desc.num_bindings);
     _binding_flags->resize(desc.num_bindings);
-    info.binding_infos.resize(std::max(1u, info.max_base_shader_register));
+    info.binding_infos.resize(1 + info.max_base_shader_register);
     if (info.num_static_samplers      != 0) info.static_samplers      = B3DMakeUniqueArgs(util::DyArray<STATIC_SAMPLER_BINDING>, info.num_static_samplers);
     if (info.num_non_dynamic_bindings != 0) info.non_dynamic_bindings = B3DMakeUniqueArgs(util::DyArray<const BINDING_INFO*>   , info.num_non_dynamic_bindings);
     if (info.num_dynamic_bindings     != 0) info.dynamic_bindings     = B3DMakeUniqueArgs(util::DyArray<const BINDING_INFO*>   , info.num_dynamic_bindings);
@@ -354,20 +354,24 @@ BMRESULT
 B3D_APIENTRY DescriptorSetLayoutVk::CreateDescriptorUpdateTemplate()
 {
     update_template_layout = B3DMakeUnique(UPDATE_TEMPLATE_LAYOUT);
-    auto&& entries = update_template_layout->entries;
-    entries.resize(desc.num_bindings - bindings_info->num_static_samplers); // 不変サンプラが割り当てられているバインディングにコピーや書き込みを行うことは無効であり、これを回避します。
-    
-    auto entries_data = entries.data();
+    auto&& entries         = update_template_layout->entries;
+    auto&& binding_entries = update_template_layout->binding_entries;
+    entries        .resize(desc.num_bindings - bindings_info->num_static_samplers); // 不変サンプラが割り当てられているバインディングにコピーや書き込みを行うことは無効であり、これを回避します。
+    binding_entries.resize(desc.num_bindings);
+
+    auto entries_data         = entries.data();
+    auto binding_entries_data = binding_entries.data();
     auto binding_infos = bindings_info->binding_infos.data();
     auto&& data_size = update_template_layout->data_size;
-    uint32_t cnt = 0;
+    uint32_t entry_cnt = 0;
     for (uint32_t i = 0; i < desc.num_bindings; i++)
     {
-        if (desc.bindings[cnt].static_sampler)
-        { cnt++; continue; }
+        auto&& b = desc.bindings[i];
+        if (b.static_sampler)
+        { entry_cnt++; continue; }
 
-        auto&& bvk = *binding_infos[desc.bindings[cnt].base_shader_register].vk_binding;
-        auto&& e = entries_data[cnt];
+        auto&& bvk = *binding_infos[b.base_shader_register].vk_binding;
+        auto&& e = entries_data[entry_cnt++];
         e.dstBinding      = bvk.binding;
         e.dstArrayElement = 0;
         e.descriptorCount = bvk.descriptorCount;
@@ -376,6 +380,8 @@ B3D_APIENTRY DescriptorSetLayoutVk::CreateDescriptorUpdateTemplate()
         e.stride          = util::GetUpdateTemplateDataStride(e.descriptorType);
         data_size += e.stride * e.descriptorCount;
         util::AddTemplateDataCounts(e.descriptorType, *update_template_layout, e.descriptorCount);
+
+        binding_entries_data[i] = &e;
     }
 
     VkDescriptorUpdateTemplateCreateInfo ci{ VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO };

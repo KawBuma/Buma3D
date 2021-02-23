@@ -79,7 +79,7 @@ struct COPY_SRC_CACHE
         device     = _device;
         heap_type  = _heap_type;
         num_ranges = _num_ranges;
-        handles.resize(num_ranges * 2);
+        handles.resize(num_ranges * 2); // srcとdst用に2倍します。
         sizes  .resize(num_ranges * 2);
         range.ResetData(  handles.data()             , sizes.data()
                         , handles.data() + num_ranges, sizes.data() + num_ranges);
@@ -103,10 +103,27 @@ struct COPY_SRC_CACHE
     }
     void CopyDescriptorSet(D3D12_CPU_DESCRIPTOR_HANDLE _handle)
     {
-        SetSrc(_handle);
-        device->CopyDescriptors(  num_ranges, range.dst_handles.data, range.dst_sizes.data
-                                , num_ranges, range.src_handles.data, range.src_sizes.data
-                                , heap_type);
+        if constexpr (false)
+        {
+            SetSrc(_handle);
+            device->CopyDescriptors(  num_ranges, range.dst_handles.data, range.dst_sizes.data
+                                    , num_ranges, range.src_handles.data, range.src_sizes.data
+                                    , heap_type);
+        }
+        else
+        {
+            // HACK: DescriptorSetUpdater::ApplyCopy() を参照してください。
+            SetSrc(_handle);
+            device->CopyDescriptors(  1, range.dst_handles.data, range.dst_sizes.data
+                                    , 1, range.src_handles.data, range.src_sizes.data
+                                    , heap_type);
+            if (num_ranges == 2) // is_enabled_copy
+            {
+                device->CopyDescriptors(  1, range.dst_handles.data + 1, range.dst_sizes.data + 1
+                                        , 1, range.src_handles.data + 1, range.src_sizes.data + 1
+                                        , heap_type);
+            }
+        }
     }
     ID3D12Device*                               device;
     D3D12_DESCRIPTOR_HEAP_TYPE                  heap_type;
@@ -136,8 +153,9 @@ struct DescriptorSetUpdateCache::DATA
             auto&& al = allocations[_type];
             copy_caches[_type] = B3DMakeUnique(COPY_SRC_CACHE);
             copy_caches[_type]->Init(device->GetD3D12Device(), _type, is_enabled_copy ? 2 : 1
-                                     , allocations[_type]->allocation.num_descriptors
-                                     , allocations[_type]->allocation.OffsetCPUHandle(0), allocations[_type]->copy_allocation.OffsetCPUHandle(0));
+                                     , al->allocation.num_descriptors
+                                     , al->allocation.handles.cpu_begin
+                                     , al->copy_allocation.cpu_handle);
         };
         if (allocations[0]) Create(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         if (allocations[1]) Create(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
@@ -215,13 +233,14 @@ void DescriptorSetUpdateCache::AddCopyDescriptorSets(DescriptorSetUpdater& _upda
         auto&& cb = _copy.bindings[i_binding];
         if (data->parameter_bindings[cb.dst_binding_index].parameter->ParameterType != D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
         {
-            PopulateCopyDescriptorBinding(_updator, _copy.bindings[i_binding], src_cache);
-        }
-        else // 宛先はルート定数です。
-        {
+            // 宛先はルート定数です。
             auto&& dst_batch = SCAST<DescriptorSetD3D12::SetRootDescriptorBatch*>(this    ->data->batch[cb.dst_binding_index].get());
             auto&& src_batch = SCAST<DescriptorSetD3D12::SetRootDescriptorBatch*>(src_cache.data->batch[cb.src_binding_index].get());
             dst_batch->CopyRootDescriptor(src_batch);
+        }
+        else
+        {
+            PopulateCopyDescriptorBinding(_updator, _copy.bindings[i_binding], src_cache);
         }
     }
 }
@@ -257,7 +276,7 @@ void DescriptorSetUpdateCache::PopulateWriteDescriptorBinding(DescriptorSetUpdat
     {
         auto&& offset = b.descriptor_offset + _write.dst_first_array_element;
         auto&& write_range = _updator.data->write_ranges[b.heap_type];
-        write_range.AddRangeDst(_write.num_descriptors, alloc->copy_allocation.OffsetCPUHandle(offset));
+        write_range.AddRangeDst(_write.num_descriptors, alloc->allocation.OffsetCPUHandle(offset));
         for (uint32_t i = 0; i < _write.num_descriptors; i++)
             write_range.AddRangeSrc(1, GetViewD3D12(_write.src_views[i])->GetCpuDescriptorAllocation()->handle);
     }
@@ -404,26 +423,26 @@ void DescriptorSetUpdater::ResizeRanges()
     auto src_sizes   = data->src_sizes  .data();
     auto dst_handles = data->dst_handles.data();
     auto dst_sizes   = data->dst_sizes  .data();
-    auto ResetData = [&](COPY_RANGE& _range, COPY_RANGE& _range_for_copy_src, uint32_t _src_offset, uint32_t _dst_offset, uint32_t _offset_for_copy_src)
-    {
-        _range             .ResetData(  src_handles + _src_offset                       , src_sizes + _src_offset
-                                      , dst_handles + _dst_offset                       , dst_sizes + _dst_offset);
-        _range_for_copy_src.ResetData(  src_handles + _src_offset + _offset_for_copy_src, src_sizes + _src_offset + _offset_for_copy_src
-                                      , dst_handles + _dst_offset + _offset_for_copy_src, dst_sizes + _dst_offset + _offset_for_copy_src);
-    };
     uint32_t src_offset = 0;
     uint32_t dst_offset = 0;
+    auto ResetData = [&](COPY_RANGE& _range, uint32_t _src_count, uint32_t _dst_count)
+    {
+        _range.ResetData(  src_handles + src_offset, src_sizes + src_offset
+                         , dst_handles + dst_offset, dst_sizes + dst_offset);
+        src_offset += _src_count;
+        dst_offset += _dst_count;
+    };
     auto ResetDataByRange = [&](COPY_RANGE& _range, COPY_RANGE& _range_for_copy_src, uint32_t _src_count, uint32_t _dst_count, uint32_t _num_range_with_copy_src)
     {
-        ResetData(_range, _range_for_copy_src, src_offset, dst_offset, _num_range_with_copy_src);
-        src_offset += _src_count + _num_range_with_copy_src;
-        dst_offset += _dst_count + _num_range_with_copy_src;
+        ResetData(_range, _src_count, _dst_count);
+        if (_num_range_with_copy_src != 0)
+            ResetData(_range_for_copy_src, _num_range_with_copy_src, _num_range_with_copy_src);
     };
     auto ResetDataByType = [&](uint32_t _type)
     {
         auto&& c = data->counts[_type];
-        ResetDataByRange(data->write_ranges[_type], data->write_ranges_for_copy_src[_type], c.GetTotalSrcWriteRangeCount(), c.GetTotalDstWriteRangeCount(), c.num_write_range_with_copy_src);
-        ResetDataByRange(data->copy_ranges[_type] , data->copy_ranges_for_copy_src[_type] , c.GetTotalSrcCopyRangeCount() , c.GetTotalDstCopyRangeCount() , c.num_copy_range_with_copy_src);
+        ResetDataByRange(data->write_ranges[_type], data->write_ranges_for_copy_src[_type], c.num_src_write_range, c.num_dst_write_range, c.num_write_range_with_copy_src);
+        ResetDataByRange(data->copy_ranges[_type] , data->copy_ranges_for_copy_src[_type] , c.num_src_copy_range , c.num_dst_copy_range , c.num_copy_range_with_copy_src);
     };
     ResetDataByType(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     ResetDataByType(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
@@ -449,22 +468,59 @@ void DescriptorSetUpdater::ApplyCopy()
 {
     uint32_t dst_offset = 0;
     uint32_t src_offset = 0;
-    auto Copy = [&](D3D12_DESCRIPTOR_HEAP_TYPE _type)
+    if constexpr (false)
     {
-        auto&& c = data->counts[_type];
-        if (c.HasWriteRange() || c.HasCopyRange())
+        auto Copy = [&](D3D12_DESCRIPTOR_HEAP_TYPE _type)
         {
-            uint32_t dst_count = c.GetTotalDstRangeCount();
-            uint32_t src_count = c.GetTotalSrcRangeCount();
-            data->device12->CopyDescriptors(  dst_count , data->dst_handles.data() + dst_offset, data->dst_sizes.data() + dst_offset
-                                            , src_count , data->src_handles.data() + src_offset, data->src_sizes.data() + src_offset
-                                            , _type);
-            dst_offset += dst_count;
-            src_offset += src_count;
-        }
-    };
-    Copy(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    Copy(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+            auto&& c = data->counts[_type];
+            if (c.HasWriteRange() || c.HasCopyRange())
+            {
+                uint32_t dst_count = c.GetTotalDstRangeCount();
+                uint32_t src_count = c.GetTotalSrcRangeCount();
+                data->device12->CopyDescriptors(  dst_count , data->dst_handles.data() + dst_offset, data->dst_sizes.data() + dst_offset
+                                                , src_count , data->src_handles.data() + src_offset, data->src_sizes.data() + src_offset
+                                                , _type);
+                dst_offset += dst_count;
+                src_offset += src_count;
+            }
+        };
+        Copy(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        Copy(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+    }
+    else
+    {
+        /*
+        HACK: ID3D12Device::CopyDescriptors() 1回の呼び出しで、 pDestDescriptorRangeStarts と pSrcDescriptorRangeStarts 内のいずれかの要素の範囲にでも同じディスクリプタが含まれた場合、
+              デバッグレイヤーはディスクリプタがオーバーラップしていると判断し、動作が未定義であるとエラーを発行します。 
+              (例えば、ソースと宛先の各範囲サイズが全て同一であると仮定して、 dstRange[0] と srcRange[3] のようにお互いに干渉しない範囲のコピーでも、それらに同じディスクリプタが含まれていればエラーが発行されます。) 
+              DescriptorSetUpdateCache::PopulateWriteDescriptorBinding() で説明しているディスクリプタの2パスコピーを1回のAPIコールで行う事を目的とし、
+              コピー操作が範囲の要素順に行われる場合オーバーラップは起こらないため、このようなコピーは有効であると考えています。 
+              実際に、少なくともnvidiaハードウェア(RTX2070)では正しくコピーが行われるようです。 
+              それでも、以下のようにコピー操作を分割して行うことでエラーの発行を回避できます。
+        */
+
+        auto Copy = [&](D3D12_DESCRIPTOR_HEAP_TYPE _type, uint32_t _dst_count, uint32_t _src_count)
+        {
+            if (_dst_count && _src_count)
+            {
+                data->device12->CopyDescriptors(  _dst_count , data->dst_handles.data() + dst_offset, data->dst_sizes.data() + dst_offset
+                                                , _src_count , data->src_handles.data() + src_offset, data->src_sizes.data() + src_offset
+                                                , _type);
+                dst_offset += _dst_count;
+                src_offset += _src_count;
+            }
+        };
+        auto CopyByType = [&](D3D12_DESCRIPTOR_HEAP_TYPE _type)
+        {
+            auto&& c = data->counts[_type];
+            Copy(_type, c.num_dst_write_range             , c.num_src_write_range);
+            Copy(_type, c.num_write_range_with_copy_src   , c.num_write_range_with_copy_src);
+            Copy(_type, c.num_dst_copy_range              , c.num_src_copy_range);
+            Copy(_type, c.num_copy_range_with_copy_src    , c.num_copy_range_with_copy_src);
+        };
+        CopyByType(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        CopyByType(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+    }
 }
 
 

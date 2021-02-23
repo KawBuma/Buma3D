@@ -123,7 +123,7 @@ B3D_APIENTRY DescriptorUpdateD3D12::VerifyUpdateDescriptorSets(const UPDATE_DESC
         auto&& w = _update_desc.write_descriptor_sets[i];
         B3D_RET_IF_FAILED(w.dst_set->As<DescriptorSetD3D12>()->VerifyWriteDescriptorSets(w));
     }
-    for (uint32_t i = 0; i < _update_desc.num_write_descriptor_sets; i++)
+    for (uint32_t i = 0; i < _update_desc.num_copy_descriptor_sets; i++)
     {
         auto&& c = _update_desc.copy_descriptor_sets[i];
         B3D_RET_IF_FAILED(c.dst_set->As<DescriptorSetD3D12>()->VerifyCopyDescriptorSets(c));

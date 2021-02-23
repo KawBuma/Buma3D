@@ -137,23 +137,25 @@ DescriptorSetUpdateCache::~DescriptorSetUpdateCache()
 
 void DescriptorSetUpdateCache::AddWriteDescriptorSets(DescriptorSetUpdater& _updator, const WRITE_DESCRIPTOR_SET& _write)
 {
+    auto dst_entries = data->template_layout.binding_entries.data();
     for (uint32_t i_binding = 0; i_binding < _write.num_bindings; i_binding++)
     {
-        PopulateWriteDescriptorBinding(_updator, _write.bindings[i_binding]);
+        PopulateWriteDescriptorBinding(_updator, _write.bindings[i_binding], dst_entries);
     }
     for (uint32_t i_binding = 0; i_binding < _write.num_dynamic_bindings; i_binding++)
     {
-        PopulateWriteDynamicDescriptorBinding(_updator, _write.dynamic_bindings[i_binding]);
+        PopulateWriteDynamicDescriptorBinding(_updator, _write.dynamic_bindings[i_binding], dst_entries);
     }
 }
 
 void DescriptorSetUpdateCache::AddCopyDescriptorSets(DescriptorSetUpdater& _updator, const COPY_DESCRIPTOR_SET& _copy)
 {
     auto&& src_cache = _copy.src_set->As<DescriptorSetVk>()->GetUpdateCache();
-    auto src_entries = src_cache.data->template_layout.entries.data();
+    auto src_entries = src_cache.data->template_layout.binding_entries.data();
+    auto dst_entries = this    ->data->template_layout.binding_entries.data();
     for (uint32_t i_binding = 0; i_binding < _copy.num_bindings; i_binding++)
     {
-        PopulateCopyDescriptorBinding(_updator, _copy.bindings[i_binding], src_cache, src_entries);
+        PopulateCopyDescriptorBinding(_updator, _copy.bindings[i_binding], src_cache, src_entries, dst_entries);
     }
 }
 
@@ -210,10 +212,9 @@ inline void DescriptorSetUpdateCache::PopulateWriteDescriptorInfo(VkWriteDescrip
     }
 }
 
-void DescriptorSetUpdateCache::PopulateWriteDescriptorBinding(DescriptorSetUpdater& _updator, const WRITE_DESCRIPTOR_BINDING& _write)
+void DescriptorSetUpdateCache::PopulateWriteDescriptorBinding(DescriptorSetUpdater& _updator, const WRITE_DESCRIPTOR_BINDING& _write, const VkDescriptorUpdateTemplateEntry* const* _dst_entries)
 {    
-    auto entries = data->template_layout.entries.data();
-    auto&& e = entries[_write.dst_binding_index];
+    auto&& e = *_dst_entries[_write.dst_binding_index];
 
     auto&& wvk = _updator.data->writes.Add();
     wvk.dstSet           = data->setvk;
@@ -224,9 +225,9 @@ void DescriptorSetUpdateCache::PopulateWriteDescriptorBinding(DescriptorSetUpdat
     PopulateWriteDescriptorInfo(wvk, _updator, _write, e);
 }
 
-void DescriptorSetUpdateCache::PopulateWriteDynamicDescriptorBinding(DescriptorSetUpdater& _updator, const WRITE_DYNAMIC_DESCRIPTOR_BINDING& _write)
+void DescriptorSetUpdateCache::PopulateWriteDynamicDescriptorBinding(DescriptorSetUpdater& _updator, const WRITE_DYNAMIC_DESCRIPTOR_BINDING& _write, const VkDescriptorUpdateTemplateEntry* const* _dst_entries)
 {
-    auto&& e = data->template_layout.entries.data()[_write.dst_binding_index];
+    auto&& e = *_dst_entries[_write.dst_binding_index];
 
     auto&& wvk = _updator.data->writes.Add();
     wvk.dstSet           = data->setvk;
@@ -243,10 +244,10 @@ void DescriptorSetUpdateCache::PopulateWriteDynamicDescriptorBinding(DescriptorS
         (*data->template_data->GetEntryInfo<VkDescriptorBufferInfo>(e, e.dstArrayElement)) = buffer_info;
 }
 
-void DescriptorSetUpdateCache::PopulateCopyDescriptorBinding(DescriptorSetUpdater& _updator, const COPY_DESCRIPTOR_BINDING& _copy, const DescriptorSetUpdateCache& _src_cache, const VkDescriptorUpdateTemplateEntry* _src_entries)
+void DescriptorSetUpdateCache::PopulateCopyDescriptorBinding(DescriptorSetUpdater& _updator, const COPY_DESCRIPTOR_BINDING& _copy, const DescriptorSetUpdateCache& _src_cache, const VkDescriptorUpdateTemplateEntry*const * _src_entries, const VkDescriptorUpdateTemplateEntry* const* _dst_entries)
 {
-    auto&& srce = _src_entries[_copy.src_binding_index];
-    auto&& dste = data->template_layout.entries.data()[_copy.dst_binding_index];
+    auto&& srce = *_src_entries[_copy.src_binding_index];
+    auto&& dste = *_dst_entries[_copy.dst_binding_index];
     auto&& cvk = _updator.data->copies.Add();
     cvk.srcSet          = _src_cache.data->setvk;
     cvk.dstSet          = data->setvk;
@@ -285,7 +286,7 @@ void DescriptorSetUpdater::UpdateDescriptorSets(const UPDATE_DESCRIPTOR_SET_DESC
     if (_update_desc.num_copy_descriptor_sets == 0 && _update_desc.num_write_descriptor_sets == 0)
         return;
 
-    CalcWriteDescriptorInfoCounts(_update_desc);
+    CalcDescriptorInfoCounts(_update_desc);
     PopulateUpdateDescriptorSets(_update_desc);
 
     vkUpdateDescriptorSets(data->vkdevice
@@ -309,7 +310,7 @@ void DescriptorSetUpdater::PopulateUpdateDescriptorSets(const UPDATE_DESCRIPTOR_
     }
 }
 
-void DescriptorSetUpdater::CalcWriteDescriptorInfoCounts(const UPDATE_DESCRIPTOR_SET_DESC& _update_desc)
+void DescriptorSetUpdater::CalcDescriptorInfoCounts(const UPDATE_DESCRIPTOR_SET_DESC& _update_desc)
 {
     data->writes        .ResetCount();
     data->copies        .ResetCount();
@@ -326,15 +327,15 @@ void DescriptorSetUpdater::CalcWriteDescriptorInfoCounts(const UPDATE_DESCRIPTOR
     {
         auto&& w = _update_desc.write_descriptor_sets[i_set];
         total_write_set += w.num_bindings + w.num_dynamic_bindings;
-        auto&& entries = w.dst_set->GetDescriptorSetLayout()->As<DescriptorSetLayoutVk>()->GetUpdateTemplateLayout().entries.data();
+        auto&& entries = w.dst_set->GetDescriptorSetLayout()->As<DescriptorSetLayoutVk>()->GetUpdateTemplateLayout().binding_entries.data();
         for (uint32_t i_binding = 0; i_binding < w.num_bindings; i_binding++)
         {
             auto&& b = w.bindings[i_binding];
-            AddWriteDescriptorInfoCounts(entries[b.dst_binding_index], b.num_descriptors, total_image_infos, total_buffer_infos, total_buffer_views);
+            AddWriteDescriptorInfoCounts(*entries[b.dst_binding_index], b.num_descriptors, total_image_infos, total_buffer_infos, total_buffer_views);
         }
         for (uint32_t i_binding = 0; i_binding < w.num_dynamic_bindings; i_binding++)
         {
-            auto&& e = entries[w.dynamic_bindings[i_binding].dst_binding_index];
+            auto&& e = *entries[w.dynamic_bindings[i_binding].dst_binding_index];
             AddWriteDescriptorInfoCounts(e, e.descriptorCount, total_image_infos, total_buffer_infos, total_buffer_views);
         }
     }

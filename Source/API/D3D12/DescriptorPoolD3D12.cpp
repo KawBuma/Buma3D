@@ -285,17 +285,17 @@ B3D_APIENTRY DescriptorPoolD3D12::AllocateDescriptors(const util::DyArray<DESCRI
     if (!IsAllocatable(_pool_sizes))
         return BMRESULT_FAILED_OUT_OF_POOL_MEMORY;
 
-    auto Allocate = [&](D3D12_DESCRIPTOR_HEAP_TYPE _type, uint32_t _num_descriptors, POOL_ALLOCATION* _dst)
+    auto Allocate = [this](D3D12_DESCRIPTOR_HEAP_TYPE _type, uint32_t _num, POOL_ALLOCATION* _dst)
     {
         size_t offset = 0;
-        _dst_descriptors->allocation = dh_allocators[_type]->Allocate(_num_descriptors, &offset);
-        if (!_dst_descriptors->allocation.handles)
+        _dst->allocation = dh_allocators[_type]->Allocate(_num, &offset);
+        if (!_dst->allocation.handles)
             return BMRESULT_FAILED_FRAGMENTED_POOL;
 
         if (desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
         {
             auto&& copy_src_heap = copy_src_heaps->at(_type);
-            _dst_descriptors->copy_allocation = { &copy_src_heap, copy_src_heap.cpu_base_handle.ptr + (copy_src_heap.increment_size * offset), _num_descriptors };
+            _dst->copy_allocation = { &copy_src_heap, copy_src_heap.cpu_base_handle.ptr + (copy_src_heap.increment_size * offset), _num };
         }
 
         return BMRESULT_SUCCEED;

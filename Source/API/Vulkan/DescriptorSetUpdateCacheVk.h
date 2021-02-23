@@ -58,9 +58,9 @@ private:
     template<typename T, bool IS_SAMPLER = false>
     void SetInfos(const T*& _dst_updator_weite_info, util::TVEC<T>& _dst_updator_infos, const WRITE_DESCRIPTOR_BINDING& _write, const VkDescriptorUpdateTemplateEntry& _entry);
     void PopulateWriteDescriptorInfo(VkWriteDescriptorSet& _wvk, DescriptorSetUpdater& _updator, const WRITE_DESCRIPTOR_BINDING& _write, const VkDescriptorUpdateTemplateEntry& _e);
-    void PopulateWriteDescriptorBinding         (DescriptorSetUpdater& _updator, const WRITE_DESCRIPTOR_BINDING&         _write);
-    void PopulateWriteDynamicDescriptorBinding  (DescriptorSetUpdater& _updator, const WRITE_DYNAMIC_DESCRIPTOR_BINDING& _write);
-    void PopulateCopyDescriptorBinding          (DescriptorSetUpdater& _updator, const COPY_DESCRIPTOR_BINDING& _copy, const DescriptorSetUpdateCache& _src_cache, const VkDescriptorUpdateTemplateEntry* _src_entries);
+    void PopulateWriteDescriptorBinding         (DescriptorSetUpdater& _updator, const WRITE_DESCRIPTOR_BINDING&         _write, const VkDescriptorUpdateTemplateEntry*const * _dst_entries);
+    void PopulateWriteDynamicDescriptorBinding  (DescriptorSetUpdater& _updator, const WRITE_DYNAMIC_DESCRIPTOR_BINDING& _write, const VkDescriptorUpdateTemplateEntry*const * _dst_entries);
+    void PopulateCopyDescriptorBinding          (DescriptorSetUpdater& _updator, const COPY_DESCRIPTOR_BINDING& _copy, const DescriptorSetUpdateCache& _src_cache, const VkDescriptorUpdateTemplateEntry*const * _src_entries, const VkDescriptorUpdateTemplateEntry*const * _dst_entries);
 
 private:
     struct DATA;
@@ -79,7 +79,7 @@ public:
 
 private:
     void PopulateUpdateDescriptorSets(const UPDATE_DESCRIPTOR_SET_DESC& _update_desc);
-    void CalcWriteDescriptorInfoCounts(const UPDATE_DESCRIPTOR_SET_DESC& _update_desc);
+    void CalcDescriptorInfoCounts(const UPDATE_DESCRIPTOR_SET_DESC& _update_desc);
 
 private:
     struct DATA;

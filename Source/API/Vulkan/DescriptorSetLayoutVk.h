@@ -53,7 +53,8 @@ public:
     struct UPDATE_TEMPLATE_LAYOUT
     {
         VkDescriptorUpdateTemplate                      update_template;
-        util::DyArray<VkDescriptorUpdateTemplateEntry>  entries;            // bindingsの順に格納します。
+        util::DyArray<VkDescriptorUpdateTemplateEntry>  entries;            // 不変サンプラのバインディングが除かれたVkDescriptorUpdateTemplateEntry構造の配列です。
+        util::DyArray<VkDescriptorUpdateTemplateEntry*> binding_entries;    // entriesの配列要素へのポインタです。 bindingsの順に格納します。
         size_t                                          data_size;          // vkUpdateDescriptorSetWithTemplate::pDataに渡すデータを作成する際に必要サイズです。
         uint32_t                                        total_num_image_infos;
         uint32_t                                        total_num_buffer_infos;
