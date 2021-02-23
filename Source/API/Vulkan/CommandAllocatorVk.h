@@ -81,18 +81,18 @@ public:
 
         ~WeakSimpleArray()
         {
-            if (this->GetAllocator() == allocator->GetTemporaryHeapAllocator() && this->reset_id != allocator->GetResetId())
+            if (alloc_id == allocator->GetTemporaryHeapAllocatorResetId())
                 this->destroy_free();
-
-            allocator = nullptr;
-            reset_id = ~0ull;
-            alloc_id = ~0ull;
         }
 
         void BeginRecord()
         {
-            if (alloc_id != allocator->GetTemporaryHeapAllocatorResetId())
+            auto parent_alloc_id = allocator->GetTemporaryHeapAllocatorResetId();
+            if (alloc_id != parent_alloc_id)
+            {
+                alloc_id = parent_alloc_id;
                 this->SetAllocator(allocator->GetTemporaryHeapAllocator());
+            }
 
             reset_id = allocator->GetResetId();
         }
