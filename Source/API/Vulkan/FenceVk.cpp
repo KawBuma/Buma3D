@@ -90,7 +90,7 @@ public:
 
         uint64_t timeout_nanosec = _timeout_millisec == UINT32_MAX
             ? UINT64_MAX
-            : _timeout_millisec * 1'000'000ull/*to nanosec*/;
+            : SCAST<uint64_t>(_timeout_millisec) * 1'000'000ull/*to nanosec*/;
 
         auto vkr = vkWaitForFences(owner->vkdevice, 1, &fence, VK_TRUE, timeout_nanosec);
         if (auto bmr = VKR_TRACE_IF_FAILED_EX(owner, vkr); bmr != BMRESULT_SUCCEED)
@@ -360,7 +360,7 @@ public:
 
         uint64_t timeout_nanosec = _timeout_millisec == UINT32_MAX
             ? UINT64_MAX
-            : _timeout_millisec * 1'000'000ull/*to nanosec*/;
+            : SCAST<uint64_t>(_timeout_millisec) * 1'000'000ull/*to nanosec*/;
 
         auto vkr = vkWaitSemaphores(owner->vkdevice, &wait_info, timeout_nanosec);
         if (auto bmr = VKR_TRACE_IF_FAILED_EX(owner, vkr); bmr != BMRESULT_SUCCEED)

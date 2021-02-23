@@ -216,7 +216,7 @@ public:
             state = SIGNALED;
             return BMRESULT_SUCCEED;
         }
-        else if (_timeout_millisec == UINT64_MAX)
+        else if (_timeout_millisec == UINT32_MAX)
         {
             // hEventがnullハンドルの場合、SetEventOnCompletionは指定されたフェンス値に達するまで戻りません。
             return SetEvent(NULL);
@@ -586,7 +586,7 @@ public:
                 return BMRESULT_SUCCEED_NOT_READY;
             }
         }
-        else if (_timeout_millisec == UINT64_MAX)
+        else if (_timeout_millisec == UINT32_MAX)
         {
             // hEventがnullハンドルの場合、SetEventOnCompletionは指定されたフェンス値に達するまで戻りません。
             return SetEvent(NULL, _value);
@@ -803,7 +803,7 @@ public:
             state = SIGNALED;
             return BMRESULT_SUCCEED;
         }
-        else if (_timeout_millisec == UINT64_MAX)
+        else if (_timeout_millisec == UINT32_MAX)
         {
             return SetEvent(NULL);
         }
