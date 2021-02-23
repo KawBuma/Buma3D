@@ -7,14 +7,15 @@ namespace buma3d
 static constexpr VIEW_DESC DEFAULT_SAMPLERS_VIEW_DESC = { VIEW_TYPE_SAMPLER, RESOURCE_FORMAT_UNKNOWN, VIEW_DIMENSION_SAMPLER };
 
 B3D_APIENTRY SamplerViewVk::SamplerViewVk()
-    : ref_count { 1 }
-    , name      {}
-    , device    {}
-    , desc      {}
-    , vkdevice  {}
-    , inspfn    {}
-    , devpfn    {}
-    , sampler   {}
+    : ref_count     { 1 }
+    , name          {}
+    , device        {}
+    , desc          {}
+    , vkdevice      {}
+    , inspfn        {}
+    , devpfn        {}
+    , sampler       {}
+    , image_info    { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED }
 {
 
 }
@@ -76,6 +77,8 @@ B3D_APIENTRY SamplerViewVk::Init(DeviceVk* _device, const SAMPLER_DESC& _desc)
 
     auto vkr = vkCreateSampler(vkdevice, &ci, B3D_VK_ALLOC_CALLBACKS, &sampler);
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
+
+    image_info.sampler = sampler;
     ++device->GetAllocationCounters().samplers;
 
     return BMRESULT_SUCCEED;
@@ -200,6 +203,12 @@ B3D_APIENTRY SamplerViewVk::GetDevicePFN() const
     return *devpfn;
 }
 
+const VkDescriptorImageInfo*
+B3D_APIENTRY SamplerViewVk::GetVkDescriptorImageInfo() const
+{
+    return &image_info;
+}
+
 VkSampler
 B3D_APIENTRY SamplerViewVk::GetVkSampler() const
 {
@@ -209,14 +218,11 @@ B3D_APIENTRY SamplerViewVk::GetVkSampler() const
 BMRESULT
 B3D_APIENTRY SamplerViewVk::AddDescriptorWriteRange(void* _dst, uint32_t _array_index) const
 {
-    auto&& dst = *RCAST<DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst);
+    auto&& dst = *RCAST<DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst);
     if (!dst.image_infos_data)
         return BMRESULT_FAILED;
-    auto&& info = dst.image_infos_data[_array_index];
-    info.imageView   = VK_NULL_HANDLE;
-    info.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    info.sampler     = sampler;
 
+    dst.image_infos_data[_array_index] = image_info;
     return BMRESULT_SUCCEED;
 }
 

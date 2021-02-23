@@ -48,6 +48,9 @@
     <Filter Include="Source\Vulkan\Query">
       <UniqueIdentifier>{0fc0b3b0-7984-4e5a-9175-3e8656940a50}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Vulkan\Descriptor\Deprecated">
+      <UniqueIdentifier>{63ecd63d-e992-4ad6-ba22-5eeffe63ee38}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\API\Vulkan\DeviceFactoryVk.cpp">
@@ -137,12 +140,6 @@
     <ClCompile Include="..\..\..\Source\API\Vulkan\RootSignatureVk.cpp">
       <Filter>Source\Vulkan\Descriptor</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.cpp">
-      <Filter>Source\Vulkan\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.cpp">
-      <Filter>Source\Vulkan\Descriptor</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\Source\API\Vulkan\PipelineStateVk.cpp">
       <Filter>Source\Vulkan\Pipeline</Filter>
     </ClCompile>
@@ -175,6 +172,33 @@
     </ClCompile>
     <ClCompile Include="..\..\..\Source\API\Vulkan\Buma3DDLLMain.cpp">
       <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\PipelineLayoutVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetLayoutVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorPool0Vk.cpp">
+      <Filter>Source\Vulkan\Descriptor\Deprecated</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSet0Vk.cpp">
+      <Filter>Source\Vulkan\Descriptor\Deprecated</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorHeapVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorSetUpdateCacheVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\API\Vulkan\DescriptorUpdateVk.cpp">
+      <Filter>Source\Vulkan\Descriptor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -279,12 +303,6 @@
     <ClInclude Include="..\..\..\Source\API\Vulkan\RootSignatureVk.h">
       <Filter>Source\Vulkan\Descriptor</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.h">
-      <Filter>Source\Vulkan\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.h">
-      <Filter>Source\Vulkan\Descriptor</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\Source\API\Vulkan\PipelineStateVk.h">
       <Filter>Source\Vulkan\Pipeline</Filter>
     </ClInclude>
@@ -317,6 +335,33 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\API\Vulkan\StreamOutputBufferViewVk.h">
       <Filter>Source\Vulkan\View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\PipelineLayoutVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetLayoutVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSet0Vk.h">
+      <Filter>Source\Vulkan\Descriptor\Deprecated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorPool0Vk.h">
+      <Filter>Source\Vulkan\Descriptor\Deprecated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorPoolVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorHeapVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorSetUpdateCacheVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\API\Vulkan\DescriptorUpdateVk.h">
+      <Filter>Source\Vulkan\Descriptor</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

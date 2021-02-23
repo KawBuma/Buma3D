@@ -11,7 +11,7 @@ B3D_APIENTRY DescriptorPoolVk::DescriptorPoolVk()
     , device            {}
     , desc              {}
     , desc_data         {}
-    , allocation_mutex  {}
+    , parent_heap       {}
     , allocation_count  {}
     , reset_id          {}
     , vkdevice          {}
@@ -35,11 +35,19 @@ B3D_APIENTRY DescriptorPoolVk::Init(DeviceVk* _device, const DESCRIPTOR_POOL_DES
     devpfn = &device->GetDevicePFN();
     vkdevice = device->GetVkDevice();
 
+    if (util::HasSameDescriptorType(_desc.num_pool_sizes, _desc.pool_sizes))
+    {
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
+                          , "DESCRIPTOR_HEAP_DESC::heap_sizesの各要素のtypeは一意である必要があります。");
+        return BMRESULT_FAILED_INVALID_PARAMETER;
+    }
     CopyDesc(_desc);
+
+    B3D_RET_IF_FAILED(parent_heap->AllocateDescriptors(desc_data->pool_sizes));
 
     B3D_RET_IF_FAILED(CreateVkDescriptorPool());
 
-    for (auto& i : desc_data.pool_sizes)
+    for (auto& i : desc_data->pool_sizes)
         pool_remains[i.type] = i.num_descriptors;
     
     return BMRESULT_SUCCEED;
@@ -50,9 +58,11 @@ B3D_APIENTRY DescriptorPoolVk::CopyDesc(const DESCRIPTOR_POOL_DESC& _desc)
 {
     desc = _desc;
 
-    desc_data.pool_sizes.resize(_desc.num_pool_sizes);
-    util::MemCopyArray(desc_data.pool_sizes.data(), _desc.pool_sizes, _desc.num_pool_sizes);
-    desc.pool_sizes = desc_data.pool_sizes.data();
+    (parent_heap = _desc.heap->As<DescriptorHeapVk>())->AddRef();
+
+    desc_data = B3DMakeUnique(DESC_DATA);
+    desc_data->pool_sizes.resize(_desc.num_pool_sizes);
+    desc.pool_sizes = util::MemCopyArray(desc_data->pool_sizes.data(), _desc.pool_sizes, _desc.num_pool_sizes);
 }
 
 void
@@ -76,7 +86,7 @@ B3D_APIENTRY DescriptorPoolVk::CreateVkDescriptorPool()
 
     VkDescriptorPoolCreateInfo ci{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
     ci.flags         = util::GetNativeDescriptorPoolFlags(desc.flags);
-    ci.maxSets       = desc.max_sets_allocation_count * desc.max_num_register_space;
+    ci.maxSets       = desc.max_sets_allocation_count;
     ci.poolSizeCount = desc.num_pool_sizes;
     ci.pPoolSizes    = sizes.data();
     auto vkr = vkCreateDescriptorPool(vkdevice, &ci, B3D_VK_ALLOC_CALLBACKS, &descriptor_pool);
@@ -88,17 +98,23 @@ B3D_APIENTRY DescriptorPoolVk::CreateVkDescriptorPool()
 void
 B3D_APIENTRY DescriptorPoolVk::Uninit()
 {
-    name.reset();
-    desc = {};
+    if (parent_heap)
+        parent_heap->FreeDescriptors(desc_data->pool_sizes);
+    hlp::SafeRelease(parent_heap);
 
     if (descriptor_pool)
         vkDestroyDescriptorPool(vkdevice, descriptor_pool, B3D_VK_ALLOC_CALLBACKS);
     descriptor_pool = VK_NULL_HANDLE;
 
+    desc = {};
+    desc_data.reset();
+
     hlp::SafeRelease(device);
     vkdevice = VK_NULL_HANDLE;
     inspfn = nullptr;
     devpfn = nullptr;
+
+    name.reset();
 }
 
 BMRESULT 
@@ -198,8 +214,6 @@ B3D_APIENTRY DescriptorPoolVk::GetCurrentAllocationCount()
 void
 B3D_APIENTRY DescriptorPoolVk::ResetPoolAndInvalidateAllocatedSets()
 {
-    std::lock_guard lock(allocation_mutex);
-
     auto vkr = vkResetDescriptorPool(vkdevice, descriptor_pool, 0/*reserved*/);
     VKR_TRACE_IF_FAILED(vkr);
 
@@ -208,33 +222,24 @@ B3D_APIENTRY DescriptorPoolVk::ResetPoolAndInvalidateAllocatedSets()
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorPoolVk::AllocateDescriptorSet(IRootSignature* _root_signature, IDescriptorSet** _dst)
+B3D_APIENTRY DescriptorPoolVk::AllocateDescriptorSets(const DESCRIPTOR_SET_ALLOCATE_DESC& _desc, IDescriptorSet** _dst_descriptor_sets)
 {
-    std::lock_guard lock(allocation_mutex);
+    util::DyArray<VkDescriptorSet> setsvk(_desc.num_descriptor_sets);
+    auto setsvk_data = setsvk.data();
+    B3D_RET_IF_FAILED(AllocateVkDescriptorSets(_desc, setsvk_data));
 
-    auto rs = _root_signature->As<RootSignatureVk>();
-
-    if (rs->GetValidSetLayouts().size() > desc.max_num_register_space)
+    util::DyArray<util::Ptr<DescriptorSetVk>> sets(_desc.num_descriptor_sets);
+    auto sets_data = sets.data();
+    for (uint32_t i = 0; i < _desc.num_descriptor_sets; i++)
     {
-        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
-                          , "要求されたルートシグネチャ内のすべての存在するregister_spaceの数がmax_num_register_spaceの数を超えています。");
-        return BMRESULT_FAILED_OUT_OF_POOL_MEMORY;
+        auto l = _desc.set_layouts[i]->As<DescriptorSetLayoutVk>();
+        B3D_RET_IF_FAILED(DescriptorSetVk::Create(l, this, setsvk_data[i], &sets_data[i]));
     }
 
-    if (allocation_count >= desc.max_sets_allocation_count)
-        return BMRESULT_FAILED_OUT_OF_POOL_MEMORY;
-
-    auto&& ps = rs->GetPoolSizes();
-    for (auto& [type, size] : ps)
+    for (uint32_t i = 0; i < _desc.num_descriptor_sets; i++)
     {
-        if (size > pool_remains[type])
-            return BMRESULT_FAILED_OUT_OF_POOL_MEMORY;
+        _dst_descriptor_sets[i] = sets_data[i].Detach();
     }
-
-    util::Ptr<DescriptorSetVk> ptr;
-    B3D_RET_IF_FAILED(DescriptorSetVk::Create(this, rs, &ptr));
-
-    *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;
 }
 
@@ -251,49 +256,68 @@ B3D_APIENTRY DescriptorPoolVk::GetResetID()
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorPoolVk::AllocateDescriptors(DescriptorSetVk* _set)
+B3D_APIENTRY DescriptorPoolVk::AllocateDescriptors(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes)
 {
-    //std::lock_guard lock(allocation_mutex); <-AllocateDescriptorSet
-
-    auto&& ps = _set->signature->GetPoolSizes();
-    for (auto& [type, size] : ps)
-        pool_remains[type] -= size;
-
-    // ゼロバインディングも、vkAllocateDescriptorSetsの呼び出しが失敗せずセットを消費する(ディスクリプタ自体は消費しない)ので、そのようなセットは作成せず、VK_NULL_HANDLEとします。
-    _set->descriptor_sets.resize(_set->signature->GetVkDescriptorSetLayouts().size(), VK_NULL_HANDLE);
-
-    VkDescriptorSetAllocateInfo ai{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, nullptr ,descriptor_pool };
-    for (auto& [offset, l] : _set->signature->GetValidSetLayouts())
-    {
-        ai.descriptorSetCount = l.num_layouts;
-        ai.pSetLayouts        = l.layouts;
-        auto vkr = vkAllocateDescriptorSets(vkdevice, &ai, _set->descriptor_sets.data() + offset);
-        B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
-    }
+    if (!IsAllocatable(_pool_sizes))
+        return BMRESULT_FAILED_OUT_OF_POOL_MEMORY;
 
     ++allocation_count;
+    DecrementRemains(_pool_sizes);
     return BMRESULT_SUCCEED;
 }
 
 void
-B3D_APIENTRY DescriptorPoolVk::FreeDescriptors(DescriptorSetVk* _set)
+B3D_APIENTRY DescriptorPoolVk::FreeDescriptors(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes)
 {
-    auto&& ps   = _set->signature->GetPoolSizes();
-    auto&& sets = _set->descriptor_sets;
-
-    std::lock_guard lock(allocation_mutex);
-
-    for (auto& [offset, l] : _set->signature->GetValidSetLayouts())
-    {
-        auto vkr = vkFreeDescriptorSets(vkdevice, descriptor_pool, l.num_layouts, sets.data() + offset);
-        VKR_TRACE_IF_FAILED(vkr);
-        std::fill(sets.data() + offset, sets.data() + (offset + l.num_layouts), VkDescriptorSet(VK_NULL_HANDLE));
-    }
-
-    for (auto& [type, size] : ps)
-        pool_remains[type] -= size;
-
     --allocation_count;
+    IncrementRemains(_pool_sizes);
+}
+
+bool
+B3D_APIENTRY DescriptorPoolVk::IsAllocatable(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes) const
+{
+    if (allocation_count > desc.max_sets_allocation_count)
+        return false;
+
+    for (auto& i : _pool_sizes)
+    {
+        if (i.num_descriptors > pool_remains[i.type])
+            return false;
+    }
+    return true;
+}
+
+void
+B3D_APIENTRY DescriptorPoolVk::DecrementRemains(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes)
+{
+    for (auto& i : _pool_sizes)
+        pool_remains[i.type] -= i.num_descriptors;
+}
+
+void
+B3D_APIENTRY DescriptorPoolVk::IncrementRemains(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes)
+{
+    for (auto& i : _pool_sizes)
+        pool_remains[i.type] += i.num_descriptors;
+}
+
+BMRESULT
+B3D_APIENTRY DescriptorPoolVk::AllocateVkDescriptorSets(const buma3d::DESCRIPTOR_SET_ALLOCATE_DESC& _desc, VkDescriptorSet* _setsvk_data)
+{
+    util::DyArray<VkDescriptorSetLayout> set_layouts(_desc.num_descriptor_sets);
+    auto set_layouts_data = set_layouts.data();
+    for (uint32_t i = 0; i < _desc.num_descriptor_sets; i++)
+        set_layouts_data[i] = _desc.set_layouts[i]->As<DescriptorSetLayoutVk>()->GetVkDescriptorSetLayout();
+
+    // vkAllocateDescriptorSetsは要素内のいずれかの割当に失敗した場合、他のすべての要素もVK_NULL_HANDLEを返します。
+    VkDescriptorSetAllocateInfo ai{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+    ai.descriptorPool     = descriptor_pool;
+    ai.descriptorSetCount = _desc.num_descriptor_sets;
+    ai.pSetLayouts        = set_layouts_data;
+    auto vkr = vkAllocateDescriptorSets(vkdevice, &ai, _setsvk_data);
+    B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
+
+    return BMRESULT_SUCCEED;
 }
 
 

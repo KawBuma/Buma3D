@@ -15,6 +15,9 @@ public:
     virtual const VkDescriptorBufferInfo*
         B3D_APIENTRY GetVkDescriptorBufferInfo() const { return nullptr; }
 
+    virtual const VkDescriptorImageInfo*
+        B3D_APIENTRY GetVkDescriptorImageInfo() const { return nullptr; }
+
     virtual VkImageView
         B3D_APIENTRY GetVkImageView() const { return VK_NULL_HANDLE; }
 
@@ -35,8 +38,8 @@ public:
     */
     virtual BMRESULT
         B3D_APIENTRY AddDescriptorWriteRange(
-            /* DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER* */void* _dst
-            , uint32_t                                                  _array_index) const { B3D_UNREFERENCED(_dst, _array_index); return BMRESULT_FAILED_INVALID_CALL; }
+            /* DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER* */void* _dst
+            , uint32_t                                                   _array_index) const { B3D_UNREFERENCED(_dst, _array_index); return BMRESULT_FAILED_INVALID_CALL; }
 
 };
 

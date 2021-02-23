@@ -61,6 +61,9 @@ public:
     const VkDescriptorBufferInfo*
         B3D_APIENTRY GetVkDescriptorBufferInfo() const override;
 
+    const VkDescriptorImageInfo*
+        B3D_APIENTRY GetVkDescriptorImageInfo() const override;
+
     VkImageView
         B3D_APIENTRY GetVkImageView() const override;
 

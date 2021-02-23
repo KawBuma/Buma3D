@@ -17,9 +17,10 @@ struct ShaderResourceViewVk::IImpl : util::details::NEW_DELETE_OVERRIDE
     virtual VkImageView GetImageView()   const { return VK_NULL_HANDLE; }
 
     virtual const VkDescriptorBufferInfo* GetVkDescriptorBufferInfo() const { return nullptr; }
+    virtual const VkDescriptorImageInfo*  GetVkDescriptorImageInfo()  const { return nullptr; }
     virtual VkImageLayout                 GetVkImageLayout()          const { return VK_IMAGE_LAYOUT_UNDEFINED; }
 
-    virtual BMRESULT AddDescriptorWriteRange(DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const = 0;
+    virtual BMRESULT AddDescriptorWriteRange(DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const = 0;
 
     virtual const VkImageSubresourceRange* GetVkImageSubresourceRange() const { return nullptr; }
 
@@ -65,7 +66,7 @@ public:
         return VK_SUCCESS;
     }
 
-    BMRESULT AddDescriptorWriteRange(DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const override
+    BMRESULT AddDescriptorWriteRange(DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const override
     {
         if (view)
         {
@@ -97,6 +98,7 @@ public:
         : owner                     { _owner }
         , view                      {}
         , image_subresource_range   {}
+        , info                      { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL }
     {
     }
 
@@ -113,6 +115,11 @@ public:
         return BMRESULT_SUCCEED;
     }
 
+    const VkDescriptorImageInfo* GetVkDescriptorImageInfo() const override
+    {
+        return &info;
+    }
+
     VkImageView GetImageView() const override
     {
         return view;
@@ -121,7 +128,9 @@ public:
     VkResult Create(VkImageViewCreateInfo* _ci) override
     {
         util::ConvertNativeSubresourceRange(owner.desc.texture.subresource_range, &image_subresource_range);
-        return vkCreateImageView(owner.vkdevice, _ci, owner.GetVkAllocationCallbacks(), &view);
+        auto vkr = vkCreateImageView(owner.vkdevice, _ci, owner.GetVkAllocationCallbacks(), &view);
+        info.imageView = view;
+        return vkr;
     }
 
     VkImageLayout GetVkImageLayout() const override
@@ -130,15 +139,12 @@ public:
         return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 
-    BMRESULT AddDescriptorWriteRange(DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const override
+    BMRESULT AddDescriptorWriteRange(DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const override
     {
         if (!_dst->image_infos_data)
             return BMRESULT_FAILED;
-        auto&& info = _dst->image_infos_data[_array_index];
-        info.imageView   = view;
-        info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        info.sampler     = VK_NULL_HANDLE;
 
+        _dst->image_infos_data[_array_index] = info;
         return BMRESULT_SUCCEED;
     }
 
@@ -151,6 +157,7 @@ private:
     ShaderResourceViewVk&   owner;
     VkImageView             view;
     VkImageSubresourceRange image_subresource_range;
+    VkDescriptorImageInfo   info;
 
 };
 
@@ -621,6 +628,12 @@ B3D_APIENTRY ShaderResourceViewVk::GetVkDescriptorBufferInfo() const
     return impl->GetVkDescriptorBufferInfo();
 }
 
+const VkDescriptorImageInfo*
+B3D_APIENTRY ShaderResourceViewVk::GetVkDescriptorImageInfo() const
+{
+    return impl->GetVkDescriptorImageInfo();
+}
+
 VkImageView
 B3D_APIENTRY ShaderResourceViewVk::GetVkImageView() const
 {
@@ -642,7 +655,7 @@ B3D_APIENTRY ShaderResourceViewVk::GetVkImageSubresourceRange() const
 BMRESULT
 B3D_APIENTRY ShaderResourceViewVk::AddDescriptorWriteRange(void* _dst, uint32_t _array_index) const
 {
-    return impl->AddDescriptorWriteRange(RCAST<DescriptorSetVk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst), _array_index);
+    return impl->AddDescriptorWriteRange(RCAST<DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER*>(_dst), _array_index);
 }
 
 const VIEW_DESC&

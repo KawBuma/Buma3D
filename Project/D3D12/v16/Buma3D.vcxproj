@@ -100,8 +100,14 @@
     <ClInclude Include="..\..\..\Source\API\D3D12\DebugMessageD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DebugMessageQueueD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DepthStencilViewD3D12.h" />
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorHeapD3D12.h" />
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorPool0D3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorPoolD3D12.h" />
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSet0D3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSetD3D12.h" />
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSetLayoutD3D12.h" />
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorSetUpdateCacheD3D12.h" />
+    <ClInclude Include="..\..\..\Source\API\D3D12\DescriptorUpdateD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DeviceAdapterD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DeviceChildD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\DeviceD3D12.h" />
@@ -112,6 +118,7 @@
     <ClInclude Include="..\..\..\Source\API\D3D12\GPUDescriptorAllocator.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\GraphicsPipelineStateD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\IndexBufferViewD3D12.h" />
+    <ClInclude Include="..\..\..\Source\API\D3D12\PipelineLayoutD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\PipelineStateD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\QueryHeapD3D12.h" />
     <ClInclude Include="..\..\..\Source\API\D3D12\RayTracingPipelineStateD3D12.h" />
@@ -149,8 +156,14 @@
     <ClCompile Include="..\..\..\Source\API\D3D12\DebugMessageD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DebugMessageQueueD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DepthStencilViewD3D12.cpp" />
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorHeapD3D12.cpp" />
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorPool0D3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorPoolD3D12.cpp" />
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSet0D3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSetD3D12.cpp" />
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSetLayoutD3D12.cpp" />
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorSetUpdateCacheD3D12.cpp" />
+    <ClCompile Include="..\..\..\Source\API\D3D12\DescriptorUpdateD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DeviceAdapterD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DeviceD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\DeviceFactoryD3D12.cpp" />
@@ -159,6 +172,7 @@
     <ClCompile Include="..\..\..\Source\API\D3D12\FramebufferD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\GraphicsPipelineStateD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\IndexBufferViewD3D12.cpp" />
+    <ClCompile Include="..\..\..\Source\API\D3D12\PipelineLayoutD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\PipelineStateD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\QueryHeapD3D12.cpp" />
     <ClCompile Include="..\..\..\Source\API\D3D12\RayTracingPipelineStateD3D12.cpp" />

@@ -1070,6 +1070,20 @@ inline VkDescriptorBindingFlags GetNativeDescriptorFlags(DESCRIPTOR_FLAGS _flags
     return result;
 }
 
+inline VkDescriptorSetLayoutCreateFlags GetNativeDescriptorSetLayoutFlags(DESCRIPTOR_SET_LAYOUT_FLAGS _flags)
+{
+    VkDescriptorSetLayoutCreateFlags result = 0x0;
+
+    if (_flags & DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL)
+        result |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+
+    // TODO: GetNativeDescriptorSetLayoutFlags: PUSH_DESCRIPTOR
+    //if (_flags & DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR)
+    //    result |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+
+    return result;
+}
+
 inline VkDescriptorPoolCreateFlags GetNativeDescriptorPoolFlags(DESCRIPTOR_POOL_FLAGS _flags)
 {
     VkDescriptorPoolCreateFlags result = 0;
@@ -1164,6 +1178,56 @@ inline VkViewport* ConvertNativeViewport(const VIEWPORT& _src_viewport, VkViewpo
     _dst_result->maxDepth = _src_viewport.max_depth;
 
     return _dst_result;
+}
+
+template <typename T>
+inline bool HasSameDescriptorType(uint32_t _num_sizes, const T* _sizes)
+{
+    util::Set<DESCRIPTOR_TYPE> types;
+    for (uint32_t i = 0; i < _num_sizes; i++)
+    {
+        if (types.find(_sizes[i].type) != types.end())
+            return true;
+        types.insert(_sizes[i].type);
+    }
+
+    return false;
+}
+
+inline uint32_t GetUpdateTemplateDataStride(VkDescriptorType _type)
+{
+    switch (_type)
+    {
+    case VK_DESCRIPTOR_TYPE_SAMPLER:
+    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        return sizeof(VkDescriptorImageInfo);
+
+    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        return sizeof(VkBufferView);
+
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+        return sizeof(VkDescriptorBufferInfo);
+
+    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        return sizeof(VkDescriptorImageInfo);
+
+
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        return sizeof(VkAccelerationStructureKHR);
+
+    case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+        return 1;
+
+    default:
+        return 0;
+    }
 }
 
 

@@ -77,10 +77,25 @@ public:
             , IRootSignature*       _root_signature) override;
 
     void
-        B3D_APIENTRY BindDescriptorSet(
+        B3D_APIENTRY BindDescriptorSet0(
               PIPELINE_BIND_POINT               _bind_point
-            , const CMD_BIND_DESCRIPTOR_SET&    _args) override;
+            , const CMD_BIND_DESCRIPTOR_SET0&   _args) override;
 
+    void
+        B3D_APIENTRY Push32BitConstants0(
+              PIPELINE_BIND_POINT               _bind_point
+            , const CMD_PUSH_32BIT_CONSTANTS0&  _args) override;
+
+    void
+        B3D_APIENTRY SetPipelineLayout(
+              PIPELINE_BIND_POINT   _bind_point
+            , IPipelineLayout*      _pipeline_layout) override;
+
+    void
+        B3D_APIENTRY BindDescriptorSets(
+              PIPELINE_BIND_POINT               _bind_point
+            , const CMD_BIND_DESCRIPTOR_SETS&   _args) override;
+    
     void
         B3D_APIENTRY Push32BitConstants(
               PIPELINE_BIND_POINT               _bind_point
@@ -397,24 +412,35 @@ private:
         VkConditionalRenderingFlagsEXT  operation;
     };
 
+    struct PIPELINE_STATE_DATA0
+    {
+        void Reset()
+        {
+            for (auto& i : current_root_signatures)  i = nullptr;
+            for (auto& i : pipeline_layouts0)        i = nullptr;
+        }
+        RootSignatureVk*    current_root_signatures[PIPELINE_BIND_POINT_RAY_TRACING + 1];
+        VkPipelineLayout    pipeline_layouts0[PIPELINE_BIND_POINT_RAY_TRACING + 1];
+    };
+
     struct PIPELINE_STATE_DATA
     {
         void Reset()
         {
             current_pso = nullptr;
-            std::fill(current_root_signatures, current_root_signatures + (PIPELINE_BIND_POINT_RAY_TRACING + 1), nullptr);
-            std::fill(pipiline_layouts       , pipiline_layouts        + (PIPELINE_BIND_POINT_RAY_TRACING + 1), nullptr);
+            for (auto& i : current_pipeline_layouts) i = nullptr;
+            for (auto& i : pipeline_layouts)         i = nullptr;
         }
-        IPipelineStateVk*   current_pso;
-        RootSignatureVk*    current_root_signatures[PIPELINE_BIND_POINT_RAY_TRACING + 1];
-        VkPipelineLayout    pipiline_layouts[PIPELINE_BIND_POINT_RAY_TRACING + 1];
+        IPipelineStateVk*   current_pso; // PIPELINE_STATE_DATA0と共有します。
+        PipelineLayoutVk*   current_pipeline_layouts[PIPELINE_BIND_POINT_RAY_TRACING + 1];
+        VkPipelineLayout    pipeline_layouts[PIPELINE_BIND_POINT_RAY_TRACING + 1];
     };
 
-    struct DESCRIPTOR_STATE_DATA
+    struct DESCRIPTOR_STATE_DATA0
     {
-        DESCRIPTOR_STATE_DATA(CommandAllocatorVk* _allocator)
-            : current_pool                      {}
-            , current_set                       {}
+        DESCRIPTOR_STATE_DATA0(CommandAllocatorVk* _allocator)
+            : current_pool0                     {}
+            , current_set0                      {}
             , dynamic_descriptor_offsets        (_allocator)
             , mapped_dynamic_descriptor_offsets (_allocator)
         {
@@ -422,8 +448,8 @@ private:
 
         void Reset()
         {
-            current_pool    = nullptr;
-            current_set     = nullptr;
+            current_pool0   = nullptr;
+            current_set0    = nullptr;
         }
 
         void BeginRecord()
@@ -432,10 +458,32 @@ private:
             mapped_dynamic_descriptor_offsets.BeginRecord();
         }
 
-        DescriptorPoolVk*           current_pool;
-        DescriptorSetVk*            current_set;
+        DescriptorPool0Vk*          current_pool0;
+        DescriptorSet0Vk*           current_set0;
         WeakSimpleArray<uint32_t>   dynamic_descriptor_offsets;
         WeakSimpleArray<uint32_t*>  mapped_dynamic_descriptor_offsets;
+    };
+
+    struct DESCRIPTOR_STATE_DATA
+    {
+        DESCRIPTOR_STATE_DATA(CommandAllocatorVk* _allocator)
+            : current_heap      {}
+            , descriptor_sets   (_allocator)
+        {
+        }
+
+        void Reset()
+        {
+            current_heap = nullptr;
+        }
+        void BeginRecord()
+        {
+            descriptor_sets.BeginRecord();
+        }
+
+        DescriptorHeapVk*                   current_heap;
+        //WeakSimpleArray<DescriptorSetVk*>  current_sets;
+        WeakSimpleArray<VkDescriptorSet>    descriptor_sets;
     };
 
     struct STREAM_OUTPUT_STATE_DATA
@@ -728,23 +776,26 @@ private:
             : barriers      (_allocator, _command_type)
             , render_pass   {}
             , predication   {}
+            , pipeline0     {}
+            , descriptor0   (_allocator)
+            , stream_output (_allocator)
             , pipeline      {}
             , descriptor    (_allocator)
-            , stream_output (_allocator)
         {}
 
         ~COMMAND_LIST_STATES_DATA()
         {
-
         }
 
         BMRESULT Reset()
         {
             render_pass   .Reset();
             predication   .Reset();
+            pipeline0     .Reset();
+            descriptor0   .Reset();
+            stream_output .Reset();
             pipeline      .Reset();
             descriptor    .Reset();
-            stream_output .Reset();
 
             return BMRESULT_SUCCEED;
         }
@@ -753,16 +804,19 @@ private:
         {
             Reset();
             barriers.BeginRecord();
-            descriptor.BeginRecord();
+            descriptor0.BeginRecord();
             stream_output.BeginRecord();
+            descriptor.BeginRecord();
         }
 
         PipelineBarrierBuffer                       barriers;
         RENDER_PASS_DATA                            render_pass;
         PREDICATION_STATE_DATA                      predication;
+        PIPELINE_STATE_DATA0                        pipeline0;
+        DESCRIPTOR_STATE_DATA0                      descriptor0;
+        STREAM_OUTPUT_STATE_DATA                    stream_output;
         PIPELINE_STATE_DATA                         pipeline;
         DESCRIPTOR_STATE_DATA                       descriptor;
-        STREAM_OUTPUT_STATE_DATA                    stream_output;
     };
     util::UniquePtr<COMMAND_LIST_STATES_DATA> cmd_states;
 

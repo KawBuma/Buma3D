@@ -668,8 +668,22 @@ inline D3D12_ROOT_DESCRIPTOR_FLAGS GetNativeDescriptorFlags(ROOT_PARAMETER_TYPE 
 {
     D3D12_ROOT_DESCRIPTOR_FLAGS result = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
 
-    //if (_flags & DESCRIPTOR_FLAG_ALLOW_UPDATE_AFTER_BIND)
+    B3D_UNREFERENCED(_type, _flags);
+
+    //if (_flags & DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND)
     //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
+
+    //if (_flags & DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING)
+    //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
+
+    //if (_flags & DESCRIPTOR_FLAG_PARTIALLY_BOUND)
+    //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
+
+    //if (_flags & DESCRIPTOR_FLAG_VARIABLE_DESCRIPTOR_COUNT)
+    //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
+
+
+    // _DATAフラグはVulkanに存在しませんが、フラグ外で同等の指定を行う機能が存在するかどうかを調査します。
 
     //if (_flags & DESCRIPTOR_FLAG_DATA_VOLATILE)
     //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
@@ -683,6 +697,13 @@ inline D3D12_ROOT_DESCRIPTOR_FLAGS GetNativeDescriptorFlags(ROOT_PARAMETER_TYPE 
     //if (_flags & DESCRIPTOR_FLAG_DESCRIPTORS_STATIC_KEEPING_BUFFER_BOUNDS_CHECKS)
     //    result |= D3D12_ROOT_DESCRIPTOR_FLAG_;
 
+    return result;
+}
+
+inline D3D12_ROOT_DESCRIPTOR_FLAGS GetNativeDescriptorFlags(DESCRIPTOR_TYPE _type, DESCRIPTOR_FLAGS _flags)
+{
+    D3D12_ROOT_DESCRIPTOR_FLAGS result = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+    B3D_UNREFERENCED(_type, _flags);
     return result;
 }
 
@@ -751,6 +772,30 @@ inline D3D12_ROOT_SIGNATURE_FLAGS GetNativeRootSignatureFlags(ROOT_SIGNATURE_FLA
     if (_flags & buma3d::ROOT_SIGNATURE_FLAG_ALLOW_MESH_SHADER_ROOT_ACCESS    ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS;
     if (_flags & buma3d::ROOT_SIGNATURE_FLAG_ALLOW_TASK_SHADER_ROOT_ACCESS    ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS;
     if (_flags & buma3d::ROOT_SIGNATURE_FLAG_RAY_TRACING_SHADER_VISIBILITY    ) result |=  D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+
+    return result;
+}
+
+inline D3D12_ROOT_SIGNATURE_FLAGS GetNativePipelineLayoutFlags(PIPELINE_LAYOUT_FLAGS _flags)
+{
+    D3D12_ROOT_SIGNATURE_FLAGS result =
+          D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS;
+
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_DENY_INPUT_ASSEMBLER_INPUT_LAYOUT) result &= ~D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS   ) result |=  D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS;
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_HULL_SHADER_ROOT_ACCESS    ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_DOMAIN_SHADER_ROOT_ACCESS  ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_GEOMETRY_SHADER_ROOT_ACCESS) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS    ) result |=  D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_STREAM_OUTPUT              ) result |=  D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT;
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_MESH_SHADER_ROOT_ACCESS    ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS;
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_TASK_SHADER_ROOT_ACCESS    ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS;
+    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_RAY_TRACING_SHADER_VISIBILITY    ) result |=  D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
 
     return result;
 }
@@ -903,6 +948,50 @@ inline D3D12_SAMPLE_POSITION* ConvertNativeSamplePosition(const buma3d::SAMPLE_P
     _dst->X = SCAST<INT8>((_src.x * 15.f) - 8.f);
     _dst->Y = SCAST<INT8>((_src.y * 15.f) - 8.f);
     return _dst;
+}
+
+
+template <typename T>
+inline void CalcDescriptorCounts(uint32_t _num_sizes, const T* _sizes, uint32_t* _dst_descriptor_count, uint32_t* _dst_sampler_descriptor_count)
+{
+    for (uint32_t i = 0; i < _num_sizes; i++)
+    {
+        auto&& ps = _sizes[i];
+        switch (ps.type)
+        {
+        case buma3d::DESCRIPTOR_TYPE_CBV:
+        case buma3d::DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case buma3d::DESCRIPTOR_TYPE_SRV_TEXTURE:
+        case buma3d::DESCRIPTOR_TYPE_SRV_TYPED_BUFFER:
+        case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER:
+        case buma3d::DESCRIPTOR_TYPE_SRV_ACCELERATION_STRUCTURE:
+        case buma3d::DESCRIPTOR_TYPE_UAV_TEXTURE:
+        case buma3d::DESCRIPTOR_TYPE_UAV_TYPED_BUFFER:
+        case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER:
+            *_dst_descriptor_count += ps.num_descriptors;
+            break;
+
+        case buma3d::DESCRIPTOR_TYPE_SAMPLER:
+            *_dst_sampler_descriptor_count += ps.num_descriptors;
+
+        default:
+            break;
+        }
+    }
+}
+
+template <typename T>
+inline bool HasSameDescriptorType(uint32_t _num_sizes, const T* _sizes)
+{
+    util::Set<DESCRIPTOR_TYPE> types;
+    for (uint32_t i = 0; i < _num_sizes; i++)
+    {
+        if (types.find(_sizes[i].type) != types.end())
+            return true;
+        types.insert(_sizes[i].type);
+    }
+
+    return false;
 }
 
 

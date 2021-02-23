@@ -68,10 +68,25 @@ public:
             , IRootSignature*       _root_signature) override;
 
     void
-        B3D_APIENTRY BindDescriptorSet(
+        B3D_APIENTRY BindDescriptorSet0(
               PIPELINE_BIND_POINT               _bind_point
-            , const CMD_BIND_DESCRIPTOR_SET&    _args) override;
+            , const CMD_BIND_DESCRIPTOR_SET0&   _args) override;
 
+    void
+        B3D_APIENTRY Push32BitConstants0(
+              PIPELINE_BIND_POINT               _bind_point
+            , const CMD_PUSH_32BIT_CONSTANTS0&  _args) override;
+
+    void
+        B3D_APIENTRY SetPipelineLayout(
+              PIPELINE_BIND_POINT   _bind_point
+            , IPipelineLayout*      _pipeline_layout) override;
+
+    void
+        B3D_APIENTRY BindDescriptorSets(
+              PIPELINE_BIND_POINT               _bind_point
+            , const CMD_BIND_DESCRIPTOR_SETS&   _args) override;
+    
     void
         B3D_APIENTRY Push32BitConstants(
               PIPELINE_BIND_POINT               _bind_point
@@ -425,28 +440,49 @@ private:
         D3D12_PREDICATION_OP    operation;
     };
 
+    struct PIPELINE_STATE_DATA0
+    {
+        void Reset()
+        {
+            current_primitive_topology  = {};
+            for (auto& i : current_root_signatures) i = nullptr;
+        }
+        D3D12_PRIMITIVE_TOPOLOGY    current_primitive_topology;
+        RootSignatureD3D12*         current_root_signatures[PIPELINE_BIND_POINT_RAY_TRACING + 1];
+    };
+
     struct PIPELINE_STATE_DATA
     {
         void Reset()
         {
             current_pso                 = nullptr;
             current_primitive_topology  = {};
-            std::fill(current_root_signatures, current_root_signatures + (PIPELINE_BIND_POINT_RAY_TRACING + 1), nullptr);
+            for (auto& i : current_pipeline_layouts) i = nullptr;
         }
-        IPipelineStateD3D12*        current_pso;
+        IPipelineStateD3D12*        current_pso; // PIPELINE_STATE_DATA0と共有します。
         D3D12_PRIMITIVE_TOPOLOGY    current_primitive_topology;
-        RootSignatureD3D12*         current_root_signatures[PIPELINE_BIND_POINT_RAY_TRACING + 1];
+        PipelineLayoutD3D12*        current_pipeline_layouts[PIPELINE_BIND_POINT_RAY_TRACING + 1];
+    };
+
+    struct DESCRIPTOR_STATE_DATA0
+    {
+        void Reset()
+        {
+            current_pool0    = nullptr;
+            current_set0     = nullptr;
+        }
+        DescriptorPool0D3D12*   current_pool0;
+        DescriptorSet0D3D12*    current_set0;
     };
 
     struct DESCRIPTOR_STATE_DATA
     {
         void Reset()
         {
-            current_pool    = nullptr;
-            current_set     = nullptr;
+            current_heap    = nullptr;
         }
-        DescriptorPoolD3D12*    current_pool;
-        DescriptorSetD3D12*     current_set;
+        DescriptorHeapD3D12*                    current_heap;
+        //WeakSimpleArray<DescriptorSetD3D12*>    current_sets;
     };
 
     struct STREAM_OUTPUT_STATE_DATA
@@ -724,9 +760,11 @@ private:
             : barriers      (_allocator, _command_type)
             , render_pass   (_allocator)
             , predication   {}
+            , pipeline0     {}
+            , descriptor0   {}
+            , stream_output (_allocator)
             , pipeline      {}
             , descriptor    {}
-            , stream_output (_allocator)
         {}
 
         ~COMMAND_LIST_STATES_DATA()
@@ -738,9 +776,12 @@ private:
         {
             render_pass     .Reset();
             predication     .Reset();
+            pipeline0       .Reset();
+            descriptor0     .Reset();
+            stream_output   .Reset();
+
             pipeline        .Reset();
             descriptor      .Reset();
-            stream_output   .Reset();
 
             return BMRESULT_SUCCEED;
         }
@@ -755,9 +796,11 @@ private:
         PipelineBarrierBuffer       barriers;
         RENDER_PASS_DATA            render_pass;
         PREDICATION_STATE_DATA      predication;
+        PIPELINE_STATE_DATA0        pipeline0;
+        DESCRIPTOR_STATE_DATA0      descriptor0;
+        STREAM_OUTPUT_STATE_DATA    stream_output;
         PIPELINE_STATE_DATA         pipeline;
         DESCRIPTOR_STATE_DATA       descriptor;
-        STREAM_OUTPUT_STATE_DATA    stream_output;
     };
     util::UniquePtr<COMMAND_LIST_STATES_DATA> cmd_states;
 

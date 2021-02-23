@@ -483,7 +483,7 @@ B3D_APIENTRY CommandListD3D12::SetPipelineState(IPipelineState* _pipeline_state)
 void
 B3D_APIENTRY CommandListD3D12::SetRootSignature(PIPELINE_BIND_POINT _bind_point, IRootSignature* _root_signature)
 {
-    auto&& p = cmd_states->pipeline;
+    auto&& p = cmd_states->pipeline0;
     p.current_root_signatures[_bind_point] = _root_signature->As<RootSignatureD3D12>();
     switch (_bind_point)
     {
@@ -501,24 +501,24 @@ B3D_APIENTRY CommandListD3D12::SetRootSignature(PIPELINE_BIND_POINT _bind_point,
 }
 
 void
-B3D_APIENTRY CommandListD3D12::BindDescriptorSet(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SET& _args)
+B3D_APIENTRY CommandListD3D12::BindDescriptorSet0(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SET0& _args)
 {
     // ヒープ更新
-    auto&& descriptor = cmd_states->descriptor;
+    auto&& descriptor = cmd_states->descriptor0;
     {
         auto incoming_pool = _args.descriptor_set->GetPool();
-        if (incoming_pool != descriptor.current_pool)
+        if (incoming_pool != descriptor.current_pool0)
         {
-            descriptor.current_pool = incoming_pool->As<DescriptorPoolD3D12>();
+            descriptor.current_pool0 = incoming_pool->As<DescriptorPool0D3D12>();
 
-            auto&& new_pools = descriptor.current_pool->GetD3D12DescriptorHeaps();
+            auto&& new_pools = descriptor.current_pool0->GetD3D12DescriptorHeaps();
             cmd.l->SetDescriptorHeaps((UINT)new_pools.size(), new_pools.data());
         }
-        descriptor.current_set = _args.descriptor_set->As<DescriptorSetD3D12>();
+        descriptor.current_set0 = _args.descriptor_set->As<DescriptorSet0D3D12>();
     }
 
     // ディスクリプタテーブル
-    auto&& batch = descriptor.current_set->GetDescriptorBatch();
+    auto&& batch = descriptor.current_set0->GetDescriptorBatch();
     for (auto& i : batch.descriptor_table_batch)
         i->Set(_bind_point, cmd.l);
 
@@ -532,11 +532,11 @@ B3D_APIENTRY CommandListD3D12::BindDescriptorSet(PIPELINE_BIND_POINT _bind_point
 }
 
 void
-B3D_APIENTRY CommandListD3D12::Push32BitConstants(PIPELINE_BIND_POINT _bind_point, const CMD_PUSH_32BIT_CONSTANTS& _args)
+B3D_APIENTRY CommandListD3D12::Push32BitConstants0(PIPELINE_BIND_POINT _bind_point, const CMD_PUSH_32BIT_CONSTANTS0& _args)
 {
-    if constexpr (false) // NOTE: DescriptorSetD3D12::SetConstantsBatchによるディスクリプタの設定メソッド抽象化のメリットは、現状存在しません。 
+    if constexpr (false) // NOTE: DescriptorSet0D3D12::SetConstantsBatchによるディスクリプタの設定メソッド抽象化のメリットは、現状存在しません。 
     {
-        auto&& batch = cmd_states->descriptor.current_set->GetDescriptorBatch();
+        auto&& batch = cmd_states->descriptor0.current_set0->GetDescriptorBatch();
         batch.descriptor_batch.data()[_args.root_parameter_index]->Set(_bind_point, cmd.l, &_args);
     }
     else // この場合では、オーバーヘッドを回避できます。
@@ -555,6 +555,103 @@ B3D_APIENTRY CommandListD3D12::Push32BitConstants(PIPELINE_BIND_POINT _bind_poin
         default:
             break;
         }
+    }
+}
+
+void
+B3D_APIENTRY CommandListD3D12::SetPipelineLayout(PIPELINE_BIND_POINT _bind_point, IPipelineLayout* _pipeline_layout)
+{
+    auto&& p = cmd_states->pipeline;
+    p.current_pipeline_layouts[_bind_point] = _pipeline_layout->As<PipelineLayoutD3D12>();
+    switch (_bind_point)
+    {
+    case buma3d::PIPELINE_BIND_POINT_GRAPHICS:
+        cmd.l->SetGraphicsRootSignature(p.current_pipeline_layouts[_bind_point]->GetD3D12RootSignature());
+        break;
+
+    case buma3d::PIPELINE_BIND_POINT_COMPUTE:
+    case buma3d::PIPELINE_BIND_POINT_RAY_TRACING:
+        cmd.l->SetComputeRootSignature(p.current_pipeline_layouts[_bind_point]->GetD3D12RootSignature());
+        break;
+    default:
+        break;
+    }
+}
+
+void
+B3D_APIENTRY CommandListD3D12::BindDescriptorSets(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SETS& _args)
+{
+    if (util::IsEnabledDebug(this))
+    {
+        DescriptorHeapD3D12* heap = _args.descriptor_sets[0]->As<DescriptorSetD3D12>()->GetHeap();
+        for (uint32_t i = 1; i < _args.num_descriptor_sets; i++)
+        {
+            if (heap != _args.descriptor_sets[i]->As<DescriptorSetD3D12>()->GetHeap())
+            {
+                B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION
+                                  , __FUNCTION__": descriptor_setsの各要素が割り当てられたヒープはすべて同一である必要がります。");
+                return;
+            }
+        }
+
+        uint32_t ddc = 0;
+        for (uint32_t i = 0; i < _args.num_descriptor_sets; i++)
+            ddc += (uint32_t)_args.descriptor_sets[i]->As<DescriptorSetD3D12>()->GetDescriptorBatch().root_descriptor_batch.size();
+        if (ddc != _args.num_dynamic_descriptor_offsets)
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION
+                              , __FUNCTION__": num_dynamic_descriptor_offsetsの値はdescriptor_sets配列の各要素に関連付けられているレイアウトの動的ディスクリプタ数の合計である必要があります。");
+            return;
+        }
+    }
+
+    // ヒープ更新
+    {
+        auto&& d = cmd_states->descriptor;
+        auto incoming_heap = _args.descriptor_sets[0]->As<DescriptorSetD3D12>()->GetHeap();
+        if (incoming_heap != d.current_heap)
+        {
+            d.current_heap = incoming_heap;
+
+            uint32_t num_heaps, heap_offset;
+            auto&& new_heaps = d.current_heap->GetD3D12DescriptorHeaps(&num_heaps, &heap_offset);
+            cmd.l->SetDescriptorHeaps(num_heaps, new_heaps.data() + heap_offset);
+        }
+    }
+
+    uint32_t ddc = 0; // dynamic descriptor count
+    auto root_parameter_offsets = cmd_states->pipeline.current_pipeline_layouts[_bind_point]->GetRootParameterOffsets();
+    for (uint32_t i = 0; i < _args.num_descriptor_sets; i++)
+    {
+        auto&& batch = _args.descriptor_sets[i]->As<DescriptorSetD3D12>()->GetDescriptorBatch();
+        auto&& root_parameter_offset = root_parameter_offsets[_args.first_set + i];
+
+        // ディスクリプタテーブル
+        for (auto& i : batch.descriptor_table_batch)
+            i->Set(root_parameter_offset, _bind_point, cmd.l);
+
+        // 動的ディスクリプタ
+        for (auto& i : batch.root_descriptor_batch)
+            i->Set(root_parameter_offset, _bind_point, cmd.l, &(_args.dynamic_descriptor_offsets[ddc++]));
+    }
+}
+
+void
+B3D_APIENTRY CommandListD3D12::Push32BitConstants(PIPELINE_BIND_POINT _bind_point, const CMD_PUSH_32BIT_CONSTANTS& _args)
+{
+    switch (_bind_point)
+    {
+    case buma3d::PIPELINE_BIND_POINT_GRAPHICS:
+        cmd.l->SetGraphicsRoot32BitConstants(_args.index, _args.num32_bit_values_to_set, _args.src_data, _args.dst_offset_in_32bit_values);
+        break;
+
+    case buma3d::PIPELINE_BIND_POINT_COMPUTE:
+    case buma3d::PIPELINE_BIND_POINT_RAY_TRACING:
+        cmd.l->SetComputeRoot32BitConstants(_args.index, _args.num32_bit_values_to_set, _args.src_data, _args.dst_offset_in_32bit_values);
+        break;
+
+    default:
+        break;
     }
 }
 
@@ -1469,15 +1566,15 @@ void CommandListD3D12::NativeSubpassBarrierBuffer::Set(const util::DyArray<util:
     // バリアデータを設定
     resource_barriers_count = 0;
     auto native_resource_barriers = resource_barriers.data();
-    for (size_t i = 0, size = _subpass_barrier.barriers_at_begin.size(); i < size; i++)
+    for (uint32_t i = 0, size = (uint32_t)_subpass_barrier.barriers_at_begin.size(); i < size; i++)
     {
         auto&& barriers     = barriers_at_begin[i];
         auto&& params       = attachments_data[barriers.attachment_index]->GetParams();
         auto&& subres_range = *params.range;
 
-        for (uint32_t i_ary = 0; i < subres_range.array_size; i++)
+        for (uint32_t i_ary = 0; i_ary < subres_range.array_size; i_ary++)
         {
-            for (uint32_t i_mip = 0; i < subres_range.mip_levels; i++)
+            for (uint32_t i_mip = 0; i_mip < subres_range.mip_levels; i_mip++)
             {
 
                 // TODO: OPTIMIZE: beforeとafterが一致するバリアの除外を事前に処理する。

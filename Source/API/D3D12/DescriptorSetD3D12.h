@@ -5,8 +5,6 @@ namespace buma3d
 
 class B3D_API DescriptorSetD3D12 : public IDeviceChildD3D12<IDescriptorSet>, public util::details::NEW_DELETE_OVERRIDE
 {
-    friend class DescriptorPoolD3D12;
-
 public:
 #pragma region ISetDescriptorBatch
 
@@ -29,6 +27,7 @@ public:
 
         /**
          * @brief ルートパラメータのタイプに応じてID3D12GraphicsCommandList::SetRoot*メソッドを抽象化します。
+         * @param _root_parameter_offset
          * @param _bind_point 
          * @param _list 
          * @param [in] _data ルートパラメータタイプに応じたオプションのパラメータを指定します。
@@ -36,7 +35,7 @@ public:
          *             SetDescriptorTableBatchの場合、参照されません。 
          *             SetRootDescriptorBatchの場合、const uint32_t* ;D3D12_GPU_VIRTUAL_ADDRESSのオフセット値です。 
         */
-        virtual void Set(PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data = nullptr) = 0;
+        virtual void Set(uint32_t _root_parameter_offset, PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data = nullptr) = 0;
         virtual const SET_DESCRIPTOR_BATCH& GetData() const = 0;
 
     };
@@ -52,19 +51,19 @@ public:
 
         virtual ~SetConstantsBatch() {}
 
-        void Set(PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data) override
+        void Set(uint32_t _root_parameter_offset, PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data) override
         {
             const CMD_PUSH_32BIT_CONSTANTS* constants = RCAST<const CMD_PUSH_32BIT_CONSTANTS*>(_data);
 
             switch (_bind_point)
             {
             case buma3d::PIPELINE_BIND_POINT_GRAPHICS:
-                _list->SetGraphicsRoot32BitConstants(batch.root_parameter_index, constants->num32_bit_values_to_set, constants->src_data, constants->dst_offset_in_32bit_values);
+                _list->SetGraphicsRoot32BitConstants(batch.root_parameter_index + _root_parameter_offset, constants->num32_bit_values_to_set, constants->src_data, constants->dst_offset_in_32bit_values);
                 break;
 
             case buma3d::PIPELINE_BIND_POINT_COMPUTE:
             case buma3d::PIPELINE_BIND_POINT_RAY_TRACING:
-                _list->SetComputeRoot32BitConstants(batch.root_parameter_index, constants->num32_bit_values_to_set, constants->src_data, constants->dst_offset_in_32bit_values);
+                _list->SetComputeRoot32BitConstants(batch.root_parameter_index + _root_parameter_offset, constants->num32_bit_values_to_set, constants->src_data, constants->dst_offset_in_32bit_values);
                 break;
 
             default:// エラー処理は上流の関数で行われます。
@@ -93,19 +92,19 @@ public:
 
         virtual ~SetDescriptorTableBatch() {}
 
-        void Set(PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data = nullptr) override
+        void Set(uint32_t _root_parameter_offset, PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data = nullptr) override
         {
             B3D_UNREFERENCED(_data);
 
             switch (_bind_point)
             {
             case buma3d::PIPELINE_BIND_POINT_GRAPHICS:
-                _list->SetGraphicsRootDescriptorTable(batch.root_parameter_index, batch.descriptor_table);
+                _list->SetGraphicsRootDescriptorTable(batch.root_parameter_index + _root_parameter_offset, batch.descriptor_table);
                 break;
 
             case buma3d::PIPELINE_BIND_POINT_COMPUTE:
             case buma3d::PIPELINE_BIND_POINT_RAY_TRACING:
-                _list->SetComputeRootDescriptorTable(batch.root_parameter_index, batch.descriptor_table);
+                _list->SetComputeRootDescriptorTable(batch.root_parameter_index + _root_parameter_offset, batch.descriptor_table);
                 break;
 
             default:// エラー処理は上流の関数で行われます。
@@ -158,19 +157,19 @@ public:
 
         virtual ~SetRootDescriptorBatch() {}
 
-        void Set(PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data) override
+        void Set(uint32_t _root_parameter_offset, PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data) override
         {
             UpdateOffset(*RCAST<const uint32_t*>(_data));
 
             switch (_bind_point)
             {
             case buma3d::PIPELINE_BIND_POINT_GRAPHICS:
-                (_list->*SetForGraphics)(batch.root_parameter_index, D3D12_GPU_VIRTUAL_ADDRESS{ batch.root_descriptor + offset });
+                (_list->*SetForGraphics)(batch.root_parameter_index + _root_parameter_offset, D3D12_GPU_VIRTUAL_ADDRESS{ batch.root_descriptor + offset });
                 break;
 
             case buma3d::PIPELINE_BIND_POINT_COMPUTE:
             case buma3d::PIPELINE_BIND_POINT_RAY_TRACING:
-                (_list->*SetForCompute)(batch.root_parameter_index, D3D12_GPU_VIRTUAL_ADDRESS{ batch.root_descriptor + offset });
+                (_list->*SetForCompute)(batch.root_parameter_index + _root_parameter_offset, D3D12_GPU_VIRTUAL_ADDRESS{ batch.root_descriptor + offset });
                 break;
 
             default:// エラー処理は上流の関数で行われます。
@@ -212,7 +211,6 @@ public:
         util::DyArray<util::UniquePtr<ISetDescriptorBatch>> descriptor_batch;
         util::DyArray<SetDescriptorTableBatch*>             descriptor_table_batch;
         util::DyArray<SetRootDescriptorBatch*>              root_descriptor_batch;
-        util::DyArray<SetConstantsBatch*>                   constants_batch;
     };
 
 #pragma endregion ISetDescriptorBatch
@@ -223,14 +221,14 @@ protected:
     B3D_APIENTRY ~DescriptorSetD3D12();
 
 private:
-    BMRESULT B3D_APIENTRY Init(DescriptorPoolD3D12* _pool, RootSignatureD3D12* _signature);
+    BMRESULT B3D_APIENTRY Init(DescriptorSetLayoutD3D12* _layout, DescriptorPoolD3D12* _pool);
     BMRESULT B3D_APIENTRY AllocateDescriptors();
     void B3D_APIENTRY CreateSetDescriptorBatch();
     void B3D_APIENTRY Uninit();
 
 public:
     static BMRESULT
-        B3D_APIENTRY Create(DescriptorPoolD3D12* _pool, RootSignatureD3D12* _signature, DescriptorSetD3D12** _dst);
+        B3D_APIENTRY Create(DescriptorSetLayoutD3D12* _layout, DescriptorPoolD3D12* _pool, DescriptorSetD3D12** _dst);
 
     void
         B3D_APIENTRY AddRef() override;
@@ -250,8 +248,8 @@ public:
     IDevice*
         B3D_APIENTRY GetDevice() const override;
 
-    IRootSignature*
-        B3D_APIENTRY GetRootSignature() const override;
+    IDescriptorSetLayout*
+        B3D_APIENTRY GetDescriptorSetLayout() const override;
 
     IDescriptorPool*
         B3D_APIENTRY GetPool() const override;
@@ -260,11 +258,7 @@ public:
         B3D_APIENTRY IsValid() const override;
 
     BMRESULT
-        B3D_APIENTRY CopyDescriptorSet(
-            IDescriptorSet* _src) override;
-
-    const util::StArray<GPU_DESCRIPTOR_ALLOCATION, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>&
-        B3D_APIENTRY GetAllocations() const;
+        B3D_APIENTRY CopyDescriptorSet(IDescriptorSet* _src) override;
 
     uint32_t
         B3D_APIENTRY GetAllocationID() const;
@@ -275,59 +269,35 @@ public:
     const DESCRIPTOR_BATCH&
         B3D_APIENTRY GetDescriptorBatch() const;
 
-    BMRESULT
-        B3D_APIENTRY WriteDescriptors(const WRITE_DESCRIPTOR_SET& _writes);
+    DescriptorSetUpdateCache&
+        B3D_APIENTRY GetUpdateCache() const;
 
     BMRESULT
-        B3D_APIENTRY CopyDescriptors(const COPY_DESCRIPTOR_SET& _copies);
+        B3D_APIENTRY VerifyWriteDescriptorSets(const WRITE_DESCRIPTOR_SET& _write);
+
+    BMRESULT
+        B3D_APIENTRY VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_SET& _copy);
+
+    DescriptorHeapD3D12*
+        B3D_APIENTRY GetHeap() const;
 
 private:
-    class UpdateDescriptorsCache
-    {
-    public:
-        UpdateDescriptorsCache();
-        ~UpdateDescriptorsCache();
-
-        void ResetRangeCount();
-        void ResizeIf(uint32_t _dst_num_descriptors, uint32_t _src_num_descriptors);
-        void AddWriteRange(const WRITE_DESCRIPTOR_RANGE& _write_range, D3D12_CPU_DESCRIPTOR_HANDLE _dst_handle);
-        void AddCopyRange(uint32_t _num_descriptors, D3D12_CPU_DESCRIPTOR_HANDLE _dst_handle, D3D12_CPU_DESCRIPTOR_HANDLE _src_handle);
-        void ApplyCopy(ID3D12Device* _device, D3D12_DESCRIPTOR_HEAP_TYPE _type);
-
-    private:
-        void AddRangeSrc(uint32_t _num_descriptors, D3D12_CPU_DESCRIPTOR_HANDLE _src_handle);
-        void AddRangeDst(uint32_t _num_descriptors, D3D12_CPU_DESCRIPTOR_HANDLE _dst_handle);
-
-    private:
-        uint32_t                                    src_cache_size;
-        uint32_t                                    dst_cache_size;
-        util::DyArray<uint32_t>                     src_sizees;
-        util::DyArray<uint32_t>                     dst_sizees;
-        util::DyArray<D3D12_CPU_DESCRIPTOR_HANDLE>  copy_src;
-        util::DyArray<D3D12_CPU_DESCRIPTOR_HANDLE>  copy_dst;
-
-        uint32_t                                    current_src_size;
-        uint32_t                                    current_dst_size;
-        uint32_t*                                   src_sizees_data;
-        uint32_t*                                   dst_sizees_data;
-        D3D12_CPU_DESCRIPTOR_HANDLE*                copy_src_data;
-        D3D12_CPU_DESCRIPTOR_HANDLE*                copy_dst_data;
-
-    };
+    BMRESULT CheckPoolCompatibility(const DESCRIPTOR_POOL_DESC& _src_desc, const DESCRIPTOR_POOL_DESC& _dst_desc);
+    bool IsCompatibleView(const DESCRIPTOR_SET_LAYOUT_BINDING& _lb, IView* _view);
 
 private:
-    std::atomic_uint32_t                                                                                            ref_count;
-    util::UniquePtr<util::NameableObjStr>                                                                           name;
-    DeviceD3D12*                                                                                                    device;
-    uint32_t                                                                                                        allocation_id;
-    uint64_t                                                                                                        reset_id;
-    ID3D12Device*                                                                                                   device12;
-    DescriptorPoolD3D12*                                                                                            pool;
-    RootSignatureD3D12*                                                                                             signature;
-    util::StArray<GPU_DESCRIPTOR_ALLOCATION, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>                                allocations;
-    DESCRIPTOR_BATCH                                                                                                descriptor_batch;
-    util::UniquePtr<util::StArray<DescriptorPoolD3D12::COPY_SRC_HANDLES, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>>   copy_src_descriptors;
-    util::StArray<UpdateDescriptorsCache, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>                                   update_descriptors_caches;
+    std::atomic_uint32_t                                                                        ref_count;
+    util::UniquePtr<util::NameableObjStr>                                                       name;
+    DeviceD3D12*                                                                                device;
+    uint32_t                                                                                    allocation_id;
+    uint64_t                                                                                    reset_id;
+    ID3D12Device*                                                                               device12;
+    DescriptorHeapD3D12*                                                                        heap;
+    DescriptorPoolD3D12*                                                                        pool;
+    DescriptorSetLayoutD3D12*                                                                   set_layout;
+    util::StArray<DescriptorPoolD3D12::POOL_ALLOCATION*, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER+1>  allocations;
+    util::UniquePtr<DESCRIPTOR_BATCH>                                                           descriptor_batch;
+    util::UniquePtr<DescriptorSetUpdateCache>                                                   update_cache;
 
 };
 

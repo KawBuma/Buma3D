@@ -13,6 +13,7 @@ protected:
 private:
     struct DESC_DATA;
     struct DESC_DATA_VK;
+    BMRESULT B3D_APIENTRY Init0(DeviceVk* _device, RootSignatureVk* _signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY Init(DeviceVk* _device, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyDesc(const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyShaderStages      (DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
@@ -41,6 +42,9 @@ private:
     void B3D_APIENTRY Uninit();
 
 public:
+    static BMRESULT
+        B3D_APIENTRY Create0(DeviceVk* _device, RootSignatureVk* _signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc, GraphicsPipelineStateVk** _dst);
+
     static BMRESULT
         B3D_APIENTRY Create(DeviceVk* _device, const GRAPHICS_PIPELINE_STATE_DESC& _desc, GraphicsPipelineStateVk** _dst);
 
@@ -97,7 +101,6 @@ private:
         ~SHADER_STAGE_DESC_DATA()
         {
             hlp::SafeRelease(module);
-            hlp::SwapClear(entry_point_name);
         }
         ShaderModuleVk* module;
         util::String    entry_point_name;
@@ -162,26 +165,13 @@ private:
         ~DESC_DATA()
         {
             hlp::SafeRelease(root_signature);
+            hlp::SafeRelease(pipeline_layout);
             hlp::SafeRelease(render_pass);
-
-            shader_stages = {};
-
-            /* NOTE: unique_ptrのデストラクタは、リソースの破棄のみ行います。 破棄されたメモリを参照するポインタはnullptrにしません。
-                     そのため、unique_ptrをメンバとして持つ構造等のデストラクタを明示的に呼び出したい場合は、以下のようにポインタもnullptrとする実装を行う必要があります。
-                     そうしないと、自動でデストラクタが呼び出される際に、破棄されたはずのポインタに対して再び破棄が行われてしまいます。 */
-            input_layout             .reset();
-            input_assembly_state_desc.reset();
-            tessellation_state_desc  .reset();
-            viewport_state           .reset();
-            rasterization_state_desc .reset();
-            stream_output            .reset();
-            multisample_state        .reset();
-            depth_stencil_state_desc .reset();
-            blend_state              .reset();
-            dynamic_state            .reset();
         }
 
         RootSignatureVk*                                root_signature;
+
+        PipelineLayoutVk*                               pipeline_layout;
         RenderPassVk*                                   render_pass;
         SHADER_STAGE_DESCS_DATA                         shader_stages;
         util::UniquePtr<INPUT_LAYOUT_DESC_DATA>         input_layout;
@@ -261,10 +251,6 @@ private:
 
     struct DESC_DATA_VK
     {
-        ~DESC_DATA_VK()
-        {
-            hlp::SwapClear(shader_stage_cis);
-        }
         util::DyArray<VkPipelineShaderStageCreateInfo>          shader_stage_cis; // VkPipelineShaderStageCreateInfo::pName にはDESC_DATAを流用します。
         util::UniquePtr<VERTEX_INPUT_STATE_DATA_VK>             vertex_input_state;
         util::UniquePtr<VkPipelineInputAssemblyStateCreateInfo> input_assembly_state_ci;
@@ -282,7 +268,7 @@ private:
     util::UniquePtr<util::NameableObjStr>   name;
     DeviceVk*                               device;
     GRAPHICS_PIPELINE_STATE_DESC            desc;
-    DESC_DATA                               desc_data;
+    util::UniquePtr<DESC_DATA>              desc_data;
 
     VkDevice                                vkdevice;
     const InstancePFN*                      inspfn;

@@ -99,7 +99,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 1, 5);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 10, 3);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -161,10 +161,17 @@ struct IStreamOutputBufferView;     DECLARE_SHARED_PTR(StreamOutputBufferView);
 
 struct IFramebuffer;                DECLARE_SHARED_PTR(Framebuffer);
 struct IRenderPass;                 DECLARE_SHARED_PTR(RenderPass);
-struct IDescriptorPool;             DECLARE_SHARED_PTR(DescriptorPool);
-struct IDescriptorSet;              DECLARE_SHARED_PTR(DescriptorSet);
+struct IDescriptorPool0;            DECLARE_SHARED_PTR(DescriptorPool0);
+struct IDescriptorSet0;             DECLARE_SHARED_PTR(DescriptorSet0);
 struct IRootSignature;              DECLARE_SHARED_PTR(RootSignature);
 struct IPipelineState;              DECLARE_SHARED_PTR(PipelineState);
+
+struct IDescriptorHeap;             DECLARE_SHARED_PTR(DescriptorHeap);
+struct IDescriptorPool;             DECLARE_SHARED_PTR(DescriptorPool);
+struct IDescriptorSet;              DECLARE_SHARED_PTR(DescriptorSet);
+struct IDescriptorUpdate;           DECLARE_SHARED_PTR(DescriptorUpdate);
+struct IDescriptorSetLayout;        DECLARE_SHARED_PTR(IDescriptorSetLayout);
+struct IPipelineLayout;             DECLARE_SHARED_PTR(IPipelineLayout);
 
 struct ICommandQueue;               DECLARE_SHARED_PTR(CommandQueue);
 struct ICommandAllocator;           DECLARE_SHARED_PTR(CommandAllocator);
@@ -2775,13 +2782,13 @@ enum DESCRIPTOR_POOL_FLAG : EnumT
 
     /**
      * @brief コピー可能ディスクリプタヒープであることを指定します。 
-     *        このフラグが指定されたヒープから割り当てられたディスクリプタセットは、COPY_DESCRIPTOR_SET::src_setまたはIDescriptorSet::CopyDescriptorSet::_srcでコピー元ディスクリプタとして利用可能です。
+     *        このフラグが指定されたヒープから割り当てられたディスクリプタセットは、COPY_DESCRIPTOR_SET::src_setまたはIDescriptorSet0::CopyDescriptorSet::_srcでコピー元ディスクリプタとして利用可能です。
     */
     DESCRIPTOR_POOL_FLAG_COPY_SRC               = 0x4
 };
 using DESCRIPTOR_POOL_FLAGS = EnumFlagsT;
 
-struct DESCRIPTOR_POOL_DESC
+struct DESCRIPTOR_POOL_DESC0
 {
     DESCRIPTOR_POOL_FLAGS       flags;
     uint32_t                    max_sets_allocation_count;  // ディスクリプタセットを割り当て出来る回数の最大値を指定します。
@@ -2791,6 +2798,56 @@ struct DESCRIPTOR_POOL_DESC
     NodeMask                    node_mask;                  // ディスクリプタが作成されるノードを指定します。TODO: D3D12で、複数のノードを指定可能にするかどうか。(VulkanではディスクリプタプールにNodeMaskの制約が無く、D3D12のCreationNodeMaskの為にVkDescriptorPoolが複数作成されることは避けたい。)
 };
 
+struct DESCRIPTOR_HEAP_SIZE
+{
+    DESCRIPTOR_TYPE type;
+    uint32_t        num_descriptors;
+};
+
+enum DESCRIPTOR_HEAP_FLAG : EnumT
+{
+    DESCRIPTOR_HEAP_FLAG_NONE = 0x0
+};
+using DESCRIPTOR_HEAP_FLAGS = EnumFlagsT;
+
+struct DESCRIPTOR_HEAP_DESC
+{
+    DESCRIPTOR_HEAP_FLAGS       flags;
+    uint32_t                    num_heap_sizes;
+    const DESCRIPTOR_HEAP_SIZE* heap_sizes;
+    NodeMask                    node_mask;          // ディスクリプタが作成されるノードを指定します。TODO: D3D12で、複数のノードを指定可能にするかどうか。(VulkanではディスクリプタプールにNodeMaskの制約が無く、D3D12のCreationNodeMaskの為にVkDescriptorPoolが複数作成されることは避けたい。)
+};
+
+struct DESCRIPTOR_POOL_DESC
+{
+    IDescriptorHeap*            heap;                       // このプールがディスクリプタセットの割り当てに使用する親ヒープを指定します。
+    DESCRIPTOR_POOL_FLAGS       flags;
+    uint32_t                    max_sets_allocation_count;  // ディスクリプタセットを割り当て出来る回数の最大値を指定します。
+    uint32_t                    num_pool_sizes;
+    const DESCRIPTOR_POOL_SIZE* pool_sizes;
+};
+
+struct DESCRIPTOR_SET_ALLOCATE_DESC
+{
+    uint32_t                        num_descriptor_sets;
+    IDescriptorSetLayout*const *    set_layouts;
+};
+
+enum DESCRIPTOR_FLAG : EnumT
+{
+      DESCRIPTOR_FLAG_NONE                                              = 0x0   // コマンドリストにセットされた後、ディスクリプタ自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。 これは、コマンドリストにセットされた後、ディスクリプタが指すリソースの参照を、CopyDescriptors等によって変更できない事を示します。
+    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND                     = 0x1   // コマンドリストにセットされた後、ディスクリプタ自体が揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CopyDescriptors等によって変更することが出来ます。 DESCRIPTORS_VOLATILE
+    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING           = 0x2   // コマンドリストにセットされていないディスクリプタを更新出来ることを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
+    , DESCRIPTOR_FLAG_PARTIALLY_BOUND                                   = 0x4   // リソースがシェーダー側で参照されない場合、ディスクリプタへリソースを設定する必要が無いことを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
+    , DESCRIPTOR_FLAG_VARIABLE_DESCRIPTOR_COUNT                         = 0x8   // このフラグが指定されるDESCRIPTOR_SET_LAYOUT_BINDING::base_shader_register番号がDESCRIPTOR_SET_LAYOUT_DESC::bindingsの各要素において最も大きい場合、シェーダー側で可変長のリソース配列が使用可能であることを示します。 
+
+//  , DESCRIPTOR_FLAG_DATA_VOLATILE                                     = 0x10  // コマンドリストにセットされた後、ディスクリプタが指すリソースが揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CPUによってリソースのデータを操作可能です。
+//  , DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE                  = 0x20  // コマンドリストにセットされた後、ディスクリプタが指すリソースを参照するドローコールが実行されている間、そのデータが静的である事を指定します。(もう一度セットし直すことでリソースが変更された事をドライバに通知することが出来ます。)
+//  , DESCRIPTOR_FLAG_DATA_STATIC                                       = 0x40  // コマンドリストにセットされた後、ディスクリプタが指すリソースは静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。
+
+//  , DESCRIPTOR_FLAG_DESCRIPTORS_STATIC_KEEPING_BUFFER_BOUNDS_CHECKS   = 0x10000
+};
+using DESCRIPTOR_FLAGS = EnumFlagsT;
 
 #pragma endregion descriptor
 
@@ -2811,20 +2868,20 @@ struct WRITE_DESCRIPTOR_TABLE
     const WRITE_DESCRIPTOR_RANGE*   ranges;                     // テーブル内のレンジを指定するWRITE_DESCRIPTOR_RANGE配列です。
 };
 
-struct WRITE_DYNAMIC_DESCRIPTOR
+struct WRITE_DYNAMIC_DESCRIPTOR0
 {
     uint32_t                        dst_root_parameter_index;   // 宛先ルートパラメータのインデックスです。
     IView*                          src_view;                   // 宛先ディスクリプタに関連付けるバッファーリソースのビューです。 テクスチャリソース、型付きバッファのビューを含めることはできません。
     uint64_t                        src_view_buffer_offset;     // 指定のビューを基準にしたオフセットです。 
 };
 
-struct WRITE_DESCRIPTOR_SET
+struct WRITE_DESCRIPTOR_SET0
 {
-    IDescriptorSet*                 dst_set;                    // 書き込み先のディスクリプタセットです。
+    IDescriptorSet0*                dst_set;                    // 書き込み先のディスクリプタセットです。
     uint32_t                        num_descriptor_tables;      // descriptor_tablesの要素数です。
     const WRITE_DESCRIPTOR_TABLE*   descriptor_tables;          // 宛先ルートパラメータとソースビューを指定するWRITE_DESCRIPTOR_TABLE構造の配列です。
     uint32_t                        num_dynamic_descriptors;    // dynamic_descriptorsの要素数です。
-    const WRITE_DYNAMIC_DESCRIPTOR* dynamic_descriptors;        // 宛先ルートパラメータとソースビューを指定するWRITE_DYNAMIC_DESCRIPTOR構造の配列です。
+    const WRITE_DYNAMIC_DESCRIPTOR0* dynamic_descriptors;       // 宛先ルートパラメータとソースビューを指定するWRITE_DYNAMIC_DESCRIPTOR0構造の配列です。
 };
 
 struct COPY_DESCRIPTOR_RANGE
@@ -2849,22 +2906,77 @@ struct COPY_DYNAMIC_DESCRIPTOR
     uint32_t                        dst_root_parameter_index;   // 宛先のディスクリプタを指定するルートパラメータインデックスです。
 };
 
-struct COPY_DESCRIPTOR_SET
+struct COPY_DESCRIPTOR_SET0
 {
-    IDescriptorSet*                 src_set;                    // コピーするディスクリプタセットです。 src_setのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
-    IDescriptorSet*                 dst_set;                    // 宛先のディスクリプタセットです。
+    IDescriptorSet0*                src_set;                    // コピーするディスクリプタセットです。 src_setのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
+    IDescriptorSet0*                dst_set;                    // 宛先のディスクリプタセットです。
     uint32_t                        num_descriptor_tables;      // descriptor_tables配列の要素数です。
     const COPY_DESCRIPTOR_TABLE*    descriptor_tables;          // コピーするディスクリプタテーブルを指定するCOPY_DESCRIPTOR_TABLE構造の配列です。
     uint32_t                        num_dynamic_descriptors;    // dynamic_descriptors配列の要素数です。
     const COPY_DYNAMIC_DESCRIPTOR*  dynamic_descriptors;        // コピーする動的ディスクリプタを指定するCOPY_DYNAMIC_DESCRIPTOR構造の配列です。
 };
 
-struct UPDATE_DESCRIPTOR_SET_DESC
+struct UPDATE_DESCRIPTOR_SET_DESC0
 {
     uint32_t                        num_write_descriptor_sets;
-    const WRITE_DESCRIPTOR_SET*     write_descriptor_sets;
+    const WRITE_DESCRIPTOR_SET0*    write_descriptor_sets;
     uint32_t                        num_copy_descriptor_sets;
-    const COPY_DESCRIPTOR_SET*      copy_descriptor_sets;
+    const COPY_DESCRIPTOR_SET0*     copy_descriptor_sets;
+};
+
+
+struct WRITE_DESCRIPTOR_BINDING
+{
+    uint32_t                                dst_binding_index;          // 宛先ディスクリプタセットが使用するレイアウトのbindings配列に対応するインデックスです。
+    uint32_t                                dst_first_array_element;    // 宛先バインディングの、ディスクリプタの書き込み先配列オフセットです。
+    uint32_t                                num_descriptors;            // src_viewsの要素数です。 
+    IView*const *                           src_views;                  // 関連付けるビューの配列です。 ビューのタイプはバインディングで指定されたディスクリプタタイプとの互換性が必要です。 
+};
+
+struct WRITE_DYNAMIC_DESCRIPTOR_BINDING
+{
+    uint32_t                                dst_binding_index;          // 宛先バインディングのインデックスです。
+    IView*                                  src_view;                   // 宛先バインディングに関連付けるバッファーリソースのビューです。 テクスチャリソース、型付きバッファのビューを含めることはできません。
+    int64_t                                 src_view_buffer_offset;     // 指定のビューを基準にしたオフセットです。 
+};
+
+struct WRITE_DESCRIPTOR_SET
+{
+    IDescriptorSet*                         dst_set;
+    uint32_t                                num_bindings;
+    const WRITE_DESCRIPTOR_BINDING*         bindings;
+    uint32_t                                num_dynamic_bindings;
+    const WRITE_DYNAMIC_DESCRIPTOR_BINDING* dynamic_bindings;
+};
+
+struct COPY_DESCRIPTOR_BINDING
+{
+    uint32_t                                src_binding_index;          // ソースバインディングのインデックスです。
+    uint32_t                                src_first_array_element;    // ソースバインディングの、ディスクリプタのコピー元配列オフセットです。
+    uint32_t                                dst_binding_index;          // 宛先バインディングのインデックスです。
+    uint32_t                                dst_first_array_element;    // 宛先バインディングの、ディスクリプタのコピー先配列オフセットです。
+    uint32_t                                num_descriptors;
+};
+
+struct COPY_DESCRIPTOR_SET
+{
+    IDescriptorSet*                         src_set;
+    IDescriptorSet*                         dst_set;
+    uint32_t                                num_bindings;
+    const COPY_DESCRIPTOR_BINDING*          bindings;
+};
+
+struct UPDATE_DESCRIPTOR_SET_DESC
+{
+    uint32_t                                num_write_descriptor_sets;
+    const WRITE_DESCRIPTOR_SET*             write_descriptor_sets;
+    uint32_t                                num_copy_descriptor_sets;
+    const COPY_DESCRIPTOR_SET*              copy_descriptor_sets;
+};
+
+struct DESCRIPTOR_UPDATE_DESC
+{
+    /* currently reserved structure */ 
 };
 
 #pragma endregion descriptor updates
@@ -2894,19 +3006,6 @@ enum RAY_TRACING_SHADER_VISIBILITY_FLAG : EnumT
     , RAY_TRACING_SHADER_VISIBILITY_FLAG_CALLABLE     = 0x20
 };
 using RAY_TRACING_SHADER_VISIBILITY_FLAGS = EnumFlagsT;
-
-enum DESCRIPTOR_FLAG : EnumT
-{
-      DESCRIPTOR_FLAG_NONE                                              = 0x0   // コマンドリストにセットされた後、ディスクリプタ自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。 これは、コマンドリストにセットされた後、ディスクリプタが指すリソースの参照を、CopyDescriptors等によって変更できない事を示します。
-    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND                     = 0x1   // コマンドリストにセットされた後、ディスクリプタ自体が揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CopyDescriptors等によって変更することが出来ます。 DESCRIPTORS_VOLATILE
-    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING           = 0x2   // コマンドリストにセットされていないディスクリプタを更新出来ることを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
-    , DESCRIPTOR_FLAG_PARTIALLY_BOUND                                   = 0x4   // リソースがシェーダー側で参照されない場合、ディスクリプタへリソースを設定する必要が無いことを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
-//  , DESCRIPTOR_FLAG_DATA_VOLATILE                                     = 0x8   // コマンドリストにセットされた後、ディスクリプタが指すリソースが揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CPUによってリソースのデータを操作可能です。
-//  , DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE                  = 0x10  // コマンドリストにセットされた後、ディスクリプタが指すリソースを参照するドローコールが実行されている間、そのデータが静的である事を指定します。(もう一度セットし直すことでリソースが変更された事をドライバに通知することが出来ます。)
-//  , DESCRIPTOR_FLAG_DATA_STATIC                                       = 0x20  // コマンドリストにセットされた後、ディスクリプタが指すリソースは静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。
-//  , DESCRIPTOR_FLAG_DESCRIPTORS_STATIC_KEEPING_BUFFER_BOUNDS_CHECKS   = 0x10000
-};
-using DESCRIPTOR_FLAGS = EnumFlagsT;
 
 struct DESCRIPTOR_RANGE
 {
@@ -3064,6 +3163,69 @@ struct ROOT_SIGNATURE_DESC
 };
 
 #pragma endregion root signature
+
+#pragma region pipeline layout
+
+struct DESCRIPTOR_SET_LAYOUT_BINDING
+{
+    DESCRIPTOR_TYPE     descriptor_type;
+    uint32_t            base_shader_register;
+    uint32_t            num_descriptors;
+    SHADER_VISIBILITY   shader_visibility;
+    DESCRIPTOR_FLAGS    flags;
+    ISamplerView*       static_sampler;
+};
+
+enum DESCRIPTOR_SET_LAYOUT_FLAG : EnumT
+{
+      DESCRIPTOR_SET_LAYOUT_FLAG_NONE                   = 0x0
+    , DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL = 0x1 // このフラグが指定されたレイアウトを使用するディスクリプタセットは、DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BINDで作成されたプールから割り当てる必要があることを指定します。
+//  , DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR        = 0x2 // TODO: PUSH_DESCRIPTOR は ID3D12GraphicsCommandList::Set*RootCBV/SRV/UAVに直接的にマップ可能ですがvkCmdPushDescriptorSetKHRの柔軟性は大きく損なわれます。
+};
+using DESCRIPTOR_SET_LAYOUT_FLAGS = EnumFlagsT;
+
+struct DESCRIPTOR_SET_LAYOUT_DESC
+{
+    DESCRIPTOR_SET_LAYOUT_FLAGS             flags;
+    uint32_t                                num_bindings;
+    const DESCRIPTOR_SET_LAYOUT_BINDING*    bindings;
+};
+
+struct PUSH_CONSTANT_PARAMETER
+{
+    SHADER_VISIBILITY   visibility;
+    uint32_t            shader_register;
+    uint32_t            register_space;
+    uint32_t            num_32bit_values;
+};
+
+enum PIPELINE_LAYOUT_FLAG : EnumT
+{
+      PIPELINE_LAYOUT_FLAG_NONE                                 = 0x0
+    , PIPELINE_LAYOUT_FLAG_DENY_INPUT_ASSEMBLER_INPUT_LAYOUT    = 0x1
+    , PIPELINE_LAYOUT_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS       = 0x2
+    , PIPELINE_LAYOUT_FLAG_ALLOW_HULL_SHADER_ROOT_ACCESS        = 0x4
+    , PIPELINE_LAYOUT_FLAG_ALLOW_DOMAIN_SHADER_ROOT_ACCESS      = 0x8
+    , PIPELINE_LAYOUT_FLAG_ALLOW_GEOMETRY_SHADER_ROOT_ACCESS    = 0x10
+    , PIPELINE_LAYOUT_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS        = 0x20
+    , PIPELINE_LAYOUT_FLAG_ALLOW_STREAM_OUTPUT                  = 0x40
+    , PIPELINE_LAYOUT_FLAG_ALLOW_MESH_SHADER_ROOT_ACCESS        = 0x80
+    , PIPELINE_LAYOUT_FLAG_ALLOW_TASK_SHADER_ROOT_ACCESS        = 0x100
+
+    , PIPELINE_LAYOUT_FLAG_RAY_TRACING_SHADER_VISIBILITY        = 0x200
+};
+using PIPELINE_LAYOUT_FLAGS = EnumFlagsT;
+
+struct PIPELINE_LAYOUT_DESC
+{
+    PIPELINE_LAYOUT_FLAGS           flags;
+    uint32_t                        num_set_layouts;
+    IDescriptorSetLayout*const *    set_layouts;
+    uint32_t                        num_push_constants;
+    const PUSH_CONSTANT_PARAMETER*  push_constants;
+};
+
+#pragma endregion pipeline layout
 
 #pragma region render pass
 
@@ -3641,7 +3803,7 @@ struct DYNAMIC_STATE_DESC
 
 struct GRAPHICS_PIPELINE_STATE_DESC
 {
-    IRootSignature*                             root_signature;
+    IPipelineLayout*                            pipeline_layout;
     IRenderPass*                                render_pass;
     uint32_t                                    subpass;
     NodeMask                                    node_mask; // パイプラインステートオブジェクトが構築されるノードを示す単一のビットを指定します。
@@ -3649,12 +3811,13 @@ struct GRAPHICS_PIPELINE_STATE_DESC
 
     uint32_t                                    num_shader_stages;
     const PIPELINE_SHADER_STAGE_DESC*           shader_stages;
+
     const INPUT_LAYOUT_DESC*                    input_layout;
     const INPUT_ASSEMBLY_STATE_DESC*            input_assembly_state;
     const TESSELLATION_STATE_DESC*              tessellation_state; // PRIMITIVE_TOPOLOGY_PATCH_LISTの場合に使用します。
     const VIEWPORT_STATE_DESC*                  viewport_state;
     const RASTERIZATION_STATE_DESC*             rasterization_state;
-    const STREAM_OUTPUT_DESC*                   stream_output;      // 現在はD3D12のみの対応です。
+    const STREAM_OUTPUT_DESC*                   stream_output;
     const MULTISAMPLE_STATE_DESC*               multisample_state;
     const DEPTH_STENCIL_STATE_DESC*             depth_stencil_state;
     const BLEND_STATE_DESC*                     blend_state;
@@ -3663,7 +3826,7 @@ struct GRAPHICS_PIPELINE_STATE_DESC
 
 struct COMPUTE_PIPELINE_STATE_DESC
 {
-    IRootSignature*             root_signature;
+    IPipelineLayout*            pipeline_layout;
     NodeMask                    node_mask;
     PIPELINE_SHADER_STAGE_DESC  shader_stage;
 };
@@ -3678,7 +3841,7 @@ struct RAY_TRACING_PIPELINE_STATE_DESC
 
 #pragma region command list arguments
 
-struct CMD_PUSH_32BIT_CONSTANTS
+struct CMD_PUSH_32BIT_CONSTANTS0
 {
     uint32_t    root_parameter_index;
     uint32_t    num32_bit_values_to_set;
@@ -3692,11 +3855,28 @@ struct DYNAMIC_DESCRIPTOR_OFFSET
     uint32_t    offset;
 };
 
-struct CMD_BIND_DESCRIPTOR_SET
+struct CMD_BIND_DESCRIPTOR_SET0
 {
-    IDescriptorSet*                     descriptor_set;
+    IDescriptorSet0*                    descriptor_set;
     uint32_t                            num_dynamic_descriptor_offsets; // 更新する動的ディスクリプタのオフセットの配列の要素数です。 
     const DYNAMIC_DESCRIPTOR_OFFSET*    dynamic_descriptor_offsets;     // 更新する動的ディスクリプタのオフセットの配列です。 
+};
+
+struct CMD_PUSH_32BIT_CONSTANTS
+{
+    uint32_t    index; // パイプラインレイアウトに存在するプッシュ定数パラメータのインデックスです。
+    uint32_t    num32_bit_values_to_set;
+    const void* src_data;
+    uint32_t    dst_offset_in_32bit_values;
+};
+
+struct CMD_BIND_DESCRIPTOR_SETS
+{
+    uint32_t                            first_set;                      // バインドするディスクリプタの開始インデックスです。 パイプラインレイアウトに存在するレイアウトバインディングに対応します。
+    uint32_t                            num_descriptor_sets;            // first_setから開始する、バインドするディスクリプタセットの配列要素数です。
+    IDescriptorSet*const *              descriptor_sets;                // first_setから開始する、バインドするディスクリプタセットの配列です。
+    uint32_t                            num_dynamic_descriptor_offsets; // 更新する動的ディスクリプタのオフセットの配列の要素数です。 値はdescriptor_sets配列の各要素に関連付けられているレイアウトの動的ディスクリプタ数の合計である必要があります。
+    const uint32_t*                     dynamic_descriptor_offsets;     // 更新する動的ディスクリプタのオフセットの配列です。 descriptor_setsの持つ動的ディスクリプタ数に応じて順番に要素が使用されます。
 };
 
 struct QUERY_DESC
@@ -4495,18 +4675,45 @@ public:
             , IRootSignature**           _dst) = 0;
 
     virtual BMRESULT
-        B3D_APIENTRY CreateDescriptorPool(
-              const DESCRIPTOR_POOL_DESC& _desc
-            , IDescriptorPool**           _dst) = 0;
+        B3D_APIENTRY CreateDescriptorPool0(
+              const DESCRIPTOR_POOL_DESC0& _desc
+            , IDescriptorPool0**           _dst) = 0;
 
     /**
      * @brief 指定のリソースでディスクリプタセットを更新します。 
-     * @param _update_desc UPDATE_DESCRIPTOR_SET_DESC
+     * @param _update_desc UPDATE_DESCRIPTOR_SET_DESC0
      * @return BMRESULT
     */
     virtual BMRESULT
-        B3D_APIENTRY UpdateDescriptorSets(
-            const UPDATE_DESCRIPTOR_SET_DESC& _update_desc) = 0;
+        B3D_APIENTRY UpdateDescriptorSets0(
+            const UPDATE_DESCRIPTOR_SET_DESC0& _update_desc) = 0;
+
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateDescriptorSetLayout(
+              const DESCRIPTOR_SET_LAYOUT_DESC& _desc
+            , IDescriptorSetLayout**            _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY CreatePipelineLayout(
+              const PIPELINE_LAYOUT_DESC&   _desc
+            , IPipelineLayout**             _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateDescriptorHeap(
+              const DESCRIPTOR_HEAP_DESC&  _desc
+            , IDescriptorHeap**            _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateDescriptorPool(
+              const DESCRIPTOR_POOL_DESC&  _desc
+            , IDescriptorPool**            _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateDescriptorUpdate(
+              const DESCRIPTOR_UPDATE_DESC& _desc
+            , IDescriptorUpdate**           _dst) = 0;
+
 
     /**
      * @brief シェーダーモジュールを作成します。
@@ -4518,6 +4725,18 @@ public:
         B3D_APIENTRY CreateShaderModule(
               const SHADER_MODULE_DESC& _desc
             , IShaderModule**           _dst) = 0;    
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateGraphicsPipelineState0(
+              IRootSignature*                     _root_signature
+            , const GRAPHICS_PIPELINE_STATE_DESC& _desc
+            , IPipelineState**                    _dst) = 0;
+
+    virtual BMRESULT
+        B3D_APIENTRY CreateComputePipelineState0(
+              IRootSignature*                    _root_signature
+            , const COMPUTE_PIPELINE_STATE_DESC& _desc
+            , IPipelineState**                   _dst) = 0;
 
     virtual BMRESULT
         B3D_APIENTRY CreateGraphicsPipelineState(
@@ -5003,13 +5222,13 @@ public:
 
 };
 
-B3D_INTERFACE IDescriptorPool : public IDeviceChild
+B3D_INTERFACE IDescriptorPool0 : public IDeviceChild
 {
 protected:
-    B3D_APIENTRY ~IDescriptorPool() {}
+    B3D_APIENTRY ~IDescriptorPool0() {}
 
 public:
-    virtual const DESCRIPTOR_POOL_DESC&
+    virtual const DESCRIPTOR_POOL_DESC0&
         B3D_APIENTRY GetDesc() const = 0;
 
     /**
@@ -5029,7 +5248,7 @@ public:
     /**
      * @brief 指定のシグネチャに必要なディスクリプタを割り当てたディスクリプタセットを作成します。成功した場合、割り当てカウントが増加します。
      * @param[in] _root_signature _dstのシグネチャを指定します。
-     * @param[out] _dst 作成されたIDescriptorSetを取得します。 DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SETを使用して作成されたプールの場合、IDescriptorSetが解放される時、割り当てられていたディスクリプタはプールに返還されます。
+     * @param[out] _dst 作成されたIDescriptorSet0を取得します。 DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SETを使用して作成されたプールの場合、IDescriptorSet0が解放される時、割り当てられていたディスクリプタはプールに返還されます。
      *                   そうでない場合返還はされず、ResetPoolAndInvalidateAllocatedSets()を介してのみ割り当てカウントを減少させることができます。
      * @return 断片化、またはディスクリプタセットの割り当て回数の上限を超える場合、BMRESULT_FAILED以下を返します。
      * @remark プールの作成時または最後にリセットされてからプールから割り当てられたすべてのセットが、(各タイプの)同じ数のディスクリプタを使用し、要求された割り当ても同じ数の(各タイプの)ディスクリプタを使用する場合、断片化によって割り当てが失敗することはありません。 
@@ -5037,15 +5256,15 @@ public:
     */
     virtual BMRESULT
         B3D_APIENTRY AllocateDescriptorSet(
-              IRootSignature*   _root_signature
-            , IDescriptorSet**  _dst) = 0;
+              IRootSignature*    _root_signature
+            , IDescriptorSet0**  _dst) = 0;
 
 };
 
-B3D_INTERFACE IDescriptorSet : public IDeviceChild
+B3D_INTERFACE IDescriptorSet0 : public IDeviceChild
 {
 protected:
-    B3D_APIENTRY ~IDescriptorSet() {}
+    B3D_APIENTRY ~IDescriptorSet0() {}
 
 public:
     /**
@@ -5057,9 +5276,9 @@ public:
 
     /**
      * @brief 割り当て元のプールを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
-     * @return IDescriptorPool* 
+     * @return IDescriptorPool0* 
     */
-    virtual IDescriptorPool*
+    virtual IDescriptorPool0*
         B3D_APIENTRY GetPool() const = 0;
 
     /**
@@ -5077,7 +5296,7 @@ public:
     */
     virtual BMRESULT
         B3D_APIENTRY CopyDescriptorSet(
-            IDescriptorSet* _src) = 0;
+            IDescriptorSet0* _src) = 0;
 
 };
 
@@ -5105,6 +5324,144 @@ public:
               uint32_t              _num_descriptor_sets
             , uint32_t*             _dst_num_register_space
             , DESCRIPTOR_POOL_SIZE* _dst_sizes) const = 0;
+
+};
+
+B3D_INTERFACE IDescriptorHeap : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorHeap() {}
+
+public:
+    virtual const DESCRIPTOR_HEAP_DESC&
+        B3D_APIENTRY GetDesc() const = 0;
+
+};
+
+B3D_INTERFACE IDescriptorPool : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorPool() {}
+
+public:
+    virtual const DESCRIPTOR_POOL_DESC&
+        B3D_APIENTRY GetDesc() const = 0;
+
+    /**
+     * @brief 現在このプールから割り当てられているディスクリプタセットの数を取得します。
+     * @return ディスクリプタセットの割り当てカウントです。
+    */
+    virtual uint32_t
+        B3D_APIENTRY GetCurrentAllocationCount() = 0;
+
+    /**
+     * @brief 割り当ての管理をリセットし、このプールから以前に割り当てた全てのディスクリプタセットの使用を無効化します。
+     * @remark 無効となったディスクリプタセットは、アプリケーションで増加させた参照カウントを解放する必要があります。
+    */
+    virtual void
+        B3D_APIENTRY ResetPoolAndInvalidateAllocatedSets() = 0;
+
+    /**
+     * @brief 指定のレイアウトに必要なディスクリプタを割り当てたディスクリプタセットを作成します。
+     * @param[in] _desc _dst_descriptor_setsを割り当てる際の情報を指定します。
+     * @param[out] _dst_descriptor_sets 作成されたIDescriptorSetを取得するの配列です。 DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SETを使用して作成されたプールの場合、IDescriptorSetが解放される時、割り当てられていたディスクリプタはプールに返還されます。
+     *                                  そうでない場合返還はされず、ResetPoolAndInvalidateAllocatedSets()を介してのみ割り当てカウントを減少させることができます。
+     * @return 断片化、またはディスクリプタセットの割り当て回数の上限を超える場合、BMRESULT_FAILED以下を返します。
+    */
+    virtual BMRESULT
+        B3D_APIENTRY AllocateDescriptorSets(
+            const DESCRIPTOR_SET_ALLOCATE_DESC& _desc
+            , IDescriptorSet**                  _dst_descriptor_sets) = 0;
+
+};
+
+B3D_INTERFACE IDescriptorSet : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorSet() {}
+
+public:
+    /**
+     * @brief このセットに対応するディスクリプタセットレイアウトを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
+     * @return IRootSignature* 
+    */
+    virtual IDescriptorSetLayout*
+        B3D_APIENTRY GetDescriptorSetLayout() const = 0;
+
+    /**
+     * @brief 割り当て元のプールを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
+     * @return IDescriptorPool* 
+    */
+    virtual IDescriptorPool*
+        B3D_APIENTRY GetPool() const = 0;
+
+    /**
+     * @brief 現在のプールからの割り当てが有効かどうかを返します。
+     * @return 割り当てが有効な場合true、無効な場合falseを返します。
+     * @remark セットを割り当てた後にプールがリセットされた場合、このオブジェクトは無効になります。
+    */
+    virtual bool
+        B3D_APIENTRY IsValid() const = 0;
+
+    /**
+     * @brief 同じレイアウトで割り当てられたディスクリプタセットの全てのディスクリプタをコピーします。
+     * @param _src コピーするディスクリプタセットです。 ディスクリプタセットレイアウトは同一である必要があります。
+     * @return 正常にコピーされた場合BMRESULT_SUCCEEDが返ります。
+     * @remark _srcのディスクリプタプールは、DESCRIPTOR_POOL_FLAG_COPY_SRCフラグを指定して作成されている必要があります。
+    */
+    virtual BMRESULT
+        B3D_APIENTRY CopyDescriptorSet(
+            IDescriptorSet* _src) = 0;
+
+};
+
+/**
+ * @brief IDescriptorSetの各バインディングを更新します。
+ *        単一のIDescriptorUpdateインスタンスのUpdateDescriptorSets関数は複数のスレッドから呼び出してはなりません。
+*/
+B3D_INTERFACE IDescriptorUpdate : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorUpdate() {}
+
+public:
+    virtual BMRESULT
+        B3D_APIENTRY UpdateDescriptorSets(
+            const UPDATE_DESCRIPTOR_SET_DESC& _update_desc) = 0;
+
+};
+
+B3D_INTERFACE IDescriptorSetLayout : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IDescriptorSetLayout() {}
+
+public:
+    virtual const DESCRIPTOR_SET_LAYOUT_DESC&
+        B3D_APIENTRY GetDesc() const = 0;
+
+    ///**
+    // * @brief このレイアウトに対応するディスクリプタプール、セットを作成する際に必要なプールサイズの情報を取得します。
+    // * @param _num_descriptor_sets 割り当てるディスクリプタセットの数を指定します。
+    // * @param[out] _dst_sizes 必要なプールサイズを取得します。nullptrの場合値は書き込まれません。
+    // * @return _dst_sizesに必要なDESCRIPTOR_POOL_SIZE構造の配列要素数を返します。
+    // * @remark _dst_sizes配列に書き込まれるDESCRIPTOR_TYPEの順序は不定です。必要な割り当てが存在しないDESCRIPTOR_TYPEはスキップされます。
+    //*/
+    //virtual uint32_t
+    //    B3D_APIENTRY GetDescriptorPoolRequirementSizes(
+    //          uint32_t              _num_descriptor_sets
+    //        , DESCRIPTOR_POOL_SIZE* _dst_sizes) const = 0;
+
+};
+
+B3D_INTERFACE IPipelineLayout : public IDeviceChild
+{
+protected:
+    B3D_APIENTRY ~IPipelineLayout() {}
+
+public:
+    virtual const PIPELINE_LAYOUT_DESC& 
+        B3D_APIENTRY GetDesc() const = 0;
 
 };
 
@@ -5282,14 +5639,31 @@ public:
             , IRootSignature*       _root_signature) = 0;
 
     virtual void
-        B3D_APIENTRY BindDescriptorSet(
+        B3D_APIENTRY BindDescriptorSet0(
               PIPELINE_BIND_POINT               _bind_point
-            , const CMD_BIND_DESCRIPTOR_SET&    _args) = 0;
+            , const CMD_BIND_DESCRIPTOR_SET0&   _args) = 0;
 
+    virtual void
+        B3D_APIENTRY Push32BitConstants0(
+              PIPELINE_BIND_POINT               _bind_point
+            , const CMD_PUSH_32BIT_CONSTANTS0&  _args) = 0;
+
+
+    virtual void
+        B3D_APIENTRY SetPipelineLayout(
+              PIPELINE_BIND_POINT   _bind_point
+            , IPipelineLayout*      _pipeline_layout) = 0;
+
+    virtual void
+        B3D_APIENTRY BindDescriptorSets(
+              PIPELINE_BIND_POINT               _bind_point
+            , const CMD_BIND_DESCRIPTOR_SETS&   _args) = 0;
+    
     virtual void
         B3D_APIENTRY Push32BitConstants(
               PIPELINE_BIND_POINT               _bind_point
             , const CMD_PUSH_32BIT_CONSTANTS&   _args) = 0;
+
 
     virtual void
         B3D_APIENTRY BindIndexBufferView(

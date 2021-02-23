@@ -7,6 +7,8 @@
 #define B3D_ENABLE_CUSTOM_ALLOCATOR
 #define B3D_ENABLE_ALLOCATOR_DEBUG
 
+// マクロ引数のカンマが識別されることを回避します。
+// e.g. B3DMakeUnique( B3D_T(util::StArray<int, 5>) )
 #define B3D_T(...) __VA_ARGS__
 
 #ifdef B3D_ENABLE_ALLOCATOR_DEBUG
@@ -873,15 +875,13 @@ inline UniquePtr<T> MakeUnique(size_t _size, const T& _val, const char* _file, i
 template<typename T>
 inline T* MemCopy(T* _dst, const T* _src)
 {
-    std::memcpy(_dst, _src, sizeof(T));
-    return _dst;
+    return static_cast<T*>(std::memcpy(_dst, _src, sizeof(T)));
 }
 
 template<typename T>
 inline T* MemCopyArray(T* _dst, const T* _src, size_t _array_size)
 {
-    std::memcpy(_dst, _src, sizeof(T) * _array_size);
-    return _dst;
+    return static_cast<T*>(std::memcpy(_dst, _src, sizeof(T) * _array_size));
 }
 
 

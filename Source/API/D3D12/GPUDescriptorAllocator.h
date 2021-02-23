@@ -17,6 +17,8 @@ struct GPU_DESCRIPTOR_RANGE
 
 struct GPU_DESCRIPTOR_ALLOCATION
 {
+    operator bool() { return handles.cpu_begin.ptr; }
+    operator bool() const { return handles.cpu_begin.ptr; }
     D3D12_CPU_DESCRIPTOR_HANDLE OffsetCPUHandle(size_t _index) const { return { handles.cpu_begin.ptr + (size_t(increment_size) * _index) }; }
     D3D12_GPU_DESCRIPTOR_HANDLE OffsetGPUHandle(size_t _index) const { return { handles.gpu_begin.ptr + (size_t(increment_size) * _index) }; }
     GPU_DESCRIPTOR_RANGE handles;
@@ -31,68 +33,103 @@ struct GPU_DESCRIPTOR_ALLOCATION
 class GPUDescriptorAllocator
 {
 public:
-    GPUDescriptorAllocator(ID3D12Device* _device, D3D12_DESCRIPTOR_HEAP_TYPE _type, uint32_t _num_descriptors, NodeMask _creation_node_mask)
-        : device                  { _device }
-        , dh_desc                 { _type, _num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, _creation_node_mask }
-        , dh_increment_size       { _device->GetDescriptorHandleIncrementSize(_type) }
-        , entry                   {}
-        //, allocation_mutex        {}
+    GPUDescriptorAllocator() = default;
+    GPUDescriptorAllocator(  UINT                           _increment_size
+                           , uint32_t                       _num_descriptors
+                           , D3D12_CPU_DESCRIPTOR_HANDLE    _cpu_base_handle
+                           , D3D12_GPU_DESCRIPTOR_HANDLE    _gpu_base_handle
+                           , bool                           _is_enabled_free_descriptor)
+        : dh_increment_size             { _increment_size }
+        , num_descriptors               { _num_descriptors }
+        , cpu_base_handle               { _cpu_base_handle }
+        , gpu_base_handle               { _gpu_base_handle }
+        , free_ranges                   {}
+        , budget                        {}
+        , usage                         {}
+        , is_enabled_free_descriptor    { _is_enabled_free_descriptor }
     {
+        if (is_enabled_free_descriptor)
+            free_ranges = B3DMakeUnique(util::List<GPU_DESCRIPTOR_RANGE>);
+        ResetRanges();
     }
 
     ~GPUDescriptorAllocator() 
     {
     }
 
-    HRESULT Init()
+    void Init(  UINT                        _increment_size
+              , uint32_t                    _num_descriptors
+              , D3D12_CPU_DESCRIPTOR_HANDLE _cpu_base_handle
+              , D3D12_GPU_DESCRIPTOR_HANDLE _gpu_base_handle
+              , bool                        _is_enabled_free_descriptor)
     {
-        return AllocateHeap();
+        dh_increment_size          = _increment_size;
+        num_descriptors            = _num_descriptors;
+        cpu_base_handle            = _cpu_base_handle;
+        gpu_base_handle            = _gpu_base_handle;
+        is_enabled_free_descriptor = _is_enabled_free_descriptor;
+
+        free_ranges.reset();
+        if (is_enabled_free_descriptor)
+            free_ranges = B3DMakeUnique(util::List<GPU_DESCRIPTOR_RANGE>);
+        ResetRanges();
     }
 
-    [[nodiscard]] GPU_DESCRIPTOR_ALLOCATION Allocate(size_t _num_descriptors = 1)
+    [[nodiscard]] GPU_DESCRIPTOR_ALLOCATION Allocate(size_t _num_descriptors = 1, size_t* _dst_offset = nullptr)
     {
-        //std::lock_guard lock(allocation_mutex);
-
         auto size = dh_increment_size * _num_descriptors;
 
         // 要求サイズがヒープの単純な残りサイズを超える。
-        if (entry.usage + size > entry.budget)
+        if (usage + size > budget)
             return GPU_DESCRIPTOR_ALLOCATION{};
 
-        auto&& ranges = entry.free_ranges;
-        for (auto&& it = ranges.begin(), end = ranges.end(); it != end; it++)
+        if (!is_enabled_free_descriptor)
         {
-            auto&& range = *it;
-            if (size > range.CalcSize())
-                continue;
-
-            auto result = GPU_DESCRIPTOR_ALLOCATION{ { range.cpu_begin.ptr, range.gpu_begin.ptr, size }, (uint32_t)_num_descriptors, (uint32_t)dh_increment_size };
-
-            // ディスクリプタが消費するメモリサイズ * 割り当て数 のオフセットを加算
-            range.cpu_begin.ptr += size;
-            range.gpu_begin.ptr += size;
-            entry.usage         += size;
-
-            if (range.cpu_begin.ptr == range.cpu_end().ptr)
-            {
-                // rangeがいっぱいになった
-                ranges.erase(it);
-            }
-
-            return result;
+            // Freeが不要な場合、線形割り当てを使用しフリーリストの探索をスキップします。
+            auto offset = usage;
+            usage += size;
+            if (_dst_offset)
+                *_dst_offset = offset;
+            return GPU_DESCRIPTOR_ALLOCATION{ { cpu_base_handle.ptr + offset, gpu_base_handle.ptr + offset, size }, (uint32_t)_num_descriptors, (uint32_t)dh_increment_size };
         }
+        else
+        {
+            auto&& ranges = *free_ranges;
+            for (auto&& it = ranges.begin(), end = ranges.end(); it != end; it++)
+            {
+                auto&& range = *it;
+                if (size > range.CalcSize())
+                    continue;
 
-        // 要求サイズは満たすが、断片化しており割り当て不能。
-        return GPU_DESCRIPTOR_ALLOCATION{};
+                auto result = GPU_DESCRIPTOR_ALLOCATION{ { range.cpu_begin.ptr, range.gpu_begin.ptr, size }, (uint32_t)_num_descriptors, (uint32_t)dh_increment_size };
+
+                // ディスクリプタが消費するメモリサイズ * 割り当て数 のオフセットを加算
+                range.cpu_begin.ptr += size;
+                range.gpu_begin.ptr += size;
+                usage               += size;
+
+                if (range.cpu_begin.ptr == range.cpu_end().ptr)
+                {
+                    // rangeがいっぱいになった
+                    ranges.erase(it);
+                }
+
+                if (_dst_offset)
+                    *_dst_offset = CalcBeginOffset(result);
+                return result;
+            }
+            // 要求サイズは満たすが、断片化しており割り当て不能。
+            return GPU_DESCRIPTOR_ALLOCATION{};
+        }
     }
 
     void Free(const GPU_DESCRIPTOR_ALLOCATION& _allocation)
     {
-        //std::lock_guard lock(allocation_mutex);
+        B3D_ASSERT(is_enabled_free_descriptor);
 
-        entry.usage -= _allocation.handles.cpu_begin.ptr - _allocation.handles.cpu_end().ptr;
+        usage -= _allocation.handles.cpu_begin.ptr - _allocation.handles.cpu_end().ptr;
 
-        auto&& ranges = entry.free_ranges;
+        auto&& ranges = *free_ranges;
         bool is_found = false;
         for (auto&& it = ranges.begin(), end = ranges.end(); it != end; it++)
         {
@@ -135,16 +172,14 @@ public:
 
     void ResetRanges()
     {
-        B3D_ASSERT(entry.descriptor_heap);
+        budget  = num_descriptors * dh_increment_size;
+        usage   = 0;
 
-        entry.free_ranges.clear();
-
-        // 新規作成したディスクリプタのフリー範囲を追加。
-        entry.cpu_base_handle   = entry.descriptor_heap->GetCPUDescriptorHandleForHeapStart();
-        auto gpu_handle         = entry.descriptor_heap->GetGPUDescriptorHandleForHeapStart();
-        entry.budget    = size_t(dh_desc.NumDescriptors) * dh_increment_size;
-        entry.usage     = 0;
-        entry.free_ranges.emplace_back(GPU_DESCRIPTOR_RANGE{ entry.cpu_base_handle, gpu_handle, entry.budget });
+        if (is_enabled_free_descriptor)
+        {
+            free_ranges->clear();
+            free_ranges->emplace_back(GPU_DESCRIPTOR_RANGE{ cpu_base_handle, gpu_base_handle, budget });
+        }
     }
 
     size_t GetIncrementSize() const
@@ -152,52 +187,20 @@ public:
         return dh_increment_size;
     }
 
-    ID3D12DescriptorHeap* GetD3D12DescriptorHeap() const 
-    {
-        return entry.descriptor_heap;
-    }
-
     size_t CalcBeginOffset(const GPU_DESCRIPTOR_ALLOCATION& _allocation) const
     {
-        return SCAST<size_t>(_allocation.handles.cpu_begin.ptr - entry.cpu_base_handle.ptr) / dh_increment_size;
+        return SCAST<size_t>(_allocation.handles.cpu_begin.ptr - cpu_base_handle.ptr) / dh_increment_size;
     }
 
 private:
-    HRESULT AllocateHeap()
-    {
-        hlp::SafeRelease(entry.descriptor_heap);
-        auto hr = device->CreateDescriptorHeap(&dh_desc, IID_PPV_ARGS(&entry.descriptor_heap));
-        if (FAILED(hr))
-            return hr;
-
-        ResetRanges();
-
-        return hr;
-    }
-
-private:
-    struct DESCRIPTOR_HEAP_ENTRY
-    {
-        ~DESCRIPTOR_HEAP_ENTRY()
-        {
-            usage = 0;
-            budget = 0;
-            hlp::SwapClear(free_ranges);
-            cpu_base_handle = {};
-            hlp::SafeRelease(descriptor_heap);
-        }
-        ID3D12DescriptorHeap*               descriptor_heap;
-        D3D12_CPU_DESCRIPTOR_HANDLE         cpu_base_handle;
-        util::List<GPU_DESCRIPTOR_RANGE>    free_ranges;
-        size_t                              budget;
-        size_t                              usage;
-    };
-    util::ComPtr<ID3D12Device> device;
-    D3D12_DESCRIPTOR_HEAP_DESC dh_desc;
-    size_t                     dh_increment_size;
-
-    DESCRIPTOR_HEAP_ENTRY entry;
-    //std::mutex            allocation_mutex;// CHANGED: pool側に移動
+    size_t                                              dh_increment_size;
+    size_t                                              num_descriptors;
+    D3D12_CPU_DESCRIPTOR_HANDLE                         cpu_base_handle;
+    D3D12_GPU_DESCRIPTOR_HANDLE                         gpu_base_handle;
+    util::UniquePtr<util::List<GPU_DESCRIPTOR_RANGE>>   free_ranges;
+    size_t                                              budget;
+    size_t                                              usage;
+    bool                                                is_enabled_free_descriptor;
 
 };
 

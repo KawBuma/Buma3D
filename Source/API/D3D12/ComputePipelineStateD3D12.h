@@ -11,12 +11,16 @@ protected:
     B3D_APIENTRY ~ComputePipelineStateD3D12();
 
 private:
+    BMRESULT B3D_APIENTRY Init0(DeviceD3D12* _device, RootSignatureD3D12* _signature, const COMPUTE_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY Init(DeviceD3D12* _device, const COMPUTE_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CreateComputeD3D12PipelineState();
     void B3D_APIENTRY CopyDesc(const COMPUTE_PIPELINE_STATE_DESC& _desc);
     void B3D_APIENTRY Uninit();
 
 public:
+    static BMRESULT
+        B3D_APIENTRY Create0(DeviceD3D12* _device, RootSignatureD3D12* _signature, const COMPUTE_PIPELINE_STATE_DESC& _desc, ComputePipelineStateD3D12** _dst);
+
     static BMRESULT
         B3D_APIENTRY Create(DeviceD3D12* _device, const COMPUTE_PIPELINE_STATE_DESC& _desc, ComputePipelineStateD3D12** _dst);
 
@@ -59,12 +63,14 @@ private:
         ~DESC_DATA()
         {
             hlp::SafeRelease(root_signature);
+            hlp::SafeRelease(pipeline_layout);
             hlp::SafeRelease(module);
             B3DSafeDeleteArray(entry_point_name);
         }
-        RootSignatureD3D12* root_signature;
-        ShaderModuleD3D12*  module;
-        char*               entry_point_name;
+        RootSignatureD3D12*     root_signature;
+        PipelineLayoutD3D12*    pipeline_layout;
+        ShaderModuleD3D12*      module;
+        char*                   entry_point_name;
     };
 
 private:
@@ -72,7 +78,7 @@ private:
     util::UniquePtr<util::NameableObjStr>       name;
     DeviceD3D12*                                device;
     COMPUTE_PIPELINE_STATE_DESC                 desc;
-    DESC_DATA                                   desc_data;
+    util::UniquePtr<DESC_DATA>                  desc_data;
     ID3D12Device*                               device12;
     ID3D12PipelineState*                        pipeline;
 

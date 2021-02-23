@@ -58,7 +58,7 @@ public:
         B3D_APIENTRY ResetPoolAndInvalidateAllocatedSets() override;
 
     BMRESULT
-        B3D_APIENTRY AllocateDescriptorSet(IRootSignature* _root_signature, IDescriptorSet** _dst) override;
+        B3D_APIENTRY AllocateDescriptorSets(const DESCRIPTOR_SET_ALLOCATE_DESC& _desc, IDescriptorSet** _dst_descriptor_sets) override;
 
     VkDescriptorPool
         B3D_APIENTRY GetVkDescriptorPool() const;
@@ -66,13 +66,18 @@ public:
     uint64_t
         B3D_APIENTRY GetResetID();
 
-    // DescriptorSetVk内部で使用します。
+    
     BMRESULT
-        B3D_APIENTRY AllocateDescriptors(DescriptorSetVk* _set);
+        B3D_APIENTRY AllocateDescriptors(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes);
 
-    // DescriptorSetVk内部で使用します。
     void
-        B3D_APIENTRY FreeDescriptors(DescriptorSetVk* _set);
+        B3D_APIENTRY FreeDescriptors(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes);
+
+private:
+    bool B3D_APIENTRY IsAllocatable(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes) const;
+    void B3D_APIENTRY DecrementRemains(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes);
+    void B3D_APIENTRY IncrementRemains(const util::DyArray<DESCRIPTOR_POOL_SIZE>& _pool_sizes);
+    BMRESULT B3D_APIENTRY AllocateVkDescriptorSets(const buma3d::DESCRIPTOR_SET_ALLOCATE_DESC& _desc, VkDescriptorSet* _setsvk_data);
 
 private:
     struct DESC_DATA
@@ -81,19 +86,19 @@ private:
     };
 
 private:
-    std::atomic_uint32_t                                            ref_count;
-    util::UniquePtr<util::NameableObjStr>                           name;
-    DeviceVk*                                                       device;
-    DESCRIPTOR_POOL_DESC                                            desc;
-    DESC_DATA                                                       desc_data;
-    util::StArray<uint32_t, DESCRIPTOR_TYPE_NUM_TYPES>              pool_remains;
-    std::mutex                                                      allocation_mutex;
-    std::atomic_uint32_t                                            allocation_count;
-    std::atomic_uint64_t                                            reset_id;
-    VkDevice                                                        vkdevice;
-    const InstancePFN*                                              inspfn;
-    const DevicePFN*                                                devpfn;
-    VkDescriptorPool                                                descriptor_pool;
+    std::atomic_uint32_t                                    ref_count;
+    util::UniquePtr<util::NameableObjStr>                   name;
+    DeviceVk*                                               device;
+    DESCRIPTOR_POOL_DESC                                    desc;
+    util::UniquePtr<DESC_DATA>                              desc_data;
+    DescriptorHeapVk*                                       parent_heap;
+    util::StArray<uint32_t, DESCRIPTOR_TYPE_NUM_TYPES>      pool_remains;
+    std::uint32_t                                           allocation_count;
+    std::uint64_t                                           reset_id;
+    VkDevice                                                vkdevice;
+    const InstancePFN*                                      inspfn;
+    const DevicePFN*                                        devpfn;
+    VkDescriptorPool                                        descriptor_pool;
 
 };
 

@@ -4,19 +4,41 @@
 namespace buma3d
 {
 
+namespace /*anonymous*/
+{
+
+inline D3D12_DESCRIPTOR_HEAP_TYPE ToHeapType(D3D12_DESCRIPTOR_RANGE_TYPE _type)
+{
+    switch (_type)
+    {
+    case D3D12_DESCRIPTOR_RANGE_TYPE_SRV:
+    case D3D12_DESCRIPTOR_RANGE_TYPE_UAV:
+    case D3D12_DESCRIPTOR_RANGE_TYPE_CBV:
+        return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
+    case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER:
+        return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+
+    default:
+        return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    }
+}
+
+}// namespace /*anonymous*/
+
 B3D_APIENTRY DescriptorSetD3D12::DescriptorSetD3D12()
-    : ref_count                 { 1 }
-    , name                      {}
-    , device                    {}
-    , allocation_id             {}
-    , reset_id                  {}
-    , device12                  {}
-    , pool                      {}
-    , signature                 {}
-    , allocations               {}
-    , descriptor_batch          {}
-    , copy_src_descriptors      {}
-    , update_descriptors_caches {}
+    : ref_count         { 1 }
+    , name              {}
+    , device            {}
+    , allocation_id     {}
+    , reset_id          {}
+    , device12          {}
+    , heap              {}
+    , pool              {}
+    , set_layout        {}
+    , allocations       {}
+    , descriptor_batch  {}
+    , update_cache      {}
 {     
       
 }
@@ -27,19 +49,24 @@ B3D_APIENTRY DescriptorSetD3D12::~DescriptorSetD3D12()
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSetD3D12::Init(DescriptorPoolD3D12* _pool, RootSignatureD3D12* _signature)
+B3D_APIENTRY DescriptorSetD3D12::Init(DescriptorSetLayoutD3D12* _layout, DescriptorPoolD3D12* _pool)
 {
     (device = _pool->GetDevice()->As<DeviceD3D12>())->AddRef();
     device12 = device->GetD3D12Device();
 
-    (pool = _pool)->AddRef();
-    (signature = _signature)->AddRef();
-
-    allocation_id = pool->GetCurrentAllocationCount() + 1;
-    reset_id      = pool->GetResetID();
+    (heap       = _pool->GetDesc().heap->As<DescriptorHeapD3D12>())->AddRef();
+    (pool       = _pool)->AddRef();
+    (set_layout = _layout)->AddRef();
 
     B3D_RET_IF_FAILED(AllocateDescriptors());
+
+    allocation_id = pool->GetCurrentAllocationCount();
+    reset_id      = pool->GetResetID();
+
     CreateSetDescriptorBatch();
+
+    // ディスクリプタ書き込みやコピー時に使用するキャッシュオブジェクトを作成。
+    update_cache = B3DMakeUniqueArgs(DescriptorSetUpdateCache, _layout, this, allocations);
 
     return BMRESULT_SUCCEED;
 }
@@ -47,49 +74,49 @@ B3D_APIENTRY DescriptorSetD3D12::Init(DescriptorPoolD3D12* _pool, RootSignatureD
 BMRESULT
 B3D_APIENTRY DescriptorSetD3D12::AllocateDescriptors()
 {
-    return pool->AllocateDescriptors(this);
+    auto&& info = set_layout->GetRootParameters12Info();
+    if (info.num_cbv_srv_uav_descrptors)
+        allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] = B3DNew(DescriptorPoolD3D12::POOL_ALLOCATION);
+    if (info.num_sampler_descrptors)
+        allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER] = B3DNew(DescriptorPoolD3D12::POOL_ALLOCATION);
+
+    B3D_RET_IF_FAILED(pool->AllocateDescriptors(set_layout->GetRootParameters12Info().pool_sizes
+                                                , info.num_cbv_srv_uav_descrptors                    , info.num_sampler_descrptors
+                                                , allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]));
+
+    return BMRESULT_SUCCEED;
 }
 
 void
 B3D_APIENTRY DescriptorSetD3D12::CreateSetDescriptorBatch()
 {
-    auto&& root_sig_desc = signature->GetDesc();
-    auto&& root_parameter_counts = signature->GetRootParameterCounts();
-    descriptor_batch.descriptor_batch       .resize(root_sig_desc.num_parameters);
-    descriptor_batch.constants_batch        .reserve(root_parameter_counts[ROOT_PARAMETER_TYPE_PUSH_32BIT_CONSTANTS]);
-    descriptor_batch.root_descriptor_batch  .reserve(root_parameter_counts[ROOT_PARAMETER_TYPE_DYNAMIC_DESCRIPTOR]);
-    descriptor_batch.descriptor_table_batch .reserve(root_parameter_counts[ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE]);
-
-    auto&& total_num_descriptors_per_tables = signature->GetTotalNumDescriptorsCountPerTables();
-    uint32_t descriptor_handle_offsets[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1]{};
-    for (uint32_t i_root_param_index = 0; i_root_param_index < root_sig_desc.num_parameters; i_root_param_index++)
+    auto&& info = set_layout->GetRootParameters12Info();
+    auto&& batches = *(descriptor_batch = B3DMakeUnique(DESCRIPTOR_BATCH));
+    batches.descriptor_batch      .reserve(info.root_parameters.size());
+    batches.root_descriptor_batch .reserve(info.num_dynamic_parameters);
+    batches.descriptor_table_batch.reserve((info.descriptor_table ? 1 : 0) + (info.sampler_table ? 1 : 0));
+    auto root_parameters = info.root_parameters.data();
+    for (uint32_t i = 0, size = (uint32_t)info.root_parameters.size(); i < size; i++)
     {
-        auto&& rp    = root_sig_desc.parameters[i_root_param_index];
-        auto&& batch = descriptor_batch.descriptor_batch[i_root_param_index];
-        switch (rp.type)
+        auto&& rp = root_parameters[i];
+        switch (rp.ParameterType)
         {
-        case buma3d::ROOT_PARAMETER_TYPE_PUSH_32BIT_CONSTANTS:
-            batch.reset(
-                descriptor_batch.constants_batch.emplace_back(
-                    B3DNewArgs(SetConstantsBatch, i_root_param_index, D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS)));
-            break;
-            
-        case buma3d::ROOT_PARAMETER_TYPE_DYNAMIC_DESCRIPTOR:
-            batch.reset(
-                descriptor_batch.root_descriptor_batch.emplace_back(
-                    B3DNewArgs(SetRootDescriptorBatch, i_root_param_index, util::GetNativeRootParameterTypeForDynamicDescriptor(rp.dynamic_descriptor.type))));
-            break;
-
-        case buma3d::ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
+        case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
         {
-            auto&& total_num_descriptors = total_num_descriptors_per_tables.at(i_root_param_index);
-            batch.reset(
-                descriptor_batch.descriptor_table_batch.emplace_back(
-                    B3DNewArgs(SetDescriptorTableBatch, i_root_param_index, D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE
-                               , allocations[total_num_descriptors.type].OffsetGPUHandle(descriptor_handle_offsets[total_num_descriptors.type]))));
-            descriptor_handle_offsets[total_num_descriptors.type] += total_num_descriptors.total_num_descriptors;
+            auto heap_type = ToHeapType(rp.DescriptorTable.pDescriptorRanges[0].RangeType);
+            batches.descriptor_batch.emplace_back(
+                batches.descriptor_table_batch.emplace_back(
+                    B3DNewArgs(SetDescriptorTableBatch, i, D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, allocations[heap_type]->allocation.handles.gpu_begin)));
             break;
         }
+
+        case D3D12_ROOT_PARAMETER_TYPE_CBV:
+        case D3D12_ROOT_PARAMETER_TYPE_SRV:
+        case D3D12_ROOT_PARAMETER_TYPE_UAV:
+            batches.descriptor_batch.emplace_back(
+                batches.root_descriptor_batch.emplace_back(
+                    B3DNewArgs(SetRootDescriptorBatch, i, rp.ParameterType)));
+            break;
 
         default:
             break;
@@ -100,34 +127,35 @@ B3D_APIENTRY DescriptorSetD3D12::CreateSetDescriptorBatch()
 void
 B3D_APIENTRY DescriptorSetD3D12::Uninit()
 {
-    name.reset();
+    descriptor_batch.reset();
 
-    descriptor_batch = {};
-    update_descriptors_caches = {};
     if (IsValid() && (pool->GetDesc().flags & DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SET))
     {
-        pool->FreeDescriptors(this);
+        pool->FreeDescriptors(set_layout->GetRootParameters12Info().pool_sizes
+                              , allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]
+                              , allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]);
     }
-    else
-    {
-        allocations.fill({});
-    }
+    for (auto& i : allocations)
+    { B3DSafeDelete(i); }
 
     allocation_id = 0;
     reset_id      = 0;
 
     hlp::SafeRelease(pool);
-    hlp::SafeRelease(signature);
+    hlp::SafeRelease(heap);
+    hlp::SafeRelease(set_layout);
     hlp::SafeRelease(device);
     device12 = nullptr;
+
+    name.reset();
 }
 
 BMRESULT 
-B3D_APIENTRY DescriptorSetD3D12::Create(DescriptorPoolD3D12* _pool, RootSignatureD3D12* _signature, DescriptorSetD3D12** _dst)
+B3D_APIENTRY DescriptorSetD3D12::Create(DescriptorSetLayoutD3D12* _layout, DescriptorPoolD3D12* _pool, DescriptorSetD3D12** _dst)
 {
     util::Ptr<DescriptorSetD3D12> ptr;
     ptr.Attach(B3DCreateImplementationClass(DescriptorSetD3D12));
-    B3D_RET_IF_FAILED(ptr->Init(_pool, _signature));
+    B3D_RET_IF_FAILED(ptr->Init(_layout, _pool));
 
     *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;
@@ -183,10 +211,10 @@ B3D_APIENTRY DescriptorSetD3D12::GetDevice() const
     return device;
 }
 
-IRootSignature*
-B3D_APIENTRY DescriptorSetD3D12::GetRootSignature() const
+IDescriptorSetLayout*
+B3D_APIENTRY DescriptorSetD3D12::GetDescriptorSetLayout() const
 {
-    return signature;
+    return set_layout;
 }
 
 IDescriptorPool*
@@ -198,44 +226,33 @@ B3D_APIENTRY DescriptorSetD3D12::GetPool() const
 bool
 B3D_APIENTRY DescriptorSetD3D12::IsValid() const
 {
-    return reset_id == pool->GetResetID();
+    return pool != nullptr && reset_id == pool->GetResetID();
 }
 
 BMRESULT
 B3D_APIENTRY DescriptorSetD3D12::CopyDescriptorSet(IDescriptorSet* _src)
-{
-    if (signature != _src->GetRootSignature())
+{    
+    auto src = _src->As<DescriptorSetD3D12>();
+    if (set_layout != src->GetDescriptorSetLayout())
         return BMRESULT_FAILED_INVALID_PARAMETER;
 
-    if (!(_src->GetPool()->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))
-        return BMRESULT_FAILED_INVALID_PARAMETER;
-
-    auto CopySimple = [this](auto& _dst_allocation, const DescriptorPoolD3D12::COPY_SRC_HANDLES& _src_allocation, D3D12_DESCRIPTOR_HEAP_TYPE _type)
-    { if (_src_allocation.num_descriptors) device12->CopyDescriptorsSimple(_src_allocation.num_descriptors, _dst_allocation.OffsetCPUHandle(0), _src_allocation.OffsetCPUHandle(0), _type); };
-
-    if (pool->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
+    if (util::IsEnabledDebug(this))
     {
-        auto&& copy_src_allocations = _src->As<DescriptorSetD3D12>()->copy_src_descriptors->data();
-        auto&& copy_dst_allocations = copy_src_descriptors->data();
-        CopySimple(copy_dst_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] , copy_src_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]  , D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        CopySimple(copy_dst_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]     , copy_src_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]      , D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-        CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]          , copy_dst_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]  , D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]              , copy_dst_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]      , D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+        auto&& src_desc = src->GetPool()->GetDesc();
+        auto&& dst_desc = pool->GetDesc();
+        B3D_RET_IF_FAILED(CheckPoolCompatibility(src_desc, dst_desc));
     }
-    else
-    {
-        auto&& src_allocations = _src->As<DescriptorSetD3D12>()->copy_src_descriptors->data();
-        CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]          , src_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]       , D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]              , src_allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]           , D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-    }
+
+    update_cache->CopyDescriptorSet(src);
+
+    // 動的ディスクリプタをコピー
+    auto   dst_batch = descriptor_batch->root_descriptor_batch.data();
+    auto&& src_batch = *_src->As<DescriptorSetD3D12>()->descriptor_batch;
+    uint32_t cnt = 0;
+    for (auto& i_src : src_batch.root_descriptor_batch)
+        dst_batch[cnt++]->CopyRootDescriptor(i_src);
 
     return BMRESULT_SUCCEED;
-}
-
-const util::StArray<GPU_DESCRIPTOR_ALLOCATION, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1>&
-B3D_APIENTRY DescriptorSetD3D12::GetAllocations() const
-{
-    return allocations;
 }
 
 uint32_t
@@ -253,216 +270,163 @@ B3D_APIENTRY DescriptorSetD3D12::GetResetID() const
 const DescriptorSetD3D12::DESCRIPTOR_BATCH&
 B3D_APIENTRY DescriptorSetD3D12::GetDescriptorBatch() const
 {
-    return descriptor_batch;
+    return *descriptor_batch;
+}
+
+DescriptorSetUpdateCache&
+B3D_APIENTRY DescriptorSetD3D12::GetUpdateCache() const
+{
+    return *update_cache;
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSetD3D12::WriteDescriptors(const WRITE_DESCRIPTOR_SET& _writes)
+B3D_APIENTRY DescriptorSetD3D12::VerifyWriteDescriptorSets(const WRITE_DESCRIPTOR_SET& _write)
 {
-    auto AddCopyRanges = [&](auto& _dst_allocations)
-    {
-        update_descriptors_caches[0].ResetRangeCount();
-        update_descriptors_caches[1].ResetRangeCount();
+    auto&& l = set_layout->GetDesc();
 
-        auto&& dst_rsdesc = signature->GetDesc();
-        auto&& total_num_descriptors_per_tables = signature->GetTotalNumDescriptorsCountPerTables();
-        for (uint32_t i_dt = 0; i_dt < _writes.num_descriptor_tables; i_dt++)
+    auto CheckCommon = [&](const auto& _b)
+    {
+        if (_b.dst_binding_index >= l.num_bindings)
+            return BMRESULT_FAILED_OUT_OF_RANGE;
+
+        auto&& lb = l.bindings[_b.dst_binding_index];
+        if (lb.static_sampler)
         {
-            auto&& write_dt              = _writes.descriptor_tables[i_dt];
-            auto&& total_num_descriptors = total_num_descriptors_per_tables.at(write_dt.dst_root_parameter_index);
-            auto&& dst_allocation        = _dst_allocations[total_num_descriptors.type];
-            auto   abs_offsets           = total_num_descriptors.absolute_handle_offsets.data();
-            auto&& cache                 = update_descriptors_caches[total_num_descriptors.type];
-            for (uint32_t i_write_range = 0; i_write_range < write_dt.num_ranges; i_write_range++)
-            {
-                auto&& write_range = write_dt.ranges[i_write_range];
-                auto dst_handle = dst_allocation.OffsetCPUHandle(SCAST<size_t>(abs_offsets[write_range.dst_range_index] + write_range.dst_first_array_element));
-                cache.AddWriteRange(write_range, dst_handle);
-            }
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                              , "書き込み先のバインディングには静的サンプラが含まれていない必要があります。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
         }
-
-        update_descriptors_caches[0].ApplyCopy(device12, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        update_descriptors_caches[1].ApplyCopy(device12, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+        return BMRESULT_SUCCEED;
     };
-
-    if (pool->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
+    auto CheckViewCompatibility = [&](const DESCRIPTOR_SET_LAYOUT_BINDING& _lb, IView* _view)
     {
-        AddCopyRanges(*copy_src_descriptors);
+        if (!IsCompatibleView(_lb, _view))
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                              , "互換性の無いIViewが指定されました。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
+        }
+        return BMRESULT_SUCCEED;
+    };
+    for (uint32_t i_binding = 0; i_binding < _write.num_bindings; i_binding++)
+    {
+        auto&& b = _write.bindings[i_binding];
+        B3D_RET_IF_FAILED(CheckCommon(b));
 
-        auto CopySimple = [this](auto& _dst_allocation, const DescriptorPoolD3D12::COPY_SRC_HANDLES& _src_allocation, D3D12_DESCRIPTOR_HEAP_TYPE _type)
-        { if (_src_allocation.num_descriptors) device12->CopyDescriptorsSimple(_src_allocation.num_descriptors, _dst_allocation.OffsetCPUHandle(0), _src_allocation.OffsetCPUHandle(0), _type); };
-        CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], copy_src_descriptors->data()[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]    , copy_src_descriptors->data()[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]    , D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+        auto&& lb = l.bindings[b.dst_binding_index];
+        if ((b.dst_first_array_element + b.num_descriptors) > lb.num_descriptors)
+            return BMRESULT_FAILED_OUT_OF_RANGE;
+
+        for (uint32_t i = 0; i < b.num_descriptors; i++)
+        {
+            B3D_RET_IF_FAILED(CheckViewCompatibility(lb, b.src_views[i]));
+        }
     }
-    else
+    for (uint32_t i_binding = 0; i_binding < _write.num_dynamic_bindings; i_binding++)
     {
-        AddCopyRanges(allocations);
-    }
-
-    for (uint32_t i = 0; i < _writes.num_dynamic_descriptors; i++)
-    {
-        auto&& dd = _writes.dynamic_descriptors[i];
-
-        auto root_descriptor = *dd.src_view->DynamicCastFromThis<IViewD3D12>()
-            ->GetGpuVirtualAddress() + dd.src_view_buffer_offset;
-
-        SCAST<SetRootDescriptorBatch*>(descriptor_batch.descriptor_batch[dd.dst_root_parameter_index].get())
-            ->WriteRootDescriptor(root_descriptor);
+        auto&& db = _write.dynamic_bindings[i_binding];
+        B3D_RET_IF_FAILED(CheckCommon(db));
+        B3D_RET_IF_FAILED(CheckViewCompatibility(l.bindings[db.dst_binding_index], db.src_view));
     }
 
     return BMRESULT_SUCCEED;
 }
 
 BMRESULT
-B3D_APIENTRY DescriptorSetD3D12::CopyDescriptors(const COPY_DESCRIPTOR_SET& _copies)
+B3D_APIENTRY DescriptorSetD3D12::VerifyCopyDescriptorSets(const COPY_DESCRIPTOR_SET& _copy)
 {
-    auto src_set = _copies.src_set->As<DescriptorSetD3D12>();
-    if (!(src_set->GetPool()->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))
+    auto src_set = _copy.src_set->As<DescriptorSetD3D12>();
+    auto dst_set = _copy.dst_set->As<DescriptorSetD3D12>();
+
+    auto&& src_desc = src_set->GetPool()->GetDesc();
+    auto&& dst_desc = dst_set->GetPool()->GetDesc();
+    B3D_RET_IF_FAILED(CheckPoolCompatibility(src_desc, dst_desc));
+
+    auto&& src_l = src_set->GetDescriptorSetLayout()->GetDesc();
+    auto&& dst_l = dst_set->GetDescriptorSetLayout()->GetDesc();
+    for (uint32_t i_binding = 0; i_binding < _copy.num_bindings; i_binding++)
+    {
+        auto&& b = _copy.bindings[i_binding];
+
+        if (b.src_binding_index >= src_l.num_bindings ||
+            b.dst_binding_index >= dst_l.num_bindings)
+            return BMRESULT_FAILED_OUT_OF_RANGE;
+
+        auto&& src_lb = src_l.bindings[b.src_binding_index];
+        auto&& dst_lb = dst_l.bindings[b.dst_binding_index];
+        if ((b.src_first_array_element + b.num_descriptors) > src_lb.num_descriptors ||
+            (b.dst_first_array_element + b.num_descriptors) > dst_lb.num_descriptors)
+            return BMRESULT_FAILED_OUT_OF_RANGE;
+
+        if (src_lb.descriptor_type != dst_lb.descriptor_type)
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                              , "コピー先、コピー元のバインディングのディスクリプタタイプは同一である必要があります。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
+        }
+        if (src_lb.static_sampler || dst_lb.static_sampler)
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                              , "コピー先、コピー元のバインディングには静的サンプラが含まれていない必要があります。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
+        }
+    }
+
+    return BMRESULT_SUCCEED;
+}
+
+DescriptorHeapD3D12*
+B3D_APIENTRY DescriptorSetD3D12::GetHeap() const
+{
+    return heap;
+}
+
+inline BMRESULT DescriptorSetD3D12::CheckPoolCompatibility(const DESCRIPTOR_POOL_DESC& _src_desc, const DESCRIPTOR_POOL_DESC& _dst_desc)
+{
+    if ((_src_desc.flags & DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOL) !=
+        (_dst_desc.flags & DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOL))
+    {
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                          , "COPY_DESCRIPTOR_SET::src_setとdst_setが割り当てられたプールには同一のDESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOLフラグの状態が指定されている必要があります。");
         return BMRESULT_FAILED_INVALID_PARAMETER;
-
-    auto AddCopyRanges = [&](auto& _dst_allocations)
-    {
-        update_descriptors_caches[0].ResetRangeCount();
-        update_descriptors_caches[1].ResetRangeCount();
-
-        auto&& src_allocations                      = src_set->copy_src_descriptors->data();
-        auto&& src_total_num_descriptors_per_tables = src_set->GetRootSignature()->As<RootSignatureD3D12>()->GetTotalNumDescriptorsCountPerTables();
-        auto&& dst_total_num_descriptors_per_tables = signature->GetTotalNumDescriptorsCountPerTables();
-        for (uint32_t i_dt = 0; i_dt < _copies.num_descriptor_tables; i_dt++)
-        {
-            auto&& copy_dt = _copies.descriptor_tables[i_dt];
-            auto&& src_total_num_descriptors = src_total_num_descriptors_per_tables.at(copy_dt.src_root_parameter_index);
-            auto&& dst_total_num_descriptors = dst_total_num_descriptors_per_tables.at(copy_dt.dst_root_parameter_index);
-            auto   src_abs_offsets           = src_total_num_descriptors.absolute_handle_offsets.data();
-            auto   dst_abs_offsets           = dst_total_num_descriptors.absolute_handle_offsets.data();
-            auto&& src_allocation            = src_allocations[dst_total_num_descriptors.type];
-            auto&& dst_allocation            = _dst_allocations[dst_total_num_descriptors.type];
-            auto&& cache                     = update_descriptors_caches[dst_total_num_descriptors.type];
-            for (uint32_t i_copy_range = 0; i_copy_range < copy_dt.num_ranges; i_copy_range++)
-            {
-                auto&& src_range = copy_dt.src_ranges[i_copy_range];
-                auto&& dst_range = copy_dt.dst_ranges[i_copy_range];
-                cache.AddCopyRange(  copy_dt.num_descriptors[i_copy_range]
-                                   , dst_allocation.OffsetCPUHandle(dst_abs_offsets[dst_range.range_index] + dst_range.first_array_element)
-                                   , src_allocation.OffsetCPUHandle(src_abs_offsets[src_range.range_index] + src_range.first_array_element));
-            }
-        }
-
-        update_descriptors_caches[0].ApplyCopy(device12, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        update_descriptors_caches[1].ApplyCopy(device12, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-    };
-
-    if (pool->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC)
-    {
-        AddCopyRanges(*copy_src_descriptors);
-
-        auto CopySimple = [this](auto& _dst_allocation, const DescriptorPoolD3D12::COPY_SRC_HANDLES& _src_allocation, D3D12_DESCRIPTOR_HEAP_TYPE _type)
-        { if (_src_allocation.num_descriptors) device12->CopyDescriptorsSimple(_src_allocation.num_descriptors, _dst_allocation.OffsetCPUHandle(0), _src_allocation.OffsetCPUHandle(0), _type); };
-        CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], copy_src_descriptors->data()[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        CopySimple(allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]    , copy_src_descriptors->data()[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER]    , D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     }
-    else
+    if (!(_src_desc.flags & DESCRIPTOR_POOL_FLAG_COPY_SRC))
     {
-        AddCopyRanges(allocations);
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
+                          , "COPY_DESCRIPTOR_SET::src_setが割り当てられたプールにはDESCRIPTOR_POOL_FLAG_COPY_SRCフラグが指定されている必要があります。");
+        return BMRESULT_FAILED_INVALID_PARAMETER;
     }
-
-    auto dst_batch = descriptor_batch.descriptor_batch.data();
-    auto src_batch = src_set->GetDescriptorBatch().descriptor_batch.data();
-    for (uint32_t i = 0; i < _copies.num_dynamic_descriptors; i++)
-    {
-        auto&& dd = _copies.dynamic_descriptors[i];
-        SCAST<SetRootDescriptorBatch*>(dst_batch[dd.dst_root_parameter_index].get())
-            ->CopyRootDescriptor(src_batch[dd.src_root_parameter_index].get());
-    }
-
     return BMRESULT_SUCCEED;
 }
 
-
-DescriptorSetD3D12::UpdateDescriptorsCache::UpdateDescriptorsCache()
-    : src_cache_size    {}
-    , dst_cache_size    {}
-    , src_sizees        {}
-    , dst_sizees        {}
-    , copy_src          {}
-    , copy_dst          {}
-    , current_src_size  {}
-    , current_dst_size  {}
-    , src_sizees_data   {}
-    , dst_sizees_data   {}
-    , copy_src_data     {}
-    , copy_dst_data     {}
+inline bool DescriptorSetD3D12::IsCompatibleView(const DESCRIPTOR_SET_LAYOUT_BINDING& _lb, IView* _view)
 {
-}
-
-DescriptorSetD3D12::UpdateDescriptorsCache::~UpdateDescriptorsCache()
-{
-}
-
-void DescriptorSetD3D12::UpdateDescriptorsCache::ResetRangeCount()
-{
-    current_src_size = 0;
-    current_dst_size = 0;
-}
-
-void DescriptorSetD3D12::UpdateDescriptorsCache::ResizeIf(uint32_t _dst_num_descriptors, uint32_t _src_num_descriptors)
-{
-    if (_src_num_descriptors + current_src_size > src_cache_size)
+    auto&& view_desc = _view->GetViewDesc();
+    auto IsInRange   = [](auto _tgt, auto _min, auto _max) { return _tgt >= _min && _tgt <= _max; };
+    auto IsBufferDim = [](auto _dim) { return (_dim == VIEW_DIMENSION_BUFFER_STRUCTURED || _dim == VIEW_DIMENSION_BUFFER_BYTEADDRESS); };
+    switch (_lb.descriptor_type)
     {
-        src_sizees.resize(_src_num_descriptors + current_src_size + 16/*reservation*/);
-        copy_src  .resize(_src_num_descriptors + current_src_size + 16/*reservation*/);
-        src_cache_size  = (uint32_t)src_sizees.size();
-        src_sizees_data = src_sizees.data();
-        copy_src_data   = copy_src  .data();
+    case buma3d::DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        return view_desc.type == VIEW_TYPE_SHADER_RESOURCE                                                &&
+               IsInRange(view_desc.dimension, VIEW_DIMENSION_TEXTURE_2D, VIEW_DIMENSION_TEXTURE_2D_ARRAY) &&
+               !(_view->As<IShaderResourceView>()->GetDesc().flags & SHADER_RESOURCE_VIEW_FLAG_DENY_INPUT_ATTACHMENT);
+
+    case buma3d::DESCRIPTOR_TYPE_CBV                        : return view_desc.type == VIEW_TYPE_CONSTANT_BUFFER;
+    case buma3d::DESCRIPTOR_TYPE_CBV_DYNAMIC                : return view_desc.type == VIEW_TYPE_CONSTANT_BUFFER;
+    case buma3d::DESCRIPTOR_TYPE_SRV_TEXTURE                : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && IsInRange(view_desc.dimension, VIEW_DIMENSION_TEXTURE_1D, VIEW_DIMENSION_TEXTURE_CUBE_ARRAY);
+    case buma3d::DESCRIPTOR_TYPE_UAV_TEXTURE                : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && IsInRange(view_desc.dimension, VIEW_DIMENSION_TEXTURE_1D, VIEW_DIMENSION_TEXTURE_CUBE_ARRAY);
+    case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER                 : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && IsBufferDim(view_desc.dimension);
+    case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER                 : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && IsBufferDim(view_desc.dimension);
+    case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER_DYNAMIC         : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && IsBufferDim(view_desc.dimension);
+    case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER_DYNAMIC         : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && IsBufferDim(view_desc.dimension);
+    case buma3d::DESCRIPTOR_TYPE_SRV_TYPED_BUFFER           : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && view_desc.dimension == VIEW_DIMENSION_BUFFER_TYPED;
+    case buma3d::DESCRIPTOR_TYPE_UAV_TYPED_BUFFER           : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && view_desc.dimension == VIEW_DIMENSION_BUFFER_TYPED;
+    case buma3d::DESCRIPTOR_TYPE_SRV_ACCELERATION_STRUCTURE : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && view_desc.dimension == VIEW_DIMENSION_BUFFER_ACCELERATION_STRUCTURE;
+    case buma3d::DESCRIPTOR_TYPE_SAMPLER                    : return view_desc.type == VIEW_TYPE_SAMPLER;
+
+    default:
+        return false;
     }
-    if (_dst_num_descriptors + current_dst_size > dst_cache_size)
-    {
-        dst_sizees.resize(_dst_num_descriptors + current_dst_size + 8/*reservation*/);
-        copy_dst  .resize(_dst_num_descriptors + current_dst_size + 8/*reservation*/);
-        dst_cache_size  = (uint32_t)src_sizees.size();
-        dst_sizees_data = dst_sizees.data();
-        copy_dst_data   = copy_dst  .data();
-    }
-}
-
-void DescriptorSetD3D12::UpdateDescriptorsCache::AddWriteRange(const WRITE_DESCRIPTOR_RANGE& _write_range, D3D12_CPU_DESCRIPTOR_HANDLE _dst_handle)
-{
-    ResizeIf(_write_range.num_descriptors, 1);
-    AddRangeDst(_write_range.num_descriptors, _dst_handle);
-
-    for (uint32_t i = 0; i < _write_range.num_descriptors; i++)
-        AddRangeSrc(1, _write_range.src_views[i]->DynamicCastFromThis<IViewD3D12>()->GetCpuDescriptorAllocation()->handle);
-}
-
-void DescriptorSetD3D12::UpdateDescriptorsCache::AddCopyRange(uint32_t _num_descriptors, D3D12_CPU_DESCRIPTOR_HANDLE _dst_handle, D3D12_CPU_DESCRIPTOR_HANDLE _src_handle)
-{
-    ResizeIf(_num_descriptors, _num_descriptors);
-    AddRangeDst(_num_descriptors, _dst_handle);
-    AddRangeSrc(_num_descriptors, _src_handle);
-}
-
-void DescriptorSetD3D12::UpdateDescriptorsCache::ApplyCopy(ID3D12Device* _device, D3D12_DESCRIPTOR_HEAP_TYPE _type)
-{
-    if (current_dst_size == 0)
-        return;
-
-    _device->CopyDescriptors(  current_dst_size, copy_dst_data, dst_sizees_data
-                             , current_src_size, copy_src_data, src_sizees_data
-                             , _type);
-}
-
-void DescriptorSetD3D12::UpdateDescriptorsCache::AddRangeSrc(uint32_t _num_descriptors, D3D12_CPU_DESCRIPTOR_HANDLE _src_handle)
-{
-    src_sizees_data[current_src_size] = _num_descriptors;
-    copy_src_data  [current_src_size] = _src_handle;
-    current_src_size++;
-}
-
-void DescriptorSetD3D12::UpdateDescriptorsCache::AddRangeDst(uint32_t _num_descriptors, D3D12_CPU_DESCRIPTOR_HANDLE _dst_handle)
-{
-    dst_sizees_data [current_dst_size] = _num_descriptors;
-    copy_dst_data   [current_dst_size] = _dst_handle;
-    current_dst_size++;
 }
 
 

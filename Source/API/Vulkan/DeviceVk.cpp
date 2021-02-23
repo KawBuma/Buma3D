@@ -1166,6 +1166,67 @@ B3D_APIENTRY DeviceVk::CreateRootSignature(const ROOT_SIGNATURE_DESC& _desc, IRo
 }
 
 BMRESULT
+B3D_APIENTRY DeviceVk::CreateDescriptorPool0(const DESCRIPTOR_POOL_DESC0& _desc, IDescriptorPool0** _dst)
+{
+    util::Ptr<DescriptorPool0Vk> ptr;
+    B3D_RET_IF_FAILED(DescriptorPool0Vk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::UpdateDescriptorSets0(const UPDATE_DESCRIPTOR_SET_DESC0& _update_desc)
+{
+    for (uint32_t i = 0; i < _update_desc.num_write_descriptor_sets; i++)
+    {
+        auto&& write = _update_desc.write_descriptor_sets[i];
+        auto dst_set = write.dst_set->As<DescriptorSet0Vk>();
+        B3D_RET_IF_FAILED(dst_set->AddWriteDescriptors(write));
+        dst_set->UpdateDescriptors();
+    }
+    for (uint32_t i = 0; i < _update_desc.num_copy_descriptor_sets; i++)
+    {
+        auto&& copy = _update_desc.copy_descriptor_sets[i];
+        auto dst_set = copy.dst_set->As<DescriptorSet0Vk>();
+        B3D_RET_IF_FAILED(dst_set->AddCopyDescriptors(copy));
+        dst_set->UpdateDescriptors();
+    }
+
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreateDescriptorSetLayout(const DESCRIPTOR_SET_LAYOUT_DESC& _desc, IDescriptorSetLayout** _dst)
+{
+    util::Ptr<DescriptorSetLayoutVk> ptr;
+    B3D_RET_IF_FAILED(DescriptorSetLayoutVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreatePipelineLayout(const PIPELINE_LAYOUT_DESC& _desc, IPipelineLayout** _dst)
+{
+    util::Ptr<PipelineLayoutVk> ptr;
+    B3D_RET_IF_FAILED(PipelineLayoutVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreateDescriptorHeap(const DESCRIPTOR_HEAP_DESC& _desc, IDescriptorHeap** _dst)
+{
+    util::Ptr<DescriptorHeapVk> ptr;
+    B3D_RET_IF_FAILED(DescriptorHeapVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY DeviceVk::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC& _desc, IDescriptorPool** _dst)
 {
     util::Ptr<DescriptorPoolVk> ptr;
@@ -1176,23 +1237,12 @@ B3D_APIENTRY DeviceVk::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC& _desc, I
 }
 
 BMRESULT
-B3D_APIENTRY DeviceVk::UpdateDescriptorSets(const UPDATE_DESCRIPTOR_SET_DESC& _update_desc)
+B3D_APIENTRY DeviceVk::CreateDescriptorUpdate(const DESCRIPTOR_UPDATE_DESC& _desc, IDescriptorUpdate** _dst)
 {
-    for (uint32_t i = 0; i < _update_desc.num_write_descriptor_sets; i++)
-    {
-        auto&& write = _update_desc.write_descriptor_sets[i];
-        auto dst_set = write.dst_set->As<DescriptorSetVk>();
-        B3D_RET_IF_FAILED(dst_set->AddWriteDescriptors(write));
-        dst_set->UpdateDescriptors();
-    }
-    for (uint32_t i = 0; i < _update_desc.num_copy_descriptor_sets; i++)
-    {
-        auto&& copy = _update_desc.copy_descriptor_sets[i];
-        auto dst_set = copy.dst_set->As<DescriptorSetVk>();
-        B3D_RET_IF_FAILED(dst_set->AddCopyDescriptors(copy));
-        dst_set->UpdateDescriptors();
-    }
+    util::Ptr<DescriptorUpdateVk> ptr;
+    B3D_RET_IF_FAILED(DescriptorUpdateVk::Create(this, _desc, &ptr));
 
+    *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;
 }
 
@@ -1201,6 +1251,26 @@ B3D_APIENTRY DeviceVk::CreateShaderModule(const SHADER_MODULE_DESC& _desc, IShad
 {
     util::Ptr<ShaderModuleVk> ptr;
     B3D_RET_IF_FAILED(ShaderModuleVk::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreateGraphicsPipelineState0(IRootSignature* _root_signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc, IPipelineState** _dst)
+{
+    util::Ptr<GraphicsPipelineStateVk> ptr;
+    B3D_RET_IF_FAILED(GraphicsPipelineStateVk::Create0(this, _root_signature->As<RootSignatureVk>(), _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceVk::CreateComputePipelineState0(IRootSignature* _root_signature, const COMPUTE_PIPELINE_STATE_DESC& _desc, IPipelineState** _dst)
+{
+    util::Ptr<ComputePipelineStateVk> ptr;
+    B3D_RET_IF_FAILED(ComputePipelineStateVk::Create0(this, _root_signature->As<RootSignatureVk>(), _desc, &ptr));
 
     *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;

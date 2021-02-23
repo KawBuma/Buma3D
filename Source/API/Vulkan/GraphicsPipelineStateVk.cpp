@@ -252,6 +252,28 @@ B3D_APIENTRY GraphicsPipelineStateVk::~GraphicsPipelineStateVk()
 }
 
 BMRESULT
+B3D_APIENTRY GraphicsPipelineStateVk::Init0(DeviceVk* _device, RootSignatureVk* _signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc)
+{
+    (device = _device)->AddRef();
+    inspfn = &device->GetInstancePFN();
+    devpfn = &device->GetDevicePFN();
+    vkdevice = device->GetVkDevice();
+
+    if (_desc.pipeline_layout)
+    {
+        B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
+                          , "IDevice::CreateGraphicsPipelineState0から作成する場合、GRAPHICS_PIPELINE_STATE_DESC::pipeline_layoutはnullptrである必要があります。");
+        return BMRESULT_FAILED;
+    }
+    B3D_RET_IF_FAILED(CopyDesc(_desc));
+    (desc_data->root_signature = _signature)->AddRef();
+
+    B3D_RET_IF_FAILED(CreateGraphicsVkPipeline());
+
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY GraphicsPipelineStateVk::Init(DeviceVk* _device, const GRAPHICS_PIPELINE_STATE_DESC& _desc)
 {
     (device = _device)->AddRef();
@@ -272,40 +294,45 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyDesc(const GRAPHICS_PIPELINE_STATE_DES
 {
     desc = _desc;
 
-    (desc_data.root_signature   = _desc.root_signature->As<RootSignatureVk>())->AddRef();
-    (desc_data.render_pass      = _desc.render_pass->As<RenderPassVk>())->AddRef();
+    desc_data = B3DMakeUnique(DESC_DATA);
+    auto&& dd = desc_data.get();
 
-    B3D_RET_IF_FAILED(CopyShaderStages(&desc_data, _desc));
+    if (_desc.pipeline_layout)
+        (dd->pipeline_layout = _desc.pipeline_layout->As<PipelineLayoutVk>())->AddRef();
+
+    (desc_data->render_pass = _desc.render_pass->As<RenderPassVk>())->AddRef();
+
+    B3D_RET_IF_FAILED(CopyShaderStages(dd, _desc));
 
     if (_desc.dynamic_state)
-        B3D_RET_IF_FAILED(CopyDynamicState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyDynamicState(dd, _desc));
 
     if (_desc.input_layout)
-        B3D_RET_IF_FAILED(CopyInputLayout(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyInputLayout(dd, _desc));
 
     if (_desc.input_assembly_state)
-        B3D_RET_IF_FAILED(CopyInputAssemblyState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyInputAssemblyState(dd, _desc));
 
     if (_desc.tessellation_state)
-        B3D_RET_IF_FAILED(CopyTessellationState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyTessellationState(dd, _desc));
 
     if (_desc.viewport_state)
-        B3D_RET_IF_FAILED(CopyViewportState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyViewportState(dd, _desc));
 
     if (_desc.rasterization_state)
-        B3D_RET_IF_FAILED(CopyRasterizationState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyRasterizationState(dd, _desc));
 
     if (_desc.stream_output)
-        B3D_RET_IF_FAILED(CopyStreamOutput(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyStreamOutput(dd, _desc));
 
     if (_desc.multisample_state)
-        B3D_RET_IF_FAILED(CopyMultisampleState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyMultisampleState(dd, _desc));
 
     if (_desc.depth_stencil_state)
-        B3D_RET_IF_FAILED(CopyDepthStencilState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyDepthStencilState(dd, _desc));
 
     if (_desc.blend_state)
-        B3D_RET_IF_FAILED(CopyBlendState(&desc_data, _desc));
+        B3D_RET_IF_FAILED(CopyBlendState(dd, _desc));
 
     return BMRESULT_SUCCEED;
 }
@@ -424,9 +451,9 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyViewportState(DESC_DATA* _dd, const GR
 
     bool is_viewport_dynamic = false;
     bool is_scissor_dynamic = false;
-    if (desc_data.dynamic_state)
+    if (desc_data->dynamic_state)
     {
-        auto&& ds = desc_data.dynamic_state->states;
+        auto&& ds = desc_data->dynamic_state->states;
         auto&& begin = ds.begin();
         auto&& end   = ds.end();
         is_viewport_dynamic = std::find(begin, end, DYNAMIC_STATE_VIEWPORT) != end;
@@ -626,12 +653,15 @@ B3D_APIENTRY GraphicsPipelineStateVk::CreateGraphicsVkPipeline()
 
     // TODO: VkGraphicsPipelineCreateInfo::flags
     //ci.flags = util::GetNativePipelineCreateFlags(desc.flags);
-    ci.flags                = 0;
-    ci.layout               = desc_data.root_signature->GetVkPipelineLayout();
-    ci.renderPass           = desc_data.render_pass->GetVkRenderPass();
-    ci.subpass              = desc.subpass;
-    ci.basePipelineHandle   = VK_NULL_HANDLE;
-    ci.basePipelineIndex    = 0;
+    ci.flags              = 0;
+    ci.renderPass         = desc_data->render_pass->GetVkRenderPass();
+    ci.subpass            = desc.subpass;
+    ci.basePipelineHandle = VK_NULL_HANDLE;
+    ci.basePipelineIndex  = 0;
+
+    ci.layout = desc_data->root_signature
+        ? desc_data->root_signature->GetVkPipelineLayout()
+        : desc_data->pipeline_layout->GetVkPipelineLayout();
 
     DESC_DATA_VK desc_data_vk{};
 
@@ -684,7 +714,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::CreateGraphicsVkPipeline()
 void
 B3D_APIENTRY GraphicsPipelineStateVk::PrepareShaderStages(VkGraphicsPipelineCreateInfo* _ci, DESC_DATA_VK* _dd)
 {
-    auto&& shader_stages = desc_data.shader_stages;
+    auto&& shader_stages = desc_data->shader_stages;
     auto&& shader_stagesvk = _dd->shader_stage_cis;
     shader_stagesvk.resize(desc.num_shader_stages, { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO });
     for (uint32_t i = 0; i < desc.num_shader_stages; i++)
@@ -711,7 +741,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareVertexInputState(VkGraphicsPipeline
     auto&& input_layoutvk = *(_dd->vertex_input_state = B3DMakeUnique(VERTEX_INPUT_STATE_DATA_VK)).get();
     input_layoutvk.bindings  .resize(desc.input_layout->num_input_slots);
     input_layoutvk.divisors  .resize(desc.input_layout->num_input_slots);
-    input_layoutvk.attributes.resize(desc_data.input_layout->input_elements.size());
+    input_layoutvk.attributes.resize(desc_data->input_layout->input_elements.size());
 
     util::UnordMap<uint32_t/*slot_number*/, uint32_t> location_offset_map;
     // locationのオフセットを予め計算
@@ -828,9 +858,9 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareViewportState(VkGraphicsPipelineCre
 
     bool is_viewport_dynamic = false;
     bool is_scissor_dynamic = false;
-    if (desc_data.dynamic_state)
+    if (desc_data->dynamic_state)
     {
-        auto&& ds = desc_data.dynamic_state->states;
+        auto&& ds = desc_data->dynamic_state->states;
         auto&& begin = ds.begin();
         auto&& end = ds.end();
         is_viewport_dynamic = std::find(begin, end, DYNAMIC_STATE_VIEWPORT) != end;
@@ -1040,8 +1070,6 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareDynamicState(VkGraphicsPipelineCrea
 void
 B3D_APIENTRY GraphicsPipelineStateVk::Uninit()
 {
-    name.reset();
-
     if (pipeline_cache)
         vkDestroyPipelineCache(vkdevice, pipeline_cache, B3D_VK_ALLOC_CALLBACKS);
     pipeline_cache = VK_NULL_HANDLE;
@@ -1050,15 +1078,26 @@ B3D_APIENTRY GraphicsPipelineStateVk::Uninit()
         vkDestroyPipeline(vkdevice, pipeline, B3D_VK_ALLOC_CALLBACKS);
     pipeline = VK_NULL_HANDLE;
 
-    hlp::SwapClear(dynamic_states);
-
     desc = {};
-    desc_data.~DESC_DATA();
+    desc_data.reset();
 
     hlp::SafeRelease(device);
     vkdevice = VK_NULL_HANDLE;
     devpfn = nullptr;
     inspfn = nullptr;
+
+    name.reset();
+}
+
+BMRESULT
+B3D_APIENTRY GraphicsPipelineStateVk::Create0(DeviceVk* _device, RootSignatureVk* _signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc, GraphicsPipelineStateVk** _dst)
+{
+    util::Ptr<GraphicsPipelineStateVk> ptr;
+    ptr.Attach(B3DCreateImplementationClass(GraphicsPipelineStateVk));
+    B3D_RET_IF_FAILED(ptr->Init0(_device, _signature, _desc));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
 }
 
 BMRESULT

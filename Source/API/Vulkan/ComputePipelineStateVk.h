@@ -11,12 +11,16 @@ protected:
     B3D_APIENTRY ~ComputePipelineStateVk();
 
 private:
+    BMRESULT B3D_APIENTRY Init0(DeviceVk* _device, RootSignatureVk* _signature, const COMPUTE_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY Init(DeviceVk* _device, const COMPUTE_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CreateComputeVkPipeline();
     void B3D_APIENTRY CopyDesc(const COMPUTE_PIPELINE_STATE_DESC& _desc);
     void B3D_APIENTRY Uninit();
 
 public:
+    static BMRESULT
+        B3D_APIENTRY Create0(DeviceVk* _device, RootSignatureVk* _signature, const COMPUTE_PIPELINE_STATE_DESC& _desc, ComputePipelineStateVk** _dst);
+
     static BMRESULT
         B3D_APIENTRY Create(DeviceVk* _device, const COMPUTE_PIPELINE_STATE_DESC& _desc, ComputePipelineStateVk** _dst);
 
@@ -68,12 +72,14 @@ private:
         ~DESC_DATA()
         {
             hlp::SafeRelease(root_signature);
+            hlp::SafeRelease(pipeline_layout);
             hlp::SafeRelease(module);
             B3DSafeDeleteArray(entry_point_name);
         }
-        RootSignatureVk* root_signature;
-        ShaderModuleVk*  module;
-        char*            entry_point_name;
+        RootSignatureVk*    root_signature;
+        PipelineLayoutVk*   pipeline_layout;
+        ShaderModuleVk*     module;
+        char*               entry_point_name;
     };
 
 private:
@@ -81,8 +87,7 @@ private:
     util::UniquePtr<util::NameableObjStr>               name;
     DeviceVk*                                           device;
     COMPUTE_PIPELINE_STATE_DESC                         desc;
-    DESC_DATA                                           desc_data;
-
+    util::UniquePtr<DESC_DATA>                          desc_data;
     VkDevice                                            vkdevice;
     const InstancePFN*                                  inspfn;
     const DevicePFN*                                    devpfn;

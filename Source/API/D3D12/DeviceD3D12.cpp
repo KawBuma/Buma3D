@@ -819,6 +819,63 @@ B3D_APIENTRY DeviceD3D12::CreateRootSignature(const ROOT_SIGNATURE_DESC& _desc, 
 }
 
 BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateDescriptorPool0(const DESCRIPTOR_POOL_DESC0& _desc, IDescriptorPool0** _dst)
+{
+    util::Ptr<DescriptorPool0D3D12> ptr;
+    B3D_RET_IF_FAILED(DescriptorPool0D3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::UpdateDescriptorSets0(const UPDATE_DESCRIPTOR_SET_DESC0& _update_desc)
+{
+    for (uint32_t i = 0; i < _update_desc.num_write_descriptor_sets; i++)
+    {
+        auto&& write = _update_desc.write_descriptor_sets[i];
+        B3D_RET_IF_FAILED(write.dst_set->As<DescriptorSet0D3D12>()->WriteDescriptors(write));
+    }
+    for (uint32_t i = 0; i < _update_desc.num_copy_descriptor_sets; i++)
+    {
+        auto&& copy = _update_desc.copy_descriptor_sets[i];
+        B3D_RET_IF_FAILED(copy.dst_set->As<DescriptorSet0D3D12>()->CopyDescriptors(copy));
+    }
+
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateDescriptorSetLayout(const DESCRIPTOR_SET_LAYOUT_DESC& _desc, IDescriptorSetLayout** _dst)
+{
+    util::Ptr<DescriptorSetLayoutD3D12> ptr;
+    B3D_RET_IF_FAILED(DescriptorSetLayoutD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreatePipelineLayout(const PIPELINE_LAYOUT_DESC& _desc, IPipelineLayout** _dst)
+{
+    util::Ptr<PipelineLayoutD3D12> ptr;
+    B3D_RET_IF_FAILED(PipelineLayoutD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateDescriptorHeap(const DESCRIPTOR_HEAP_DESC& _desc, IDescriptorHeap** _dst)
+{
+    util::Ptr<DescriptorHeapD3D12> ptr;
+    B3D_RET_IF_FAILED(DescriptorHeapD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY DeviceD3D12::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC& _desc, IDescriptorPool** _dst)
 {
     util::Ptr<DescriptorPoolD3D12> ptr;
@@ -829,19 +886,12 @@ B3D_APIENTRY DeviceD3D12::CreateDescriptorPool(const DESCRIPTOR_POOL_DESC& _desc
 }
 
 BMRESULT
-B3D_APIENTRY DeviceD3D12::UpdateDescriptorSets(const UPDATE_DESCRIPTOR_SET_DESC& _update_desc)
+B3D_APIENTRY DeviceD3D12::CreateDescriptorUpdate(const DESCRIPTOR_UPDATE_DESC& _desc, IDescriptorUpdate** _dst)
 {
-    for (uint32_t i = 0; i < _update_desc.num_write_descriptor_sets; i++)
-    {
-        auto&& write = _update_desc.write_descriptor_sets[i];
-        B3D_RET_IF_FAILED(write.dst_set->As<DescriptorSetD3D12>()->WriteDescriptors(write));
-    }
-    for (uint32_t i = 0; i < _update_desc.num_copy_descriptor_sets; i++)
-    {
-        auto&& copy = _update_desc.copy_descriptor_sets[i];
-        B3D_RET_IF_FAILED(copy.dst_set->As<DescriptorSetD3D12>()->CopyDescriptors(copy));
-    }
+    util::Ptr<DescriptorUpdateD3D12> ptr;
+    B3D_RET_IF_FAILED(DescriptorUpdateD3D12::Create(this, _desc, &ptr));
 
+    *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;
 }
 
@@ -850,6 +900,26 @@ B3D_APIENTRY DeviceD3D12::CreateShaderModule(const SHADER_MODULE_DESC& _desc, IS
 {
     util::Ptr<ShaderModuleD3D12> ptr;
     B3D_RET_IF_FAILED(ShaderModuleD3D12::Create(this, _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateGraphicsPipelineState0(IRootSignature* _root_signature, const GRAPHICS_PIPELINE_STATE_DESC& _desc, IPipelineState** _dst)
+{
+    util::Ptr<GraphicsPipelineStateD3D12> ptr;
+    B3D_RET_IF_FAILED(GraphicsPipelineStateD3D12::Create0(this, _root_signature->As<RootSignatureD3D12>(), _desc, &ptr));
+
+    *_dst = ptr.Detach();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
+B3D_APIENTRY DeviceD3D12::CreateComputePipelineState0(IRootSignature* _root_signature, const COMPUTE_PIPELINE_STATE_DESC& _desc, IPipelineState** _dst)
+{
+    util::Ptr<ComputePipelineStateD3D12> ptr;
+    B3D_RET_IF_FAILED(ComputePipelineStateD3D12::Create0(this, _root_signature->As<RootSignatureD3D12>(), _desc, &ptr));
 
     *_dst = ptr.Detach();
     return BMRESULT_SUCCEED;

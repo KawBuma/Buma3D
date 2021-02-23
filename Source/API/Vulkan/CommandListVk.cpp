@@ -350,12 +350,12 @@ B3D_APIENTRY CommandListVk::SetPipelineState(IPipelineState* _pipeline_state)
 void
 B3D_APIENTRY CommandListVk::SetRootSignature(PIPELINE_BIND_POINT _bind_point, IRootSignature* _root_signature)
 {
-    auto&& p = cmd_states->pipeline;
+    auto&& p = cmd_states->pipeline0;
     auto&& s = p.current_root_signatures[_bind_point];
     s = _root_signature->As<RootSignatureVk>();
-    p.pipiline_layouts[_bind_point] = s->GetVkPipelineLayout();
+    p.pipeline_layouts0[_bind_point] = s->GetVkPipelineLayout();
 
-    auto&& d = cmd_states->descriptor;
+    auto&& d = cmd_states->descriptor0;
     auto num_parameters = s->GetDesc().num_parameters;
     if (num_parameters > d.dynamic_descriptor_offsets.size())
     {
@@ -376,17 +376,17 @@ B3D_APIENTRY CommandListVk::SetRootSignature(PIPELINE_BIND_POINT _bind_point, IR
 }
 
 void
-B3D_APIENTRY CommandListVk::BindDescriptorSet(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SET& _args)
+B3D_APIENTRY CommandListVk::BindDescriptorSet0(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SET0& _args)
 {
-    auto&& descriptor = cmd_states->descriptor;
+    auto&& descriptor = cmd_states->descriptor0;
     {
         auto incoming_pool = _args.descriptor_set->GetPool();
-        if (incoming_pool != descriptor.current_pool)
-            descriptor.current_pool = incoming_pool->As<DescriptorPoolVk>();
-        descriptor.current_set = _args.descriptor_set->As<DescriptorSetVk>();
+        if (incoming_pool != descriptor.current_pool0)
+            descriptor.current_pool0 = incoming_pool->As<DescriptorPool0Vk>();
+        descriptor.current_set0 = _args.descriptor_set->As<DescriptorSet0Vk>();
     }
-    auto&& valid_set_layouts    = cmd_states->pipeline.current_root_signatures[_bind_point]->GetValidSetLayoutsArray();
-    auto   sets                 = descriptor.current_set->GetVkDescriptorSets().data();
+    auto&& valid_set_layouts    = cmd_states->pipeline0.current_root_signatures[_bind_point]->GetValidSetLayoutsArray();
+    auto   sets                 = descriptor.current_set0->GetVkDescriptorSets().data();
 
     // SetRootSignatureで作成したマップ化された配列にオフセット値を設定する。
     auto dynamic_descriptor_offsets_data        = descriptor.dynamic_descriptor_offsets.data();
@@ -397,26 +397,79 @@ B3D_APIENTRY CommandListVk::BindDescriptorSet(PIPELINE_BIND_POINT _bind_point, c
         *mapped_dynamic_descriptor_offsets_data[offset.root_parameter_index] = offset.offset;
     }
 
-    auto&& p = cmd_states->pipeline;
+    auto&& p = cmd_states->pipeline0;
     uint32_t dynamic_descriptors_count = 0;
     for (auto& i : valid_set_layouts)
     {
-        vkCmdBindDescriptorSets(command_buffer, util::GetNativePipelineBindPoint(_bind_point), p.pipiline_layouts[_bind_point]
+        vkCmdBindDescriptorSets(command_buffer, util::GetNativePipelineBindPoint(_bind_point), p.pipeline_layouts0[_bind_point]
                                 , i.first_set
-                                , i.valid_set_layouts->num_layouts , &sets[i.first_set]
-                                , (uint32_t)i.valid_set_layouts->num_dynamic_descriptors, &dynamic_descriptor_offsets_data[dynamic_descriptors_count]);
+                                , i.valid_set_layouts->num_layouts            , &sets[i.first_set]
+                                , i.valid_set_layouts->num_dynamic_descriptors, &dynamic_descriptor_offsets_data[dynamic_descriptors_count]);
         dynamic_descriptors_count += i.valid_set_layouts->num_dynamic_descriptors;
     }
+}
+
+void
+B3D_APIENTRY CommandListVk::Push32BitConstants0(PIPELINE_BIND_POINT _bind_point, const CMD_PUSH_32BIT_CONSTANTS0& _args)
+{
+    auto&& p = cmd_states->pipeline0;
+    auto&& range = p.current_root_signatures[_bind_point]->GetPushConstantRangesData().mapped_ranges.data()[_args.root_parameter_index];
+    vkCmdPushConstants(command_buffer, p.pipeline_layouts0[_bind_point]
+                       , range->stageFlags
+                       , (_args.dst_offset_in_32bit_values * 4/*bytes*/) + range->offset
+                       , _args.num32_bit_values_to_set     * 4/*bytes*/
+                       , _args.src_data);
+}
+
+void
+B3D_APIENTRY CommandListVk::SetPipelineLayout(PIPELINE_BIND_POINT _bind_point, IPipelineLayout* _pipeline_layout)
+{
+    auto&& p = cmd_states->pipeline;
+    p.current_pipeline_layouts[_bind_point] = _pipeline_layout->As<PipelineLayoutVk>();
+    p.pipeline_layouts        [_bind_point] = p.current_pipeline_layouts[_bind_point]->GetVkPipelineLayout();
+}
+
+void
+B3D_APIENTRY CommandListVk::BindDescriptorSets(PIPELINE_BIND_POINT _bind_point, const CMD_BIND_DESCRIPTOR_SETS& _args)
+{
+    if (util::IsEnabledDebug(this))
+    {
+        DescriptorHeapVk* heap = _args.descriptor_sets[0]->As<DescriptorSetVk>()->GetHeap();
+        for (uint32_t i = 1; i < _args.num_descriptor_sets; i++)
+        {
+            if (heap != _args.descriptor_sets[i]->As<DescriptorSetVk>()->GetHeap())
+            {
+                B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION
+                                  , __FUNCTION__": descriptor_setsの各要素が割り当てられたヒープはすべて同一である必要がります。");
+                return;
+            }
+        }
+    }
+
+    auto&& d = cmd_states->descriptor;
+    d.current_heap = _args.descriptor_sets[0]->As<DescriptorSetVk>()->GetHeap();
+
+    if (_args.num_descriptor_sets > (uint32_t)d.descriptor_sets.size())
+        d.descriptor_sets.resize(_args.num_descriptor_sets);
+
+    uint32_t cnt = 0;
+    for (auto& i : d.descriptor_sets)
+        i = _args.descriptor_sets[cnt++]->As<DescriptorSetVk>()->GetVkDescriptorSet();
+
+    vkCmdBindDescriptorSets(command_buffer, util::GetNativePipelineBindPoint(_bind_point), cmd_states->pipeline.pipeline_layouts[_bind_point]
+                            , _args.first_set
+                            , _args.num_descriptor_sets           , d.descriptor_sets.data()
+                            , _args.num_dynamic_descriptor_offsets, _args.dynamic_descriptor_offsets);
 }
 
 void
 B3D_APIENTRY CommandListVk::Push32BitConstants(PIPELINE_BIND_POINT _bind_point, const CMD_PUSH_32BIT_CONSTANTS& _args)
 {
     auto&& p = cmd_states->pipeline;
-    auto&& range = p.current_root_signatures[_bind_point]->GetPushConstantRangesData().mapped_ranges.data()[_args.root_parameter_index];
-    vkCmdPushConstants(command_buffer, p.pipiline_layouts[_bind_point]
-                       , range->stageFlags
-                       , (_args.dst_offset_in_32bit_values * 4/*bytes*/) + range->offset
+    auto&& range = p.current_pipeline_layouts[_bind_point]->GetVkPushConstantRanges()[_args.index];
+    vkCmdPushConstants(command_buffer, p.pipeline_layouts[_bind_point]
+                       , range.stageFlags
+                       , (_args.dst_offset_in_32bit_values * 4/*bytes*/) + range.offset
                        , _args.num32_bit_values_to_set     * 4/*bytes*/
                        , _args.src_data);
 }

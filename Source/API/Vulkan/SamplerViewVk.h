@@ -52,6 +52,9 @@ public:
     const DevicePFN&
         B3D_APIENTRY GetDevicePFN() const override;
 
+    const VkDescriptorImageInfo*
+        B3D_APIENTRY GetVkDescriptorImageInfo() const override;
+
     VkSampler
         B3D_APIENTRY GetVkSampler() const override;
 
@@ -77,6 +80,7 @@ private:
     const InstancePFN*                      inspfn;
     const DevicePFN*                        devpfn;
     VkSampler                               sampler;
+    VkDescriptorImageInfo                   image_info; // ディスクリプタの更新時に利用します。
 
 };
 

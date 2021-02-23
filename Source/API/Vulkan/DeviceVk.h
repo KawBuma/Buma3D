@@ -176,13 +176,40 @@ public:
             , IRootSignature**           _dst) override;
 
     BMRESULT
-        B3D_APIENTRY CreateDescriptorPool(
-              const DESCRIPTOR_POOL_DESC& _desc
-            , IDescriptorPool**           _dst) override;
+        B3D_APIENTRY CreateDescriptorPool0(
+              const DESCRIPTOR_POOL_DESC0& _desc
+            , IDescriptorPool0**           _dst) override;
 
     BMRESULT
-        B3D_APIENTRY UpdateDescriptorSets(
-            const UPDATE_DESCRIPTOR_SET_DESC& _update_desc) override;
+        B3D_APIENTRY UpdateDescriptorSets0(
+            const UPDATE_DESCRIPTOR_SET_DESC0& _update_desc) override;
+
+
+    BMRESULT
+        B3D_APIENTRY CreateDescriptorSetLayout(
+              const DESCRIPTOR_SET_LAYOUT_DESC& _desc
+            , IDescriptorSetLayout**            _dst) override;
+
+    BMRESULT
+        B3D_APIENTRY CreatePipelineLayout(
+              const PIPELINE_LAYOUT_DESC&   _desc
+            , IPipelineLayout**             _dst) override;
+
+    BMRESULT
+        B3D_APIENTRY CreateDescriptorHeap(
+              const DESCRIPTOR_HEAP_DESC&  _desc
+            , IDescriptorHeap**            _dst) override;
+
+    BMRESULT
+        B3D_APIENTRY CreateDescriptorPool(
+              const DESCRIPTOR_POOL_DESC&  _desc
+            , IDescriptorPool**            _dst) override;
+
+    BMRESULT
+        B3D_APIENTRY CreateDescriptorUpdate(
+              const DESCRIPTOR_UPDATE_DESC& _desc
+            , IDescriptorUpdate**           _dst) override;
+
 
     BMRESULT
         B3D_APIENTRY CreateShaderModule(
@@ -190,19 +217,32 @@ public:
             , IShaderModule**           _dst) override;    
 
     BMRESULT
+        B3D_APIENTRY CreateGraphicsPipelineState0(
+              IRootSignature*                       _root_signature
+            , const GRAPHICS_PIPELINE_STATE_DESC&   _desc
+            , IPipelineState**                      _dst) override;
+
+    BMRESULT
+        B3D_APIENTRY CreateComputePipelineState0(
+              IRootSignature*                       _root_signature
+            , const COMPUTE_PIPELINE_STATE_DESC&    _desc
+            , IPipelineState**                      _dst) override;
+
+    BMRESULT
         B3D_APIENTRY CreateGraphicsPipelineState(
-              const GRAPHICS_PIPELINE_STATE_DESC& _desc
-            , IPipelineState**                    _dst) override;
+              const GRAPHICS_PIPELINE_STATE_DESC&   _desc
+            , IPipelineState**                      _dst) override;
 
     BMRESULT
         B3D_APIENTRY CreateComputePipelineState(
-              const COMPUTE_PIPELINE_STATE_DESC& _desc
-            , IPipelineState**                   _dst) override;
+              const COMPUTE_PIPELINE_STATE_DESC&    _desc
+            , IPipelineState**                      _dst) override;
 
     BMRESULT
         B3D_APIENTRY CreateRayTracingPipelineState(
               const RAY_TRACING_PIPELINE_STATE_DESC& _desc
             , IPipelineState**                       _dst) override;
+
 
     BMRESULT
         B3D_APIENTRY CreateSwapChain(
