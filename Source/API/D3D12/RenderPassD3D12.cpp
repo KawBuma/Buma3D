@@ -82,7 +82,7 @@ void RenderPassD3D12::RENDER_PASS_BARRIER_DATA::Prepare(const RENDER_PASS_DESC& 
         // 開始->最初に参照されるサブパス
         {
             auto&& at_begin = b.histories[b.min_subpass_index];
-            at_begin.prev_subpass_index = ~0;// begin (SUBPASS_EXTERNAL)
+            at_begin.prev_subpass_index = ~0u;// begin (SUBPASS_EXTERNAL)
             at_begin.prev_ref_type      = ATTACHMENT_REF_TYPE::RENDER_PASS_BEGIN;
             at_begin.prev_ref           = &b.begin_ref;
             b.begin_ref                       = *at_begin.next_ref;

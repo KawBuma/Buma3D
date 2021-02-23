@@ -619,7 +619,7 @@ B3D_APIENTRY DeviceAdapterVk::QueryPresentationSupport(COMMAND_TYPE _queue_type,
     BMRESULT result = BMRESULT_FAILED_NOT_SUPPORTED;
     auto&& prop = queue_properties_map[_queue_type];
 
-    if (!inspfn->vkGetPhysicalDeviceSurfaceSupportKHR && !prop)
+    if (!inspfn->vkGetPhysicalDeviceSurfaceSupportKHR || !prop)
         return result;
 
     VkBool32 is_supported = VK_FALSE;

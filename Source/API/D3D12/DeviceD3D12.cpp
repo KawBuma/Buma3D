@@ -422,8 +422,8 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
     };
 
     D3D12_HEAP_PROPERTIES d3d12hp{};
-    d3d12hp.CreationNodeMask = ~0x0;// CreateResourceHeap時に指定
-    d3d12hp.VisibleNodeMask = ~0x0; // CreateResourceHeap時に指定
+    d3d12hp.CreationNodeMask = ~0x0u;// CreateResourceHeap時に指定
+    d3d12hp.VisibleNodeMask = ~0x0u; // CreateResourceHeap時に指定
 
     constexpr RESOURCE_HEAP_PROPERTY_FLAGS DEFAULT_FLAGS = RESOURCE_HEAP_PROPERTY_FLAG_SUBSET_ALLOCATION | RESOURCE_HEAP_PROPERTY_FLAG_VISIBLE_NODE_MASK;
 
@@ -677,7 +677,7 @@ B3D_APIENTRY DeviceD3D12::GetResourceAllocationInfo(uint32_t _num_resources, con
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
 
-    uint32_t masked_heap_type_bits = ~0;// リソースを割り当て可能なヒープタイプのビットマスク。
+    uint32_t masked_heap_type_bits = ~0u;// リソースを割り当て可能なヒープタイプのビットマスク。
     for (uint32_t i = 0; i < _num_resources; i++)
     {
         auto&& _info  = _dst_infos[i];
@@ -708,8 +708,8 @@ uint32_t
 B3D_APIENTRY DeviceD3D12::GetTiledResourceAllocationInfo(const IResource* _reserved_resource, TILED_RESOURCE_ALLOCATION_INFO* _dst_infos) const
 {
     uint32_t count = 1;
-    auto&& desc = _reserved_resource->GetDesc();
-    if (desc.dimension == RESOURCE_DIMENSION_BUFFER)
+    auto&& res_desc = _reserved_resource->GetDesc();
+    if (res_desc.dimension == RESOURCE_DIMENSION_BUFFER)
         count = _reserved_resource->As<BufferD3D12>()->GetTiledResourceAllocationInfo(_dst_infos);
     else
         count = _reserved_resource->As<TextureD3D12>()->GetTiledResourceAllocationInfo(_dst_infos);

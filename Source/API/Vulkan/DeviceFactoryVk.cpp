@@ -260,44 +260,49 @@ VKAPI_CALL DebugReportCallback
     , void*                      _user_data
 )
 {
-    static const char* OBJECT_TYPE_NAMES[] =
+    auto GetObjectTypeName = [](VkDebugReportObjectTypeEXT _type)
     {
-          "Unknown"                    // = 0,
-        , "VkInstance"                 // = 1,
-        , "VkPhysicalDevice"           // = 2,
-        , "VkDevice"                   // = 3,
-        , "VkQueue"                    // = 4,
-        , "VkSemaphore"                // = 5,
-        , "VkCommandBuffer"            // = 6,
-        , "VkFence"                    // = 7,
-        , "VkDeviceMemory"             // = 8,
-        , "VkBuffer"                   // = 9,
-        , "VkImage"                    // = 10,
-        , "VkEvent"                    // = 11,
-        , "VkQueryPool"                // = 12,
-        , "VkBufferView"               // = 13,
-        , "VkImageView"                // = 14,
-        , "VkShaderModule"             // = 15,
-        , "VkPipelineCache"            // = 16,
-        , "VkPipelineLayout"           // = 17,
-        , "VkRenderPass"               // = 18,
-        , "VkPipeline"                 // = 19,
-        , "VkDescriptorSetLayout"      // = 20,
-        , "VkSampler"                  // = 21,
-        , "VkDescriptorPool"           // = 22,
-        , "VkDescriptorSet"            // = 23,
-        , "VkFramebuffer"              // = 24,
-        , "VkCommandPool"              // = 25,
-        , "VkSurfaceKHR"               // = 26,
-        , "VkSwapchainKHR"             // = 27,
-        , "VkDebugReportCallbackEXT"   // = 28,
-        , "VkDisplayKHR"               // = 29,
-        , "VkDisplayModeKHR"           // = 30,
-        , "VkValidationCacheEXT"       // = 33,
-                                       
-        , "VkSamplerYcbcrConversion"   // = 1000156000,->[34]
-        , "VkDescriptorUpdateTemplate" // = 1000085000,->[35]
-        , "VkAccelerationStructureKHR" // = 1000165000,->[36]
+        switch (_type)
+        {
+        case VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT                    : return "Unknown";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT                   : return "VkInstance";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT            : return "VkPhysicalDevice";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT                     : return "VkDevice";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT                      : return "VkQueue";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT                  : return "VkSemaphore";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT             : return "VkCommandBuffer";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT                      : return "VkFence";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT              : return "VkDeviceMemory";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT                     : return "VkBuffer";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT                      : return "VkImage";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT                      : return "VkEvent";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT                 : return "VkQueryPool";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT                : return "VkBufferView";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT                 : return "VkImageView";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT              : return "VkShaderModule";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT             : return "VkPipelineCache";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT            : return "VkPipelineLayout";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT                : return "VkRenderPass";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT                   : return "VkPipeline";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT      : return "VkDescriptorSetLayout";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT                    : return "VkSampler";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT            : return "VkDescriptorPool";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT             : return "VkDescriptorSet";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT                : return "VkFramebuffer";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT               : return "VkCommandPool";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT                : return "VkSurfaceKHR";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT              : return "VkSwapchainKHR";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT  : return "VkDebugReportCallbackEXT";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT                : return "VkDisplayKHR";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT           : return "VkDisplayModeKHR";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT       : return "VkValidationCacheEXT";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT   : return "VkSamplerYcbcrConversion";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT : return "VkDescriptorUpdateTemplate";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT : return "VkAccelerationStructureKHR";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT  : return "VkAccelerationStructureNV";
+        default:
+            return "Unkown";
+        }
     };
 
     auto b3d_data = (buma3d::DEBUG_REPORT_USER_DATA*)(_user_data);
@@ -331,13 +336,7 @@ VKAPI_CALL DebugReportCallback
     ss << _message << " [ Message code: " << _message_code;
 
     ss << ", Obejct type: ";
-    switch (_object_type)
-    {
-    case VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT   : ss << OBJECT_TYPE_NAMES[34]; break;
-    case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT : ss << OBJECT_TYPE_NAMES[35]; break;
-    case VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT  : ss << OBJECT_TYPE_NAMES[36]; break;
-    default                                                         : ss << OBJECT_TYPE_NAMES[_object_type]; break;
-    }
+    ss << GetObjectTypeName(_object_type);
     ss << ", Obejct handle: "; hlp::PrintHex(ss, _object);
     ss << ", Location: " << std::dec << _location << " ]";
 
@@ -359,49 +358,54 @@ VKAPI_CALL DebugUtilsMessengerCallback
     , void*                                         _user_data
 )
 {
-    static const char* OBJECT_NAMES[] =
+    auto GetObjectTypeName = [](VkObjectType _type)
     {
-          "Unknown"
-        , "VkInstance"
-        , "VkPhysicalDevice"
-        , "VkDevice"
-        , "VkQueue"
-        , "VkSemaphore"
-        , "VkCommandBuffer"
-        , "VkFence"
-        , "VkDeviceMemory"
-        , "VkBuffer"
-        , "VkImage"
-        , "VkEvent"
-        , "VkQueryPool"
-        , "VkBufferView"
-        , "VkImageView"
-        , "VkShaderModule"
-        , "VkPipelineCache"
-        , "VkPipelineLayout"
-        , "VkRenderPass"
-        , "VkPipeline"
-        , "VkDescriptorSetLayout"
-        , "VkSampler"
-        , "VkDescriptorPool"
-        , "VkDescriptorSet"
-        , "VkFramebuffer"
-        , "VkCommandPool"
-
-        , "VkSamplerYcbcrConversion"         // 1000156000,->[26]
-        , "VkDescriptorUpdateTemplate"       // 1000085000,->[27]
-        , "VkSurfaceKHR"                     // 1000000000,->[28]
-        , "VkSwapchainKHR"                   // 1000001000,->[29]
-        , "VkDisplayKHR"                     // 1000002000,->[30]
-        , "VkDisplayModeKHR"                 // 1000002001,->[31]
-        , "VkDebugReportCallbackEXT"         // 1000011000,->[32]
-        , "VkDebugUtilsMessengerEXT"         // 1000128000,->[33]
-        , "VkAccelerationStructureKHR"       // 1000165000,->[34]
-        , "VkValidationCacheEXT"             // 1000160000,->[35]
-        , "VkPerformanceConfigurationINTEL"  // 1000210000,->[36]
-        , "VkDeferredOperationKHR"           // 1000268000,->[37]
-        , "VkIndirectCommandsLayoutNV"       // 1000277000,->[38]
-        , "VkPrivateDataSlotEXT"             // 1000295000,->[39]
+        switch (_type)
+        {
+        case VK_OBJECT_TYPE_UNKNOWN                         : return "Unknown";
+        case VK_OBJECT_TYPE_INSTANCE                        : return "VkInstance";
+        case VK_OBJECT_TYPE_PHYSICAL_DEVICE                 : return "VkPhysicalDevice";
+        case VK_OBJECT_TYPE_DEVICE                          : return "VkDevice";
+        case VK_OBJECT_TYPE_QUEUE                           : return "VkQueue";
+        case VK_OBJECT_TYPE_SEMAPHORE                       : return "VkSemaphore";
+        case VK_OBJECT_TYPE_COMMAND_BUFFER                  : return "VkCommandBuffer";
+        case VK_OBJECT_TYPE_FENCE                           : return "VkFence";
+        case VK_OBJECT_TYPE_DEVICE_MEMORY                   : return "VkDeviceMemory";
+        case VK_OBJECT_TYPE_BUFFER                          : return "VkBuffer";
+        case VK_OBJECT_TYPE_IMAGE                           : return "VkImage";
+        case VK_OBJECT_TYPE_EVENT                           : return "VkEvent";
+        case VK_OBJECT_TYPE_QUERY_POOL                      : return "VkQueryPool";
+        case VK_OBJECT_TYPE_BUFFER_VIEW                     : return "VkBufferView";
+        case VK_OBJECT_TYPE_IMAGE_VIEW                      : return "VkImageView";
+        case VK_OBJECT_TYPE_SHADER_MODULE                   : return "VkShaderModule";
+        case VK_OBJECT_TYPE_PIPELINE_CACHE                  : return "VkPipelineCache";
+        case VK_OBJECT_TYPE_PIPELINE_LAYOUT                 : return "VkPipelineLayout";
+        case VK_OBJECT_TYPE_RENDER_PASS                     : return "VkRenderPass";
+        case VK_OBJECT_TYPE_PIPELINE                        : return "VkPipeline";
+        case VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT           : return "VkDescriptorSetLayout";
+        case VK_OBJECT_TYPE_SAMPLER                         : return "VkSampler";
+        case VK_OBJECT_TYPE_DESCRIPTOR_POOL                 : return "VkDescriptorPool";
+        case VK_OBJECT_TYPE_DESCRIPTOR_SET                  : return "VkDescriptorSet";
+        case VK_OBJECT_TYPE_FRAMEBUFFER                     : return "VkFramebuffer";
+        case VK_OBJECT_TYPE_COMMAND_POOL                    : return "VkCommandPool";
+        case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION        : return "VkSamplerYcbcrConversion";
+        case VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE      : return "VkDescriptorUpdateTemplate";
+        case VK_OBJECT_TYPE_SURFACE_KHR                     : return "VkSurfaceKHR";
+        case VK_OBJECT_TYPE_SWAPCHAIN_KHR                   : return "VkSwapchainKHR";
+        case VK_OBJECT_TYPE_DISPLAY_KHR                     : return "VkDisplayKHR";
+        case VK_OBJECT_TYPE_DISPLAY_MODE_KHR                : return "VkDisplayModeKHR";
+        case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT       : return "VkDebugReportCallbackEXT";
+        case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT       : return "VkDebugUtilsMessengerEXT";
+        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR      : return "VkAccelerationStructureKHR";
+        case VK_OBJECT_TYPE_VALIDATION_CACHE_EXT            : return "VkValidationCacheEXT";
+        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV       : return "VkAccelerationStructureNV";
+        case VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL : return "VkPerformanceConfigurationINTEL";
+        case VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR          : return "VkDeferredOperationKHR";
+        case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV     : return "VkIndirectCommandsLayoutNV";
+        case VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT           : return "VkPrivateDataSlotEXT";
+        default:
+            return "Unknown";
+        }
     };
 
     auto b3d_data = (buma3d::DEBUG_REPORT_USER_DATA*)(_user_data);
@@ -442,27 +446,7 @@ VKAPI_CALL DebugUtilsMessengerCallback
             auto&& obj = _callback_data->pObjects[i];
             ss << "#" << i << ": ";
             ss << "Type: ";
-            switch (obj.objectType)
-            {
-            case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION        : ss << OBJECT_NAMES[26]; break;
-            case VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE      : ss << OBJECT_NAMES[27]; break;
-            case VK_OBJECT_TYPE_SURFACE_KHR                     : ss << OBJECT_NAMES[28]; break;
-            case VK_OBJECT_TYPE_SWAPCHAIN_KHR                   : ss << OBJECT_NAMES[29]; break;
-            case VK_OBJECT_TYPE_DISPLAY_KHR                     : ss << OBJECT_NAMES[30]; break;
-            case VK_OBJECT_TYPE_DISPLAY_MODE_KHR                : ss << OBJECT_NAMES[31]; break;
-            case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT       : ss << OBJECT_NAMES[32]; break;
-            case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT       : ss << OBJECT_NAMES[33]; break;
-            case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR      : ss << OBJECT_NAMES[34]; break;
-            case VK_OBJECT_TYPE_VALIDATION_CACHE_EXT            : ss << OBJECT_NAMES[35]; break;
-            case VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL : ss << OBJECT_NAMES[36]; break;
-            case VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR          : ss << OBJECT_NAMES[37]; break;
-            case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV     : ss << OBJECT_NAMES[38]; break;
-            case VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT           : ss << OBJECT_NAMES[39]; break;
-
-            default:
-                ss << OBJECT_NAMES[obj.objectType];
-                break;
-            }
+            ss << GetObjectTypeName(obj.objectType);
             ss << ", Handle: "; hlp::PrintHex(ss, obj.objectHandle);
             ss << ", Name: ";
             if (obj.pObjectName)

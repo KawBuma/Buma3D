@@ -607,27 +607,27 @@ private:
         // バリアの合計数を取得
         uint32_t CalcBarrierCounts(const CMD_PIPELINE_BARRIER& _args)
         {
-            uint32_t num_total_barriers = 0;
+            uint32_t result = 0;
 
             // バッファにはサブリソースが存在しません。
-            num_total_barriers += _args.num_buffer_barriers;
+            result += _args.num_buffer_barriers;
 
             // テクスチャバリア数
-            auto AddBarrierCount = [&num_total_barriers](const SUBRESOURCE_RANGE& _range)
+            auto AddBarrierCount = [&result](const SUBRESOURCE_RANGE& _range)
             {
                 if (_range.offset.aspect == (TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL))
-                    num_total_barriers += (_range.mip_levels * _range.array_size) * 2;
+                    result += (_range.mip_levels * _range.array_size) * 2;
                 else
-                    num_total_barriers += _range.mip_levels * _range.array_size;
+                    result += _range.mip_levels * _range.array_size;
             };
-            for (uint32_t i = 0; i < _args.num_texture_barriers; i++)
+            for (uint32_t i_barrier = 0; i_barrier < _args.num_texture_barriers; i_barrier++)
             {
-                auto&& tb = _args.texture_barriers[i];
+                auto&& tb = _args.texture_barriers[i_barrier];
                 switch (tb.type)
                 {
                 case buma3d::TEXTURE_BARRIER_TYPE_BARRIER_RANGE:
-                    for (uint32_t i = 0; i < tb.barrier_range->num_subresource_ranges; i++)
-                        AddBarrierCount(tb.barrier_range->subresource_ranges[i]);
+                    for (uint32_t i_range = 0; i_range < tb.barrier_range->num_subresource_ranges; i_range++)
+                        AddBarrierCount(tb.barrier_range->subresource_ranges[i_range]);
                     break;
 
                 case buma3d::TEXTURE_BARRIER_TYPE_VIEW:
@@ -644,7 +644,7 @@ private:
                 }
             }
 
-            return num_total_barriers;
+            return result;
         }
 
         template<typename T>

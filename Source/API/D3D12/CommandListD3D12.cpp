@@ -627,12 +627,12 @@ B3D_APIENTRY CommandListD3D12::BindDescriptorSets(PIPELINE_BIND_POINT _bind_poin
         auto&& root_parameter_offset = root_parameter_offsets[_args.first_set + i];
 
         // ディスクリプタテーブル
-        for (auto& i : batch.descriptor_table_batch)
-            i->Set(root_parameter_offset, _bind_point, cmd.l);
+        for (auto& i_batch : batch.descriptor_table_batch)
+            i_batch->Set(root_parameter_offset, _bind_point, cmd.l);
 
         // 動的ディスクリプタ
-        for (auto& i : batch.root_descriptor_batch)
-            i->Set(root_parameter_offset, _bind_point, cmd.l, &(_args.dynamic_descriptor_offsets[ddc++]));
+        for (auto& i_batch : batch.root_descriptor_batch)
+            i_batch->Set(root_parameter_offset, _bind_point, cmd.l, &(_args.dynamic_descriptor_offsets[ddc++]));
     }
 }
 
@@ -1376,7 +1376,7 @@ B3D_APIENTRY CommandListD3D12::EndRenderPass(const SUBPASS_END_DESC& _subpass_en
     rp.is_render_pass_scope = false;
     rp.render_pass          = nullptr;
     rp.framebuffer          = nullptr;
-    rp.current_subpass      = ~0;
+    rp.current_subpass      = ~0u;
 }
 
 void

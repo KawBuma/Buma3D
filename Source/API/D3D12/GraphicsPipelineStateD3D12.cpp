@@ -392,7 +392,6 @@ public:
         num_pixels = state.sample_position_grid_size.width * state.sample_position_grid_size.height;
         sample_positions.resize(state.num_sample_positions);
         sample_positions_data = sample_positions.data();
-        auto sample_positions_data = sample_positions.data();
         for (uint32_t i = 0; i < state.num_sample_positions; i++)
             util::ConvertNativeSamplePosition(state.sample_positions[i], &sample_positions_data[i]);
     }

@@ -196,8 +196,8 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareDescriptorPoolSizes()
              そのため実際にディスクリプタを消費することはありませんが、動作を共通化する目的で仮想的にアロケーションを行います。 */
 
     // 各タイプのディスクリプタ数を計算
-    auto&& i = *parameters12_info;
-    auto&& pool_sizes = i.pool_sizes;
+    auto&& info = *parameters12_info;
+    auto&& pool_sizes = info.pool_sizes;
     for (auto& i : desc_data->bindings)
     {
         auto it_find = std::find_if(pool_sizes.begin(), pool_sizes.end(),
@@ -212,10 +212,10 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareDescriptorPoolSizes()
         }
     }
 
-    util::CalcDescriptorCounts((uint32_t)pool_sizes.size(), pool_sizes.data(), &i.num_cbv_srv_uav_descrptors, &i.num_sampler_descrptors);
+    util::CalcDescriptorCounts((uint32_t)pool_sizes.size(), pool_sizes.data(), &info.num_cbv_srv_uav_descrptors, &info.num_sampler_descrptors);
 
     // D3D12の場合、静的サンプラはディスクリプタを消費しません。
-    i.num_sampler_descrptors -= i.num_static_samplers;
+    info.num_sampler_descrptors -= info.num_static_samplers;
 }
 
 BMRESULT

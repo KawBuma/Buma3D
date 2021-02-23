@@ -44,10 +44,10 @@ B3D_APIENTRY FramebufferD3D12::ParseRenderPassAndAllocateDescriptor()
 
     auto&& rpdesc = desc_data.render_pass12->GetDesc();
     descriptors.resize(rpdesc.num_subpasses);
-    for (uint32_t i = 0; i < rpdesc.num_subpasses; i++)
+    for (uint32_t i_pass = 0; i_pass < rpdesc.num_subpasses; i_pass++)
     {
-        auto sp = rpdesc.subpasses[i];
-        auto&& subpass_descriptor = descriptors[i];
+        auto sp = rpdesc.subpasses[i_pass];
+        auto&& subpass_descriptor = descriptors[i_pass];
 
         if (sp.num_color_attachments == 0)
         {

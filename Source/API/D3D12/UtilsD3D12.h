@@ -355,8 +355,8 @@ inline void GetNativeResourceDesc(const RESOURCE_DESC& _desc, D3D12_RESOURCE_DES
     {
         _result->Width              = _desc.texture.extent.width;
         _result->Height             = _desc.texture.extent.height;
-        _result->DepthOrArraySize   = _desc.dimension == RESOURCE_DIMENSION_TEX3D ? _desc.texture.extent.depth : _desc.texture.array_size;
-        _result->MipLevels          = util::CalcMipLevels(_desc.texture);
+        _result->DepthOrArraySize   = SCAST<UINT16>(_desc.dimension == RESOURCE_DIMENSION_TEX3D ? _desc.texture.extent.depth : _desc.texture.array_size);
+        _result->MipLevels          = SCAST<UINT16>(util::CalcMipLevels(_desc.texture));
         _result->Format             = GetNativeFormat(_desc.texture.format_desc.format);
         _result->SampleDesc.Count   = _desc.texture.sample_count;
         _result->SampleDesc.Quality = 0;
@@ -973,6 +973,7 @@ inline void CalcDescriptorCounts(uint32_t _num_sizes, const T* _sizes, uint32_t*
 
         case buma3d::DESCRIPTOR_TYPE_SAMPLER:
             *_dst_sampler_descriptor_count += ps.num_descriptors;
+            break;
 
         default:
             break;

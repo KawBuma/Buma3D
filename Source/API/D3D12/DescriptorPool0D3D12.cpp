@@ -100,7 +100,7 @@ B3D_APIENTRY DescriptorPool0D3D12::CreateDescriptorHeaps(uint32_t _num_descs, ui
             auto&& copy_src_heap = copy_src_heaps->emplace_back();
 
             D3D12_DESCRIPTOR_HEAP_DESC dhd{ _heap_type, _num, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, B3D_DEFAULT_NODE_MASK };
-            auto hr = device12->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&copy_src_heap.copy_desc_heap12));
+            hr = device12->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&copy_src_heap.copy_desc_heap12));
             B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
 
             copy_src_heap.increment_size    = device12->GetDescriptorHandleIncrementSize(_heap_type);
