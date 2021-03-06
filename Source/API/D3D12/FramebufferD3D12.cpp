@@ -26,6 +26,7 @@ BMRESULT
 B3D_APIENTRY FramebufferD3D12::Init(DeviceD3D12* _device, const FRAMEBUFFER_DESC& _desc)
 {
     (device = _device)->AddRef();
+    device12 = _device->GetD3D12Device();
 
     CopyDesc(_desc);
     B3D_RET_IF_FAILED(ParseRenderPassAndAllocateDescriptor());
