@@ -36,6 +36,11 @@ template<typename T>
 using List = std::list<T, details::b3d_allocator<T>>;
 
 
+// 単方向リストです。
+template<typename T>
+using FwdList = std::forward_list<T, details::b3d_allocator<T>>;
+
+
 // 両端キューです。
 template<typename T>
 using Deque = std::deque<T, details::b3d_allocator<T>>;

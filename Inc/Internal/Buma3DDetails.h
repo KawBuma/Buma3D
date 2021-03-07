@@ -32,6 +32,9 @@ template <class _Ty, class _Alloc = allocator<_Ty>>
 class list;
 
 template <class _Ty, class _Alloc = allocator<_Ty>>
+class forward_list;
+
+template <class _Ty, class _Alloc = allocator<_Ty>>
 class deque;
 
 template <class _Ty, class _Container = deque<_Ty>>

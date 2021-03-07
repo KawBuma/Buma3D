@@ -36,6 +36,7 @@ struct CPU_DESCRIPTOR_ALLOCATION
 */
 class CPUDescriptorAllocator
 {
+    struct CPU_DESCRIPTOR_HEAP_ENTRY;
 public:
     inline static constexpr uint32_t DEFAULT_NUM_DESCRIPTORS = 1024;
     inline static constexpr const wchar_t* HEAP_TYPE_NAMES[] = {
@@ -53,17 +54,14 @@ public:
         , entries                 {}
         , free_entry_indices      {}
         , entries_head            {}
-        , free_entry_indices_head {}
         , allocation_mutex        {}
     {
     }
 
     ~CPUDescriptorAllocator() 
     {
-        hlp::SwapClear(free_entry_indices);
-        free_entry_indices_head = nullptr;
-
-        hlp::SwapClear(entries);
+        for (auto& i : entries)
+            B3DSafeDelete(i);
         entries_head = nullptr;
 
         device.Reset();
@@ -74,65 +72,62 @@ public:
         B3D_ASSERT(_num_descriptors <= (size_t)DEFAULT_NUM_DESCRIPTORS);
         std::lock_guard lock(allocation_mutex);
 
-        if (free_entry_indices.empty())
-            AllocateHeap();
-
         auto size = dh_increment_size * _num_descriptors;
+        CPU_DESCRIPTOR_HEAP_ENTRY* entry = RequestEntry(size);
 
-        // entry.usageが要求サイズ未満
-        auto&& entry = entries_head[*free_entry_indices_head];
-        if (entry.usage + size > entry.budget)
-            AllocateHeap();
-
-        auto&& ranges = entry.free_ranges;
-        for (auto&& it = ranges.begin(), end = ranges.end(); it != end; it++)
+        auto Alloc = [this, _num_descriptors, size](auto&& _entry, auto&& _range, auto&& _it_bef)
         {
-            auto&& range = *it;
-            if (size > range.CalcSize())
-                continue;
-
-            auto result = CPU_DESCRIPTOR_ALLOCATION{ *free_entry_indices_head, (uint32_t)dh_increment_size, (uint32_t)_num_descriptors, { range.begin, range.begin.ptr + size } };
+            auto result = CPU_DESCRIPTOR_ALLOCATION{ _entry.heap_index, (uint32_t)dh_increment_size, (uint32_t)_num_descriptors, { _range.begin, _range.begin.ptr + size } };
 
             // ディスクリプタが消費するメモリサイズ * 割り当て数 のオフセットを加算
-            range.begin.ptr += size;
-            entry.usage     += size;
+            _range.begin.ptr += size;
+            _entry.usage     += size;
 
-            if (range.begin.ptr == range.end.ptr)
+            if (_range.begin.ptr == _range.end.ptr)
             {
                 // rangeがいっぱいになった
-                ranges.erase(it);
+                _entry.free_ranges.erase_after(_it_bef);
+
                 // emptyの場合、フリーヒープのインデックス配列から削除。
-                if (ranges.empty())
-                    PopFulledEntryIndex();
+                if (_entry.free_ranges.empty())
+                    free_entry_indices.erase(_entry.heap_index);
             }
 
             return result;
+        };
+
+        auto&& it_bef = entry->free_ranges.before_begin();
+        for (auto& i : entry->free_ranges)
+        {
+            if (size <= i.CalcSize())
+                return Alloc(*entry, i, it_bef);
+            ++it_bef;
         }
 
         // 要求サイズは満たすが、断片化していたので新規作成。
-        AllocateHeap();
-        return Allocate(_num_descriptors);
+        entry = AllocateHeap();
+        return Alloc(*entry, *entry->free_ranges.begin(), entry->free_ranges.before_begin());;
     }
 
     void Free(const CPU_DESCRIPTOR_ALLOCATION& _allocation)
     {
         std::lock_guard lock(allocation_mutex);
 
-        auto&& entry = entries_head[_allocation.heap_index];
+        auto&& entry = *entries_head[_allocation.heap_index];
         entry.usage -= _allocation.handle.CalcSize();
 
         auto&& ranges = entry.free_ranges;
-        bool is_found = false;
-        for (auto&& it = ranges.begin(), end = ranges.end(); it != end; it++)
+        bool has_found = false;
+        auto&& it = ranges.begin();
+        for (auto& i : ranges)
         {
-            auto&& i = *it;
-            // b=i.begin.ptr, e=i.end.ptr, p=_allocation.descriptor.ptr
+            // b=i.begin.ptr, e=i.end.ptr, p=_allocation.handle.begin.ptr
             // ------------------------b--------------------------------------
             // ----------------p_______|--------------------------------------
             if (_allocation.handle.end.ptr == i.begin.ptr)
             {
                 i.begin.ptr = _allocation.handle.begin.ptr;
-                is_found = true;
+                has_found = true;
                 break;
             }
 
@@ -142,7 +137,7 @@ public:
             else if (_allocation.handle.begin.ptr == i.end.ptr)
             {
                 i.end.ptr = _allocation.handle.end.ptr;
-                is_found = true;
+                has_found = true;
                 break;
             }
 
@@ -151,22 +146,21 @@ public:
             // -----p-------exxxxxxx-----------------------------------------------
             else if (_allocation.handle.end.ptr < i.begin.ptr)
             {
-                ranges.insert(it, _allocation.handle);
-                is_found = true;
+                ranges.insert_after(it, _allocation.handle);
+                has_found = true;
                 break;
             }
+
+            ++it;
         }
 
-        if (!is_found)
+        if (!has_found)
         {
             // 現在emptyの場合、割り当ての再開のためインデックスを追加
             if (ranges.empty())
-            {
-                free_entry_indices.push_back(_allocation.heap_index);
-                free_entry_indices_head = &free_entry_indices.front();
-            }
+                free_entry_indices.emplace(_allocation.heap_index);
 
-            ranges.emplace_back(_allocation.handle);
+            ranges.emplace_front(_allocation.handle);
         }
     }
 
@@ -176,9 +170,9 @@ public:
     }
 
 private:
-    void AllocateHeap()
+    CPU_DESCRIPTOR_HEAP_ENTRY* AllocateHeap()
     {
-        auto&& new_entry = entries.emplace_back();
+        auto&& new_entry = *entries.emplace_back(B3DNew(CPU_DESCRIPTOR_HEAP_ENTRY));
         entries_head = entries.data();
         auto hr = device->CreateDescriptorHeap(&dh_desc, IID_PPV_ARGS(&new_entry.descriptor_heap));
         B3D_ASSERT(hr == S_OK && __FUNCTION__);
@@ -190,18 +184,40 @@ private:
         auto handle = new_entry.descriptor_heap->GetCPUDescriptorHandleForHeapStart();
         new_entry.budget = size_t(dh_desc.NumDescriptors) * dh_increment_size;
         new_entry.usage = 0;
-        new_entry.free_ranges.emplace_back(CPU_DESCRIPTOR_RANGE{ handle.ptr ,handle.ptr + new_entry.budget });
+        new_entry.free_ranges.emplace_front(CPU_DESCRIPTOR_RANGE{ handle.ptr ,handle.ptr + new_entry.budget });
 
         // 割り当て可能としてインデックスを追加
-        free_entry_indices.push_back(uint32_t(entries.size()) - 1);
-        free_entry_indices_head = &free_entry_indices.front();
+        new_entry.heap_index = uint32_t(entries.size()) - 1;
+        free_entry_indices.emplace(new_entry.heap_index);
+
+        return &new_entry;
     }
 
-    void PopFulledEntryIndex()
+    CPU_DESCRIPTOR_HEAP_ENTRY* RequestEntry(size_t _size)
     {
-        free_entry_indices.pop_front();
-        if (free_entry_indices.size() != 0)
-            free_entry_indices_head = &free_entry_indices.front();
+        CPU_DESCRIPTOR_HEAP_ENTRY* result{};
+        if (free_entry_indices.empty())
+        {
+            result = AllocateHeap();
+        }
+        else
+        {
+            bool has_found = false;
+            for (auto& i : free_entry_indices)
+            {
+                auto&& e = entries_head[i];
+                // entry.usageが要求サイズ未満
+                if (e->usage + _size <= e->budget)
+                {
+                    result = e;
+                    has_found = true;
+                    break;
+                }
+            }
+            if (!has_found)
+                result = AllocateHeap();
+        }
+        return result;
     }
 
 private:
@@ -211,23 +227,22 @@ private:
         {
             usage = 0;
             budget = 0;
-            hlp::SwapClear(free_ranges);
             hlp::SafeRelease(descriptor_heap);
         }
-        ID3D12DescriptorHeap*            descriptor_heap;
-        util::List<CPU_DESCRIPTOR_RANGE> free_ranges;
-        size_t                           budget;
-        size_t                           usage;
+        ID3D12DescriptorHeap*               descriptor_heap;
+        util::FwdList<CPU_DESCRIPTOR_RANGE> free_ranges;
+        size_t                              budget;
+        size_t                              usage;
+        uint32_t                            heap_index;
     };
     util::ComPtr<ID3D12Device> device;
     D3D12_DESCRIPTOR_HEAP_DESC dh_desc;
     size_t                     dh_increment_size;
 
-    util::DyArray<CPU_DESCRIPTOR_HEAP_ENTRY> entries;
-    util::List<uint32_t>                     free_entry_indices;
-    CPU_DESCRIPTOR_HEAP_ENTRY*               entries_head;
-    uint32_t*                                free_entry_indices_head;
-    std::mutex                               allocation_mutex;
+    util::DyArray<CPU_DESCRIPTOR_HEAP_ENTRY*>   entries;
+    util::Set<uint32_t>                         free_entry_indices;
+    CPU_DESCRIPTOR_HEAP_ENTRY**                 entries_head;
+    std::mutex                                  allocation_mutex;
 
 };
 
