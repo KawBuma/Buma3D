@@ -896,9 +896,14 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareRasterizationState(VkGraphicsPipeli
     auto&& rasterization_state = *desc.rasterization_state;
     auto&& rasterization_statevk = *(_dd->rasterization_state = B3DMakeUnique(RASTERIZATION_STATE_DATA_VK)).get();
 
+    /* HACK: depthClampEnableは、生成された深度値を深度バッファの値と比較する前に、VIEWPORT::min_depth,max_depthへクランプする事を有効にします。
+             D3Dではこの機能を無効化するAPIが存在しないため(https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#Viewport)、
+             現在B3DのVulkanの実装では、対応している場合常にクランプを有効にしています。 */
+    auto&& features = device->GetDeviceAdapter()->GetPhysicalDeviceData().features2.features;
+
     rasterization_statevk.ci.flags                   = 0;// reserved
-    rasterization_statevk.ci.depthClampEnable        = rasterization_state.depth_bias_clamp != 0.f;
-    rasterization_statevk.ci.rasterizerDiscardEnable = VK_FALSE;
+    rasterization_statevk.ci.depthClampEnable        = features.depthClamp; // TODO: このような機能対応の有無をB3DがAPIとして提供すべき。
+    rasterization_statevk.ci.rasterizerDiscardEnable = VK_FALSE; // FIXME: ピクセルシェーダーステージが存在しない場合暗黙的に無効にできる?
     rasterization_statevk.ci.polygonMode             = util::GetNativeFillMode(rasterization_state.fill_mode);
     rasterization_statevk.ci.cullMode                = util::GetNativeCullMode(rasterization_state.cull_mode);
     rasterization_statevk.ci.frontFace               = rasterization_state.is_front_counter_clockwise ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
