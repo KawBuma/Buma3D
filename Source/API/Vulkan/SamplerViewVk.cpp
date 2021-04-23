@@ -48,7 +48,7 @@ B3D_APIENTRY SamplerViewVk::Init(DeviceVk* _device, const SAMPLER_DESC& _desc)
     ci.addressModeU            = util::GetNativeAddressMode         (desc.texture.address.u);
     ci.addressModeV            = util::GetNativeAddressMode         (desc.texture.address.v);
     ci.addressModeW            = util::GetNativeAddressMode         (desc.texture.address.w);
-    ci.anisotropyEnable        = desc.filter.mode == SAMPLER_FILTER_MODE_ANISOTROPHIC;
+    ci.anisotropyEnable        = desc.filter.mode == SAMPLER_FILTER_MODE_ANISOTROPIC;
     ci.compareEnable           = desc.filter.reduction_mode == SAMPLER_FILTER_REDUCTION_MODE_COMPARISON;
     ci.maxAnisotropy           = SCAST<float>(desc.filter.max_anisotropy);
     ci.compareOp               = util::GetNativeComparisonFunc(desc.filter.comparison_func);

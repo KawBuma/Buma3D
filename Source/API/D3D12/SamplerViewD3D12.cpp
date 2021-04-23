@@ -38,7 +38,7 @@ B3D_APIENTRY SamplerViewD3D12::Init(DeviceD3D12* _device, const SAMPLER_DESC& _d
             , util::GetNativeTextureSampleMode  (desc.texture.sample.magnification)                        // mag
             , util::GetNativeTextureSampleMode  (desc.texture.sample.mip)                                  // mip
             , util::GetNativeFilterReductionMode(desc.filter.reduction_mode)                               // reduction
-        ) | (desc.filter.mode == SAMPLER_FILTER_MODE_ANISOTROPHIC ? D3D12_ANISOTROPIC_FILTERING_BIT : 0x0) // aniso enabled ?
+        ) | (desc.filter.mode == SAMPLER_FILTER_MODE_ANISOTROPIC ? D3D12_ANISOTROPIC_FILTERING_BIT : 0x0) // aniso enabled ?
     );
 
     desc12.MaxAnisotropy   = desc.filter.max_anisotropy;

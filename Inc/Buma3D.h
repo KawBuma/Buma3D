@@ -2175,7 +2175,7 @@ struct STREAM_OUTPUT_BUFFER_VIEW_DESC
 enum SAMPLER_FILTER_MODE : EnumT
 {
       SAMPLER_FILTER_MODE_STANDARD
-    , SAMPLER_FILTER_MODE_ANISOTROPHIC
+    , SAMPLER_FILTER_MODE_ANISOTROPIC
 };
 
 enum SAMPLER_FILTER_REDUCTION_MODE : EnumT
@@ -2229,7 +2229,7 @@ struct SAMPLER_FILTER_DESC
 {
     SAMPLER_FILTER_MODE           mode;
     SAMPLER_FILTER_REDUCTION_MODE reduction_mode;
-    uint32_t                      max_anisotropy; // SAMPLER_FILTER_REDUCTION_MODE_ANISOTROPHICの場合に使用します。
+    uint32_t                      max_anisotropy; // SAMPLER_FILTER_REDUCTION_MODE_ANISOTROPICの場合に使用します。
     COMPARISON_FUNC               comparison_func;// SAMPLER_FILTER_REDUCTION_MODE_COMPARISONの場合に使用します。
 };
 
