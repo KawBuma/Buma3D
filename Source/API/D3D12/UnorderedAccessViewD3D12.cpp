@@ -156,6 +156,7 @@ B3D_APIENTRY UnorderedAccessViewD3D12::InitAsBufferUAV()
         srv_buf.FirstElement        = bdesc.first_element;
         srv_buf.NumElements         = (UINT)bdesc.num_elements;
         srv_buf.StructureByteStride = 0;
+        srv_buf.Flags               = D3D12_BUFFER_UAV_FLAG_RAW;
         virtual_address = buffer->GetGPUVirtualAddress() + (util::GetFormatSize(RESOURCE_FORMAT_R32_TYPELESS) * bdesc.first_element * bdesc.num_elements);
         break;
     }

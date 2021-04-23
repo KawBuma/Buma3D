@@ -147,6 +147,7 @@ B3D_APIENTRY ShaderResourceViewD3D12::InitAsBufferSRV()
         srv_buf.FirstElement        = bdesc.first_element;
         srv_buf.NumElements         = (UINT)bdesc.num_elements;
         srv_buf.StructureByteStride = 0;
+        srv_buf.Flags               = D3D12_BUFFER_SRV_FLAG_RAW;
         virtual_address = buffer->GetGPUVirtualAddress() + (util::GetFormatSize(RESOURCE_FORMAT_R32_TYPELESS) * bdesc.first_element * bdesc.num_elements);
         break;
     }
