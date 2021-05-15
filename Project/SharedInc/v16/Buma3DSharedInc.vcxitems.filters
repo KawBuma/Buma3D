@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DStringHelper.h">
       <Filter>Common\Helper</Filter>
     </ClInclude>
@@ -11,19 +10,20 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\Buma3DMemory.h">
       <Filter>Common\Util</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Internal\Buma3DDetails.h">
-      <Filter>Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Util\Buma3DPtr.h">
-      <Filter>Common\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Util\Buma3DUtils.h">
-      <Filter>Common\Util</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\TLSFMemoryAllocator.h">
       <Filter>Common\Util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\FormatUtils.h">
+      <Filter>Common\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D\Internal\Buma3DDetails.h">
+      <Filter>Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D\Buma3D.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D\Util\Buma3DPtr.h">
+      <Filter>Common\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D\Util\Buma3DUtils.h">
       <Filter>Common\Util</Filter>
     </ClInclude>
   </ItemGroup>

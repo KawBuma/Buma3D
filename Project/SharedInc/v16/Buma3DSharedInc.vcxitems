@@ -14,10 +14,10 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Internal\Buma3DDetails.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Util\Buma3DPtr.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Util\Buma3DUtils.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D\Buma3D.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D\Internal\Buma3DDetails.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D\Util\Buma3DPtr.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Inc\Buma3D\Util\Buma3DUtils.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DCommonHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Helper\Buma3DStringHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Source\Common\Util\Buma3DMemory.h" />

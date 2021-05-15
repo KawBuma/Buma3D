@@ -9,7 +9,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\include\;$(ProjectDir)..\..\..\Inc\;$(ProjectDir)..\..\..\Source\;$(ProjectDir)..\..\..\Source\API\Vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\include\;$(ProjectDir)..\..\..\Inc\Buma3D\;$(ProjectDir)..\..\..\Source\;$(ProjectDir)..\..\..\Source\API\Vulkan\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
