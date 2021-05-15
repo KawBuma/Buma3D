@@ -265,14 +265,10 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
     if (_old_swapchain)
     {
         // 以前フルスクリーンで、解除する場合
-        if (   desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE &&
-            !(_desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE))
+        if (is_enabled_fullscreen)
         {
             auto vkr = devpfn->vkReleaseFullScreenExclusiveModeEXT(vkdevice, _old_swapchain);
             B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
-            // TODO: CHECK
-            if (vkr != VK_SUCCESS)
-                B3D_DEBUG_BREAK();
             is_enabled_fullscreen = false;
         }
     }

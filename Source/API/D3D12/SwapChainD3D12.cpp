@@ -273,8 +273,8 @@ B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsdesc{};
     fsdesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
     fsdesc.Scaling          = DXGI_MODE_SCALING_UNSPECIFIED;
-    fsdesc.Windowed         = TRUE;
-    
+    fsdesc.Windowed         = desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE ? FALSE : TRUE;
+
     // TODO: ストアアプリの対応。
     // スワップチェインの作成
     auto hwnd = RCAST<HWND>(RCAST<const SURFACE_PLATFORM_DATA_WINDOWS*>(desc.surface->GetDesc().platform_data.data)->hwnd);
