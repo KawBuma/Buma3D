@@ -355,5 +355,37 @@ MigrationBackup/
 # End of https://www.gitignore.io/api/visualstudio
 
 
-#Buma3D Externals
-/External/D3DX12/
+# Created by https://www.toptal.com/developers/gitignore/api/cmake
+# Edit at https://www.toptal.com/developers/gitignore?templates=cmake
+
+### CMake ###
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+CMakeUserPresets.json
+
+### CMake Patch ###
+# External projects
+*-prefix/
+
+# End of https://www.toptal.com/developers/gitignore/api/cmake
+
+
+# Buma3D
+
+# external
+/External
+
+# CMake generated
+/build
+/install
+
+# End of Buma3D
