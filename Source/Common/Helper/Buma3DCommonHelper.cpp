@@ -1,5 +1,5 @@
-#include "Buma3DPCH.h"
-#include "Buma3DCommonHelper.h"
+#include <type_traits>
+#include "./Buma3DCommonHelper.h"
 
 namespace buma3d
 {

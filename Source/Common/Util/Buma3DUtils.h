@@ -1,5 +1,5 @@
 #pragma once
-#include "./Internal/Buma3DDetails.h"
+#include "./Buma3DDetails.h"
 
 namespace buma3d
 {
