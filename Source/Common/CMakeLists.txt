@@ -1,24 +1,28 @@
-cmake_minimum_required(3.16)
+cmake_minimum_required(VERSION 3.16)
 
-project(Buma3D_Common)
-
+# ===============================================================================================
+# パスの定義
+# ===============================================================================================
 set(COMMON_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(B3D_HEADERS
+# ===============================================================================================
+# 各グラフィックスAPI用実装共通のソースファイル 
+# ===============================================================================================
+set(BUMA3D_PUBLIC_HEADERS
     ${BUMA3D_INCLUDE_DIR}/Buma3D/Internal/Buma3DDetails.h
     ${BUMA3D_INCLUDE_DIR}/Buma3D/Util/Buma3DUtils.h
     ${BUMA3D_INCLUDE_DIR}/Buma3D/Util/Buma3DPtr.h
     ${BUMA3D_INCLUDE_DIR}/Buma3D/Buma3D.h
 )
 
-set(SOURCES_HELPER
+set(HELPER_SOURCES
     ${COMMON_SRC_DIR}/Helper/Buma3DCommonHelper.cpp
     ${COMMON_SRC_DIR}/Helper/Buma3DCommonHelper.h
     ${COMMON_SRC_DIR}/Helper/Buma3DStringHelper.cpp
     ${COMMON_SRC_DIR}/Helper/Buma3DStringHelper.h
 )
 
-set(SOURCES_UTIL
+set(UTIL_SOURCES
     ${COMMON_SRC_DIR}/Util/Buma3DMemory.cpp
     ${COMMON_SRC_DIR}/Util/Buma3DMemory.h
     ${COMMON_SRC_DIR}/Util/FormatUtils.cpp
@@ -27,4 +31,12 @@ set(SOURCES_UTIL
     ${COMMON_SRC_DIR}/Util/TLSFMemoryAllocator.h
 )
 
-add_library(Buma3D_Common ${B3D_HEADERS} ${SOURCES_HELPER} ${SOURCES_UTIL})
+# ===============================================================================================
+# 各グラフィックスAPI用実装共通オブジェクトライブラリ
+# ===============================================================================================
+add_library(Buma3D_Common OBJECT ${BUMA3D_PUBLIC_HEADERS} ${HELPER_SOURCES} ${UTIL_SOURCES})
+target_link_libraries(Buma3D_Common PUBLIC buma3d_compiler_flags)
+
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HELPER_SOURCES} ${UTIL_SOURCES})
+
+target_include_directories(Buma3D_Common PUBLIC ${BUMA3D_INCLUDE_DIR} ${COMMON_SRC_DIR})
