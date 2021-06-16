@@ -28,36 +28,12 @@
 #pragma endregion
 
 
-#ifndef B3D_ASSERT
-
-#if defined(DEBUG) || defined(_DEBUG)
-#define B3D_ASSERT(expr) assert(expr)
-#define B3D_ASSERT_EXPR(expr, msg) _ASSERT_EXPR(expr, msg)
-#else
-#define B3D_ASSERT(expr) (expr)
-#define B3D_ASSERT_EXPR(expr, msg) (expr, msg)
-#endif
-
-#endif
-
-#define B3D_DEBUG_BREAK DebugBreak
-
-#define SCAST static_cast
-#define DCAST dynamic_cast
-#define RCAST reinterpret_cast
-#define CCAST const_cast
-
-#include "Buma3D.h"
-#include "Util/Buma3DUtils.h"
-#include "Util/Buma3DPtr.h"
+#include <Buma3D/Buma3D.h>
+#include <Buma3D/Util/Buma3DPtr.h>
+#include <Util/Buma3DUtils.h>
 
 namespace buma3d
 {
-
-inline constexpr bool IS_ENABLE_WHOLE_DEBUG           = true;
-inline constexpr bool IS_ENABLE_INTERNAL_DEBUG_OUTPUT = true && IS_ENABLE_WHOLE_DEBUG;
-inline constexpr bool IS_ENABLE_DEBUG_OUTPUT          = true && IS_ENABLE_WHOLE_DEBUG;
-inline constexpr bool IS_ENABLE_REFCOUNT_DEBUG        = false && IS_ENABLE_WHOLE_DEBUG;
 
 // 前方宣言
 
@@ -128,18 +104,6 @@ DECLARE_VK_SHARED_PTR(AccelerationStructureVk);
 #undef DECLARE_VK_SHARED_PTR
 
 }// namespace buma3d
-
-#define B3D_REFCOUNT_DEBUG(ref_count)                                                                               \
-    if constexpr (buma3d::IS_ENABLE_REFCOUNT_DEBUG)                                                                 \
-    {                                                                                                               \
-        hlp::OutDebugStr(hlp::WStringConvolution(__FUNCTION__" ", GetName(), L" - ref count: ", ref_count, L'\n')); \
-    }
-
-#define B3D_WEAKREFCOUNT_DEBUG(weak_ref_count)                                                                                \
-    if constexpr (buma3d::IS_ENABLE_REFCOUNT_DEBUG)                                                                           \
-    {                                                                                                                         \
-        hlp::OutDebugStr(hlp::WStringConvolution(__FUNCTION__" ", GetName(), L" - weak ref count: ", weak_ref_count, L'\n')); \
-    }
 
 
 #if B3D_PLATFORM_IS_USED_WINDOWS

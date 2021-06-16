@@ -29,32 +29,12 @@
 #pragma endregion
 
 
-#if defined(DEBUG) || defined(_DEBUG)
-#define B3D_ASSERT(expr) assert(expr)
-#define B3D_ASSERT_EXPR(expr, msg) _ASSERT_EXPR(expr, msg)
-#else
-#define B3D_ASSERT(expr) (expr)
-#define B3D_ASSERT_EXPR(expr, msg) (expr, msg)
-#endif
-
-#define B3D_DEBUG_BREAK DebugBreak
-
-#define SCAST static_cast
-#define DCAST dynamic_cast
-#define RCAST reinterpret_cast
-#define CCAST const_cast
-
-#include "Buma3D.h"
-#include "Util/Buma3DUtils.h"
-#include "Util/Buma3DPtr.h"
+#include <Buma3D/Buma3D.h>
+#include <Buma3D/Util/Buma3DPtr.h>
+#include <Util/Buma3DUtils.h>
 
 namespace buma3d
 {
-
-inline constexpr bool IS_ENABLE_WHOLE_DEBUG           = true;
-inline constexpr bool IS_ENABLE_INTERNAL_DEBUG_OUTPUT = true && IS_ENABLE_WHOLE_DEBUG;
-inline constexpr bool IS_ENABLE_DEBUG_OUTPUT          = true && IS_ENABLE_WHOLE_DEBUG;
-inline constexpr bool IS_ENABLE_REFCOUNT_DEBUG        = false && IS_ENABLE_WHOLE_DEBUG;
 
 // 前方宣言
 
@@ -129,34 +109,20 @@ DECLARE_D3D12_SHARED_PTR(AccelerationStructureD3D12);
 
 }// namespace buma3d
 
-#define B3D_REFCOUNT_DEBUG(ref_count)                                                           \
-    if constexpr (buma3d::IS_ENABLE_REFCOUNT_DEBUG)                                             \
-    {                                                                                           \
-        auto n = GetName();                                                                     \
-        B3D_ADD_DEBUG_MSG_INFO_B3D(n ? n : "(unnamed)", " - ref count = ", ref_count, '\n');    \
-    }
-
-#define B3D_WEAKREFCOUNT_DEBUG(weak_ref_count)                                                      \
-    if constexpr (buma3d::IS_ENABLE_REFCOUNT_DEBUG)                                                 \
-    {                                                                                               \
-        auto n = GetName();                                                                         \
-        B3D_ADD_DEBUG_MSG_INFO_B3D(n ? n : "(unnamed)", " - weak ref count = ", ref_count, '\n');   \
-    }
-
 
 // directx include
 #define NOMINMAX
 #include <dxgidebug.h>
 #include <dxgi1_6.h>
 #include <d3d12.h>
-#include <../External/D3DX12/d3dx12.h>
+#include <directx/d3dx12.h>
 #include <wrl.h>
 #include <pix3.h>
 
-#include "Common/Helper/Buma3DCommonHelper.h"
-#include "Common/Helper/Buma3DStringHelper.h"
-#include "Common/Util/Buma3DMemory.h"
-#include "Common/Util/FormatUtils.h"
+#include <Helper/Buma3DCommonHelper.h>
+#include <Helper/Buma3DStringHelper.h>
+#include <Util/Buma3DMemory.h>
+#include <Util/FormatUtils.h>
 
 #include "FormatUtilsD3D12.h"
 #include "UtilsD3D12.h"
