@@ -19,58 +19,58 @@ class weak_ptr;
 template <class _Ty>
 struct default_delete;
 
-template <class _Ty, class _Dx = default_delete<_Ty>>
+template <class _Ty, class _Dx>
 class unique_ptr;
 
 template <class _Ty, size_t>
 class array;
 
-template <class _Ty, class _Alloc = allocator<_Ty>>
+template <class _Ty, class _Alloc>
 class vector;
 
-template <class _Ty, class _Alloc = allocator<_Ty>>
+template <class _Ty, class _Alloc>
 class list;
 
-template <class _Ty, class _Alloc = allocator<_Ty>>
+template <class _Ty, class _Alloc>
 class forward_list;
 
-template <class _Ty, class _Alloc = allocator<_Ty>>
+template <class _Ty, class _Alloc>
 class deque;
 
-template <class _Ty, class _Container = deque<_Ty>>
+template <class _Ty, class _Container>
 class queue;
 
-template <class _Ty, class _Container = deque<_Ty>>
+template <class _Ty, class _Container>
 class stack;
 
-template <class _Ty = void>
+template <class _Ty>
 struct less;
 
 template <class _Ty1, class _Ty2>
 struct pair;
 
-template <class _Kty, class _Ty, class _Pr = less<_Kty>, class _Alloc = allocator<pair<const _Kty, _Ty>>>
+template <class _Kty, class _Ty, class _Pr, class _Alloc>
 class map;
 
 template <class _Kty>
 struct hash;
 
-template <class _Ty = void>
+template <class _Ty>
 struct equal_to;
 
-template <class _Kty, class _Ty, class _Hasher = hash<_Kty>, class _Keyeq = equal_to<_Kty>, class _Alloc = allocator<pair<const _Kty, _Ty>>>
+template <class _Kty, class _Ty, class _Hasher, class _Keyeq, class _Alloc>
 class unordered_map;
 
-template <class _Kty, class _Pr = less<_Kty>, class _Alloc = allocator<_Kty>>
+template <class _Kty, class _Pr, class _Alloc>
 class set;
 
-template <class _Kty, class _Hasher = hash<_Kty>, class _Keyeq = equal_to<_Kty>, class _Alloc = allocator<_Kty>>
+template <class _Kty, class _Hasher, class _Keyeq, class _Alloc>
 class unordered_set;
 
 template <class _Elem>
 struct char_traits;
 
-template <class _Elem, class _Traits = char_traits<_Elem>, class _Alloc = allocator<_Elem>>
+template <class _Elem, class _Traits, class _Alloc>
 class basic_string;
 
 template <class _Elem, class _Traits, class _Alloc>

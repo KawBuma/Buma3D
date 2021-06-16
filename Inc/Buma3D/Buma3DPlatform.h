@@ -1,6 +1,6 @@
 #pragma once
 
-// �v���b�g�t�H�[��
+// プラットフォーム
 
 #ifndef B3D_PLATFORM_USING
 
@@ -16,7 +16,7 @@
 #   endif // __ANDROID__
 
 
-    // �v���b�g�t�H�[�����ʒ萔
+    // プラットフォーム識別定数
 #   if B3D_PLATFORM_USING == B3D_PLATFORM_WINDOWS
 #       define B3D_PLATFORM_IS_USED_WINDOWS (1)
 #       define B3D_PLATFORM_IS_USED_ANDROID (0)
@@ -28,7 +28,7 @@
 #   endif // B3D_PLATFORM_USING == B3D_PLATFORM_ANDROID
 
 
-    // API�V���{���錾�̑������`
+    // APIシンボル宣言の属性を定義
 #   if defined(B3D_DLLEXPORT) && B3D_PLATFORM_IS_USED_WINDOWS
 #       define B3D_DLL_API extern "C" __declspec(dllexport)
 #       define B3D_API 
@@ -45,27 +45,24 @@
 
 #   if B3D_PLATFORM_USING == B3D_PLATFORM_WINDOWS
         /* __declspec(novtable)
-        ���̌`����__declspec�́A�C�ӂ̃N���X�錾�ɓK�p�ł��܂��B
-        �������A�����ȃC���^�[�t�F�[�X�N���X�A�܂�A���ꎩ�̂ł̓C���X�^���X������Ȃ��N���X�ɂ̂ݓK�p����K�v������܂��B
-        __declspec�́A�R���p�C���[���R�[�h�𐶐����āA�N���X�̃R���X�g���N�^�[����уf�X�g���N�^�[��vfptr������������̂��~���܂��B
-        �����̏ꍇ�A����ɂ��A�N���X�Ɋ֘A�t�����Ă���vtable�ւ̎Q�Ƃ݂̂��폜����A�����J�ɂ���č폜����܂��B
-        ���̌`����__declspec���g�p����ƁA�R�[�h�T�C�Y��啝�ɍ팸�ł��܂��B
-        novtable�Ń}�[�N���ꂽ�N���X���C���X�^���X�����Ă���N���X�����o�[�ɃA�N�Z�X���悤�Ƃ���ƁA�A�N�Z�X�ᔽ���������܂��B*/
+        この形式の__declspecは、任意のクラス宣言に適用できます。
+        ただし、純粋なインターフェースクラス、つまり、それ自体ではインスタンス化されないクラスにのみ適用する必要があります。
+        __declspecは、コンパイラーがコードを生成して、クラスのコンストラクターおよびデストラクターでvfptrを初期化するのを停止します。
+        多くの場合、これにより、クラスに関連付けられているvtableへの参照のみが削除され、リンカによって削除されます。
+        この形式の__declspecを使用すると、コードサイズを大幅に削減できます。
+        novtableでマークされたクラスをインスタンス化してからクラスメンバーにアクセスしようとすると、アクセス違反が発生します。*/
 #       define B3D_INTERFACE struct B3D_API __declspec(novtable)
 
 #   else
 #       define B3D_INTERFACE struct B3D_API 
 #   endif
 
-    // �Ăяo���K��
+    // 呼び出し規約
 #   if B3D_PLATFORM_IS_USED_WINDOWS
 #       define B3D_APIENTRY __stdcall
 #   else
 #       define B3D_APIENTRY
 #   endif // B3D_PLATFORM_IS_USED_WINDOWS
 
-
-    // 1�x���Q�Ƃ���Ȃ��ꍇ��h��
-#   define B3D_UNREFERENCED(...) (__VA_ARGS__)
 
 #endif // !B3D_PLATFORM_USING

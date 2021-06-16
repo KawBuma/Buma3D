@@ -5,11 +5,11 @@
 
 
 // インクルード
-#include <Buma3D/Util/Buma3DPlatform.h>
-#include <Buma3D/Util/Buma3DUtils.h>
+#include <Buma3D/Buma3DPlatform.h>
 #include <type_traits>
 
 
+// プラットフォーム
 namespace buma3d
 {
 
@@ -48,74 +48,64 @@ inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, ui
 }// namespace buma3d
 
 
-// 前方宣言, ポインタusing
+// 前方宣言 
 namespace buma3d
 {
 
-#define DECLARE_SHARED_PTR(T)                          \
-//using T##Ptr     = util::SharedPtr<I##T>;            \
-//using T##WPtr    = util::WeakPtr<I##T>;              \
-//using T##CPtr    = util::SharedPtr<const I##T>;      \
-//using T##CWPtr   = util::WeakPtr<const I##T>;        \
-//using T##RawPtr  = I##T*;                            \
-//using T##CRawPtr = const I##T*
+struct ISharedBase;
+struct IBlob;
+struct INameableObject;
 
-struct ISharedBase;                 DECLARE_SHARED_PTR(SharedBase);
-struct IBlob;                       DECLARE_SHARED_PTR(Blob);
-struct INameableObject;             DECLARE_SHARED_PTR(NameableObject);
+struct IShaderModule;
 
-struct IShaderModule;               DECLARE_SHARED_PTR(ShaderModule);
+struct IDeviceFactory;
+struct IDebugMessage;
+struct IDebugMessageQueue;
+struct IDeviceAdapter;
+struct ISurface;
+struct IDevice;
+struct IDeviceChild;
+struct ISwapChain;
 
-struct IDeviceFactory;              DECLARE_SHARED_PTR(DeviceFactory);
-struct IDebugMessage;               DECLARE_SHARED_PTR(DebugMessage);
-struct IDebugMessageQueue;          DECLARE_SHARED_PTR(DebugMessageQueue);
-struct IDeviceAdapter;              DECLARE_SHARED_PTR(DeviceAdapter);
-struct ISurface;                    DECLARE_SHARED_PTR(Surface);
-struct IDevice;                     DECLARE_SHARED_PTR(Device);
-struct IDeviceChild;                DECLARE_SHARED_PTR(DeviceChild);
-struct ISwapChain;                  DECLARE_SHARED_PTR(SwapChain);
+struct IResourceHeap;
+struct IResource;
+struct IBuffer;
+struct ITexture;
 
-struct IResourceHeap;               DECLARE_SHARED_PTR(ResourceHeap);
-struct IResource;                   DECLARE_SHARED_PTR(Resource);
-struct IBuffer;                     DECLARE_SHARED_PTR(Buffer);
-struct ITexture;                    DECLARE_SHARED_PTR(Texture);
+struct IView;
+struct IVertexBufferView;
+struct IIndexBufferView;
+struct IConstantBufferView;
+struct IRenderTargetView;
+struct IDepthStencilView;
+struct IShaderResourceView;
+struct IUnorderedAccessView;
+struct ISamplerView;
+struct IStreamOutputBufferView;
 
-struct IView;                       DECLARE_SHARED_PTR(View);
-struct IVertexBufferView;           DECLARE_SHARED_PTR(VertexBufferView);
-struct IIndexBufferView;            DECLARE_SHARED_PTR(IndexBufferView);
-struct IConstantBufferView;         DECLARE_SHARED_PTR(ConstantBufferView);
-struct IRenderTargetView;           DECLARE_SHARED_PTR(RenderTargetView);
-struct IDepthStencilView;           DECLARE_SHARED_PTR(DepthStencilView);
-struct IShaderResourceView;         DECLARE_SHARED_PTR(ShaderResourceView);
-struct IUnorderedAccessView;        DECLARE_SHARED_PTR(UnorderedAccessView);
-struct ISamplerView;                DECLARE_SHARED_PTR(SamplerView);
-struct IStreamOutputBufferView;     DECLARE_SHARED_PTR(StreamOutputBufferView);
+struct IFramebuffer;
+struct IRenderPass;
+struct IDescriptorPool0;
+struct IDescriptorSet0;
+struct IRootSignature;
+struct IPipelineState;
 
-struct IFramebuffer;                DECLARE_SHARED_PTR(Framebuffer);
-struct IRenderPass;                 DECLARE_SHARED_PTR(RenderPass);
-struct IDescriptorPool0;            DECLARE_SHARED_PTR(DescriptorPool0);
-struct IDescriptorSet0;             DECLARE_SHARED_PTR(DescriptorSet0);
-struct IRootSignature;              DECLARE_SHARED_PTR(RootSignature);
-struct IPipelineState;              DECLARE_SHARED_PTR(PipelineState);
+struct IDescriptorHeap;
+struct IDescriptorPool;
+struct IDescriptorSet;
+struct IDescriptorUpdate;
+struct IDescriptorSetLayout;
+struct IPipelineLayout;
 
-struct IDescriptorHeap;             DECLARE_SHARED_PTR(DescriptorHeap);
-struct IDescriptorPool;             DECLARE_SHARED_PTR(DescriptorPool);
-struct IDescriptorSet;              DECLARE_SHARED_PTR(DescriptorSet);
-struct IDescriptorUpdate;           DECLARE_SHARED_PTR(DescriptorUpdate);
-struct IDescriptorSetLayout;        DECLARE_SHARED_PTR(IDescriptorSetLayout);
-struct IPipelineLayout;             DECLARE_SHARED_PTR(IPipelineLayout);
+struct ICommandQueue;
+struct ICommandAllocator;
+struct ICommandList;
+struct IFence;
 
-struct ICommandQueue;               DECLARE_SHARED_PTR(CommandQueue);
-struct ICommandAllocator;           DECLARE_SHARED_PTR(CommandAllocator);
-struct ICommandList;                DECLARE_SHARED_PTR(CommandList);
-struct IFence;                      DECLARE_SHARED_PTR(Fence);
+struct IQueryHeap;
+struct ICommandSignature;
 
-struct IQueryHeap;                  DECLARE_SHARED_PTR(QueryHeap);
-struct ICommandSignature;           DECLARE_SHARED_PTR(CommandSignature);
-
-struct IAccelerationStructure;      DECLARE_SHARED_PTR(AccelerationStructure);
-
-#undef DECLARE_SHARED_PTR
+struct IAccelerationStructure;
 
 }// namespace buma3d
 
