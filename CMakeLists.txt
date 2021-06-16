@@ -34,7 +34,7 @@ target_compile_definitions(buma3d_compiler_flags INTERFACE "B3D_DLLEXPORT")
 if(MSVC)
     target_compile_options(buma3d_compiler_flags     INTERFACE "/W3")                    # 警告レベル 
     target_compile_options(buma3d_compiler_flags     INTERFACE "/MP")                    # 複数プロセッサによるコンパイル 
-    target_compile_options(buma3d_compiler_flags     INTERFACE "/source-charset:utf-8>") # ソースファイルの文字セットはutf-8です 
+    target_compile_options(buma3d_compiler_flags     INTERFACE "/source-charset:utf-8")  # ソースファイルの文字セットはutf-8です 
     target_compile_definitions(buma3d_compiler_flags INTERFACE _UNICODE UNICODE)         # これにより、 文字セット: "Unicode 文字セットを使用する" が自動的に選択されます 
 endif(MSVC)
 
