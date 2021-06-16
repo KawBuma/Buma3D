@@ -9,8 +9,6 @@ set(COMMON_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # 各グラフィックスAPI用実装共通のソースファイル 
 # ===============================================================================================
 set(BUMA3D_PUBLIC_HEADERS
-    ${BUMA3D_INCLUDE_DIR}/Buma3D/Internal/Buma3DDetails.h
-    ${BUMA3D_INCLUDE_DIR}/Buma3D/Util/Buma3DUtils.h
     ${BUMA3D_INCLUDE_DIR}/Buma3D/Util/Buma3DPtr.h
     ${BUMA3D_INCLUDE_DIR}/Buma3D/Buma3D.h
 )
@@ -23,6 +21,9 @@ set(HELPER_SOURCES
 )
 
 set(UTIL_SOURCES
+    ${COMMON_SRC_DIR}/Util/Buma3DCompiler.h
+    ${COMMON_SRC_DIR}/Util/Buma3DUtils.h
+    ${COMMON_SRC_DIR}/Util/Buma3DDetails.h
     ${COMMON_SRC_DIR}/Util/Buma3DMemory.cpp
     ${COMMON_SRC_DIR}/Util/Buma3DMemory.h
     ${COMMON_SRC_DIR}/Util/FormatUtils.cpp
