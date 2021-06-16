@@ -1,6 +1,14 @@
-#include "Buma3DPCH.h"
-#include "Buma3DMemory.h"
-#include "TLSFMemoryAllocator.h"
+#include "./Buma3DMemory.h"
+#include "./TLSFMemoryAllocator.h"
+
+#include <Helper/Buma3DCommonHelper.h>
+#include <Helper/Buma3DStringHelper.h>
+
+#include <cstddef>
+#include <cassert>
+#include <mutex>
+#include <sstream>
+#include <unordered_map>
 
 namespace t = tlsf;
 
@@ -205,7 +213,7 @@ struct MA_DEBUG_INFO
     {
         if constexpr (IS_ENABLE_DETECT_MEMORY_CORRUPTION)
         {
-            auto corruption_check_area = reinterpret_cast<MA_DEBUG_INFO::MemoryCorruptionCheckT*>((byte*)(_address)+_request_size);
+            auto corruption_check_area = reinterpret_cast<MA_DEBUG_INFO::MemoryCorruptionCheckT*>((std::byte*)(_address)+_request_size);
             *corruption_check_area = MEMORY_CORRUPTION_CHECK_VALUE;
         }
 
@@ -240,12 +248,12 @@ struct MA_DEBUG_INFO
     }
     bool IsCorrupted()
     {
-        auto corruption_check_area = RCAST<MemoryCorruptionCheckT*>((byte*)(address)+request_size);
+        auto corruption_check_area = RCAST<MemoryCorruptionCheckT*>((std::byte*)(address)+request_size);
         return (*corruption_check_area != MEMORY_CORRUPTION_CHECK_VALUE);
     }
     void WriteCorruptionCheckInfo(DebugSStream& _ss)
     {
-        auto corruption_check_area = RCAST<MemoryCorruptionCheckT*>((byte*)(address)+request_size);
+        auto corruption_check_area = RCAST<MemoryCorruptionCheckT*>((std::byte*)(address)+request_size);
         // NOTE: sizeof(void*) * 2 : 1バイトで16進数における2桁まで表現可能なのでstd::setwは型のサイズの2倍
         _ss << "\tCorruption detected Address : " << SETHEX('0', sizeof(void*) * 2) << address << "(check_area: " << SETHEX('0', sizeof(void*) * 2) << corruption_check_area << ")\n";
         _ss << "\tExpected value              : " << SETHEX('0', MEMORY_CORRUPTION_CHECK_SIZE * 2) << MEMORY_CORRUPTION_CHECK_VALUE << "\n";

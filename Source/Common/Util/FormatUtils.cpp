@@ -1,5 +1,5 @@
-#include "Buma3DPCH.h"
-#include "FormatUtils.h"
+#include <Buma3D/Buma3D.h>
+#include "./FormatUtils.h"
 
 namespace buma3d
 {

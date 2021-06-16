@@ -1,4 +1,5 @@
 #pragma once
+#include <Buma3D/Buma3D.h>
 
 // マクロ
 

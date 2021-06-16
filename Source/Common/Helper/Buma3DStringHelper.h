@@ -1,4 +1,19 @@
 #pragma once
+#include <string>
+#include <sstream>
+#include <iomanip>
+
+#include <Buma3D/Buma3D.h>
+#include <Util/Buma3DDetails.h>
+#include <Util/Buma3DUtils.h>
+#include <Util/Buma3DDefinitions.h>
+
+#if B3D_PLATFORM_IS_USED_WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#endif // B3D_PLATFORM_IS_USED_WINDOWS
+
 
 /*
 標準ライブラリ stringヘッダの実装を改造
@@ -8,8 +23,6 @@ namespace buma3d
 {
 namespace hlp
 {
-
-inline constexpr bool IS_ENABLE_DEBUG_STRING = true;
 
 inline void OutDebugStr(const char* _str)
 {
