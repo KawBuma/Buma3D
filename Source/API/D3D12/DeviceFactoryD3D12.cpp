@@ -1,6 +1,6 @@
 #include"Buma3DPCH.h"
 #include "DeviceFactoryD3D12.h"
-#include "./Common/Util/Buma3DMemory.h"
+#include <Util/Buma3DMemory.h>
 
 namespace buma3d
 {
