@@ -117,7 +117,7 @@ DECLARE_D3D12_SHARED_PTR(AccelerationStructureD3D12);
 #include <d3d12.h>
 #include <directx/d3dx12.h>
 #include <wrl.h>
-#include <pix3.h>
+#include <WinPixEventRuntime/pix3.h>
 
 #include <Helper/Buma3DCommonHelper.h>
 #include <Helper/Buma3DStringHelper.h>
