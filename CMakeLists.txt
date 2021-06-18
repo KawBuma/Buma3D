@@ -44,10 +44,15 @@ endif(MSVC)
 add_subdirectory(Source/Common ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_Common)
 
 if(BUMA3D_ENABLE_D3D12)
-    add_subdirectory(${BUMA3D_EXTERNAL_DIR}/DirectX-Headers)
-    add_subdirectory(${BUMA3D_SOURCE_DIR}/API/D3D12 ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_D3D12)
+add_subdirectory(${BUMA3D_EXTERNAL_DIR}/DirectX-Headers)
+add_subdirectory(${BUMA3D_SOURCE_DIR}/API/D3D12 ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_D3D12)
 endif()
 
 if(BUMA3D_ENABLE_VULKAN)
-    add_subdirectory(${BUMA3D_SOURCE_DIR}/API/Vulkan ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_Vulkan)
+add_subdirectory(${BUMA3D_SOURCE_DIR}/API/Vulkan ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_Vulkan)
 endif()
+
+# ===============================================================================================
+# インストール 
+# ===============================================================================================
+install(DIRECTORY ${BUMA3D_INCLUDE_DIR}/Buma3D DESTINATION include)
