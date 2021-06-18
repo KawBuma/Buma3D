@@ -19,9 +19,9 @@ endif()
 # ===============================================================================================
 # 共通パスの定義
 # ===============================================================================================
-set(BUMA3D_EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/External)
-set(BUMA3D_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/Inc)
-set(BUMA3D_SOURCE_DIR ${CMAKE_SOURCE_DIR}/Source)
+set(BUMA3D_EXTERNAL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/External)
+set(BUMA3D_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
+set(BUMA3D_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source)
 
 # ===============================================================================================
 # コンパイルオプションの伝播ライブラリ
