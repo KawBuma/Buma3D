@@ -1,23 +1,23 @@
 #pragma once
 #include "Buma3DCompiler.h"
 
-#if defined(DEBUG) || defined(_DEBUG)
 
-#if B3D_PLATFORM_IS_USED_WINDOWS
-#define B3D_DEBUG_BREAK DebugBreak
-#else
-#define B3D_DEBUG_BREAK
-#endif // B3D_PLATFORM_IS_USED_WINDOWS
-
-#endif // defined(DEBUG) || defined(_DEBUG)
-
-#if defined(DEBUG) || defined(_DEBUG)
-#define B3D_ASSERT(expr) assert(expr)
-#define B3D_ASSERT_EXPR(expr, msg) _ASSERT_EXPR(expr, msg)
-#else
-#define B3D_ASSERT(expr) (expr)
-#define B3D_ASSERT_EXPR(expr, msg) (expr, msg)
-#endif
+# if defined(DEBUG) || defined(_DEBUG)
+#   define B3D_ASSERT(expr) assert(expr)
+#   define B3D_ASSERT_EXPR(expr, msg) _ASSERT_EXPR(expr, msg)
+#
+#   if B3D_PLATFORM_IS_USED_WINDOWS
+#       define B3D_DEBUG_BREAK DebugBreak
+#   else
+#       define B3D_DEBUG_BREAK void
+#   endif // B3D_PLATFORM_IS_USED_WINDOWS
+#
+# else
+#   define B3D_ASSERT(expr) (expr)
+#   define B3D_ASSERT_EXPR(expr, msg) (expr, msg)
+#   define B3D_DEBUG_BREAK void
+#
+# endif // defined(DEBUG) || defined(_DEBUG)
 
 
 #define SCAST static_cast
