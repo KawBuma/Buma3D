@@ -116,6 +116,32 @@ set(D3D12_SOURCES
 )
 
 # ===============================================================================================
+# WinPIXEventRuntime 
+# ===============================================================================================
+set(PIX_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime")
+set(PIX_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime/Include")
+set(PIX_LIBRARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime/bin")
+
+include(FetchContent)
+FetchContent_Declare(WinPixEventRuntime
+    URL                 "https://www.nuget.org/api/v2/package/WinPixEventRuntime"
+    DOWNLOAD_DIR        ${PIX_DOWNLOAD_DIR}
+    LOG_DOWNLOAD        1
+    SOURCE_DIR          ${PIX_DOWNLOAD_DIR}
+    CONFIGURE_COMMAND   ${CMAKE_COMMAND} -E tar -xf "${PIX_DOWNLOAD_DIR}/winpixeventruntime.*.nupkg"
+    LOG_CONFIGURE       1
+)
+
+FetchContent_GetProperties(WinPixEventRuntime)
+if(NOT WinPixEventRuntime_POPULATED)
+    FetchContent_Populate(WinPixEventRuntime)
+endif()
+
+set(WinPixEventRuntime_DLL_PATH 
+    ${PIX_LIBRARY_DIR}/${CMAKE_GENERATOR_PLATFORM}/WinPixEventRuntime.dll 
+    CACHE PATH "WinPixEventRuntime.dll path")
+
+# ===============================================================================================
 # D3D12用実装のライブラリ
 # ===============================================================================================
 add_library(Buma3D_D3D12 MODULE ${D3D12_HEADERS} ${D3D12_SOURCES})
@@ -124,10 +150,21 @@ target_include_directories(Buma3D_D3D12
     PRIVATE 
     ${BUMA3D_INCLUDE_DIR} 
     ${D3D12_SRC_DIR}
+    ${PIX_INCLUDE_DIR}
 )
 
 target_link_libraries(Buma3D_D3D12 
     PRIVATE 
     Buma3D_Common 
     Microsoft::DirectX-Headers
+    dxguid.lib
+    dxgi.lib
+    d3d12.lib
+    ${PIX_LIBRARY_DIR}/${CMAKE_GENERATOR_PLATFORM}/WinPixEventRuntime.lib
 )
+
+# ===============================================================================================
+# インストール 
+# ===============================================================================================
+install(TARGETS Buma3D_D3D12 DESTINATION bin)
+install(FILES ${WinPixEventRuntime_DLL_PATH} DESTINATION bin)
