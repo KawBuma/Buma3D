@@ -381,9 +381,6 @@ CMakeUserPresets.json
 
 # Buma3D
 
-# external
-/External
-
 # CMake generated
 /build
 /install
