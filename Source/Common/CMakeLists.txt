@@ -41,3 +41,5 @@ target_link_libraries(Buma3D_Common PUBLIC Buma3D_Header buma3d_compiler_flags)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HELPER_SOURCES} ${UTIL_SOURCES})
 
 target_include_directories(Buma3D_Common PUBLIC ${COMMON_SRC_DIR})
+
+set_target_properties(Buma3D_Common PROPERTIES FOLDER Buma3D)

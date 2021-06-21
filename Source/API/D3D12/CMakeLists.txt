@@ -10,9 +10,9 @@ set(D3D12_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # ===============================================================================================
 # D3D12用実装のソースファイル
 # ===============================================================================================
-set(D3D12_HEADERS 
+set(D3D12_HEADERS
     ${D3D12_SRC_DIR}/AccelerationStructureInfoQueryHeapD3D12.h
-    ${D3D12_SRC_DIR}/BufferD3D12.h    
+    ${D3D12_SRC_DIR}/BufferD3D12.h
     # ${D3D12_SRC_DIR}/Buma3DPCH.h
     ${D3D12_SRC_DIR}/CommandAllocatorD3D12.h
     ${D3D12_SRC_DIR}/CommandListD3D12.h
@@ -64,10 +64,10 @@ set(D3D12_HEADERS
     ${D3D12_SRC_DIR}/ViewD3D12.h
 )
 
-set(D3D12_SOURCES 
+set(D3D12_SOURCES
     ${D3D12_SRC_DIR}/AccelerationStructureInfoQueryHeapD3D12.cpp
     ${D3D12_SRC_DIR}/BufferD3D12.cpp
-    ${D3D12_SRC_DIR}/Buma3DD3D12.cpp    
+    ${D3D12_SRC_DIR}/Buma3DD3D12.cpp
     # ${D3D12_SRC_DIR}/Buma3DDLLMain.cpp
     # ${D3D12_SRC_DIR}/Buma3DPCH.cpp
     ${D3D12_SRC_DIR}/CommandAllocatorD3D12.cpp
@@ -116,7 +116,7 @@ set(D3D12_SOURCES
 )
 
 # ===============================================================================================
-# WinPIXEventRuntime 
+# WinPIXEventRuntime
 # ===============================================================================================
 set(PIX_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime")
 set(PIX_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime/Include")
@@ -137,8 +137,8 @@ if(NOT WinPixEventRuntime_POPULATED)
     FetchContent_Populate(WinPixEventRuntime)
 endif()
 
-set(WinPixEventRuntime_DLL_PATH 
-    ${PIX_LIBRARY_DIR}/${CMAKE_GENERATOR_PLATFORM}/WinPixEventRuntime.dll 
+set(WinPixEventRuntime_DLL_PATH
+    ${PIX_LIBRARY_DIR}/${CMAKE_GENERATOR_PLATFORM}/WinPixEventRuntime.dll
     CACHE PATH "WinPixEventRuntime.dll path")
 
 # ===============================================================================================
@@ -146,16 +146,16 @@ set(WinPixEventRuntime_DLL_PATH
 # ===============================================================================================
 add_library(Buma3D_D3D12 MODULE ${D3D12_HEADERS} ${D3D12_SOURCES})
 
-target_include_directories(Buma3D_D3D12 
-    PRIVATE 
-    ${BUMA3D_INCLUDE_DIR} 
+target_include_directories(Buma3D_D3D12
+    PRIVATE
+    ${BUMA3D_INCLUDE_DIR}
     ${D3D12_SRC_DIR}
     ${PIX_INCLUDE_DIR}
 )
 
-target_link_libraries(Buma3D_D3D12 
-    PRIVATE 
-    Buma3D_Common 
+target_link_libraries(Buma3D_D3D12
+    PRIVATE
+    Buma3D_Common
     Microsoft::DirectX-Headers
     dxguid.lib
     dxgi.lib
@@ -163,8 +163,10 @@ target_link_libraries(Buma3D_D3D12
     ${PIX_LIBRARY_DIR}/${CMAKE_GENERATOR_PLATFORM}/WinPixEventRuntime.lib
 )
 
+set_target_properties(Buma3D_D3D12 PROPERTIES FOLDER Buma3D)
+
 # ===============================================================================================
-# インストール 
+# インストール
 # ===============================================================================================
 install(TARGETS Buma3D_D3D12 DESTINATION bin)
 install(FILES ${WinPixEventRuntime_DLL_PATH} DESTINATION bin)

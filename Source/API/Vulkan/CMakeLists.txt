@@ -130,13 +130,15 @@ target_include_directories(Buma3D_Vulkan
     ${VULKAN_SRC_DIR}
 )
 
-target_link_libraries(Buma3D_Vulkan 
-    PRIVATE 
-    Buma3D_Common 
+target_link_libraries(Buma3D_Vulkan
+    PRIVATE
+    Buma3D_Common
     Vulkan::Vulkan
 )
 
+set_target_properties(Buma3D_Vulkan PROPERTIES FOLDER Buma3D)
+
 # ===============================================================================================
-# インストール 
+# インストール
 # ===============================================================================================
 install(TARGETS Buma3D_Vulkan DESTINATION bin)
