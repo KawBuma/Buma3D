@@ -24,6 +24,12 @@ set(BUMA3D_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
 set(BUMA3D_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source)
 
 # ===============================================================================================
+# ヘッダーファイル インクルードライブラリ
+# ===============================================================================================
+add_library(Buma3D_Header INTERFACE)
+target_include_directories(Buma3D_Header INTERFACE ${BUMA3D_INCLUDE_DIR})
+
+# ===============================================================================================
 # コンパイルオプションの伝播ライブラリ
 # ===============================================================================================
 add_library(buma3d_compiler_flags INTERFACE)
@@ -44,12 +50,12 @@ endif(MSVC)
 add_subdirectory(Source/Common ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_Common)
 
 if(BUMA3D_ENABLE_D3D12)
-add_subdirectory(${BUMA3D_EXTERNAL_DIR}/DirectX-Headers)
-add_subdirectory(${BUMA3D_SOURCE_DIR}/API/D3D12 ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_D3D12)
+    add_subdirectory(${BUMA3D_EXTERNAL_DIR}/DirectX-Headers)
+    add_subdirectory(${BUMA3D_SOURCE_DIR}/API/D3D12 ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_D3D12)
 endif()
 
 if(BUMA3D_ENABLE_VULKAN)
-add_subdirectory(${BUMA3D_SOURCE_DIR}/API/Vulkan ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_Vulkan)
+    add_subdirectory(${BUMA3D_SOURCE_DIR}/API/Vulkan ${CMAKE_CURRENT_BINARY_DIR}/Buma3D_Vulkan)
 endif()
 
 # ===============================================================================================

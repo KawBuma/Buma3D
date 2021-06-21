@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.16)
 set(COMMON_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ===============================================================================================
-# 各グラフィックスAPI用実装共通のソースファイル 
+# 各グラフィックスAPI用実装共通のソースファイル
 # ===============================================================================================
 set(BUMA3D_PUBLIC_HEADERS
     ${BUMA3D_INCLUDE_DIR}/Buma3D/Util/Buma3DPtr.h
@@ -36,8 +36,8 @@ set(UTIL_SOURCES
 # 各グラフィックスAPI用実装共通オブジェクトライブラリ
 # ===============================================================================================
 add_library(Buma3D_Common OBJECT ${BUMA3D_PUBLIC_HEADERS} ${HELPER_SOURCES} ${UTIL_SOURCES})
-target_link_libraries(Buma3D_Common PUBLIC buma3d_compiler_flags)
+target_link_libraries(Buma3D_Common PUBLIC Buma3D_Header buma3d_compiler_flags)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HELPER_SOURCES} ${UTIL_SOURCES})
 
-target_include_directories(Buma3D_Common PUBLIC ${BUMA3D_INCLUDE_DIR} ${COMMON_SRC_DIR})
+target_include_directories(Buma3D_Common PUBLIC ${COMMON_SRC_DIR})
