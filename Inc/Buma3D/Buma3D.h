@@ -1180,7 +1180,11 @@ struct SWAP_CHAIN_ACQUIRE_NEXT_BUFFER_INFO
      *         指定された場合、AcquireNextBuffer呼び出し後、その呼び出しに使用したスワップチェインが破棄される前に、適切に待機操作、リセットを行う必要があります。
     */
     IFence*        signal_fence_to_cpu;
-    uint32_t       timeout_millisec;    // CPUで待機するミリ秒単位の値です。
+
+    /**
+     * @brief 利用可能な状態であるバッファのacquireをCPUで待機するミリ秒単位の値です。 
+    */
+    uint32_t       timeout_millisec;
 };
 
 struct SWAP_CHAIN_PRESENT_INFO
@@ -4848,17 +4852,21 @@ public:
             , ITexture** _dst) = 0;
 
     /**
-     * @brief 取得可能なバックバッファのインデックスを取得し、指定されている場合そのインデックスのバックバッファのプレゼント操作が完了した際にシグナルを送信します。
-     * @param      _info             バッファインデックスの取得時に使用するパラメータを指定します。 
-     * @param[out] _dst_buffer_index 次のプレゼント操作に使用するバックバッファのインデックスを取得します。
-     * @return 使用可能バッファが存在せず、タイムアウトした場合BMRESULT_SUCCEED_TIMEOUT、timeoutがゼロの場合BMRESULT_SUCCEED_NOT_READYが返ります。 
-     * @remark 取得したインデックスのバッファはアプリケーションによって所有された状態になり、任意のコマンドでバッファの内容を編集することができます。 
+     * @brief 次のプレゼント操作に使用するバックバッファのインデックスを取得し、そのバックバッファが利用可能になった際に指定のフェンスへシグナルを送信します。
+     * @param      _info             バックバッファイの取得に使用するパラメータを指定します。 
+     * @param[out] _dst_buffer_index 成功した場合、次のプレゼント操作に使用する、取得されたバックバッファのインデックスを返します。 
+     * @return 利用可能なバッファが取得された場合BMRESULT_SUCCEEDが返ります。 
+     *         利用可能バッファが取得されないままタイムアウトした場合BMRESULT_SUCCEED_TIMEOUTが返ります。 
+     *         利用可能バッファが存在せず、timeoutがゼロの場合BMRESULT_SUCCEED_NOT_READYが返ります。 
+     * @remark タイムアウトが発生した場合、 _info.signal_fence または _info.signal_fence_to_cpu を待機してバッファが利用可能となるタイミングを待機します。 
+     *         タイムアウトが発生したかどうかに関わらず、 _info.signal_fence または _info.signal_fence_to_cpu を待機して非シグナル状態にする必要があります。 
+     *         _dst_buffer_indexのバッファはアプリケーションによって所有された状態になり、利用可能になり次第任意のコマンドでバッファの内容を編集することができます。 
      *         この所有権はISwapChain::Presentを呼び出すことによって解放する必要があります。
-     *         加えて、この関数とISwapChain::Presentは1つの操作セットです。 Presentを呼び出すまで、再びこの関数を呼び出してはなりません。
+     *         この関数とISwapChain::Presentは1つの操作セットです。 Presentを呼び出すまで、再びこの関数を呼び出してはなりません。
      * @note バッファの取得(acquire)と、そのバッファが利用可能(available)になることは別々に扱われます。
      *       たとえば、AcquireNextBufferを呼び出し、_dst_buffer_indexにacquireしたバッファのインデックスが設定されたとしても、そのバッファは現在プレゼント操作が実行中である可能性があります。
      *       プレゼントの実行中(バッファ利用不可時)にカラーアタッチメントとして書き込みを行うと、ディスプレイへの表示結果が破壊される可能性もあります。
-     *       利用可能(available)になるタイミングをアプリケーションが知るためには、SWAP_CHAIN_ACQUIRE_NEXT_BUFFER_INFOにsignal_fenceとsignal_fence_to_cpuを渡し、これらのシグナルを待機します。
+     *       利用可能(available)になるタイミングをアプリケーションが知るためには、timeout_millisecをUINT32_MAXに設定して利用可能なバッファを確実に待機するか、signal_fence_to_cpuのシグナルを待機します。
     */
     virtual BMRESULT
         B3D_APIENTRY AcquireNextBuffer(

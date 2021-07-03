@@ -33,14 +33,14 @@ B3D_APIENTRY SwapChainVk::~SwapChainVk()
     Uninit();
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::Init(DeviceVk* _device, const SWAP_CHAIN_DESC& _desc)
 {
     (device = _device)->AddRef();
     inspfn = &device->GetInstancePFN();
     devpfn = &device->GetDevicePFN();
     vkdevice = device->GetVkDevice();
-    
+
     if (!devpfn->vkCreateSwapchainKHR)
     {
         B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
@@ -157,7 +157,7 @@ B3D_APIENTRY SwapChainVk::CopyDesc(const SWAP_CHAIN_DESC& _desc)
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::CreateSwapChainData()
 {
     if (!swapchain_data)
@@ -189,7 +189,7 @@ B3D_APIENTRY SwapChainVk::CreateSwapChainData()
         if (dg_pmflags & VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_MULTI_DEVICE_BIT_KHR)
         {
             uint32_t rect_count = 0;
-            auto&& lmdrects = swapchain_data->local_multi_device_rects; 
+            auto&& lmdrects = swapchain_data->local_multi_device_rects;
             vkr = devpfn->vkGetPhysicalDevicePresentRectanglesKHR(suf_pd, suf, &rect_count, nullptr);
             lmdrects.resize(rect_count);
             vkr = devpfn->vkGetPhysicalDevicePresentRectanglesKHR(suf_pd, suf, &rect_count, lmdrects.data());
@@ -201,7 +201,7 @@ B3D_APIENTRY SwapChainVk::CreateSwapChainData()
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::CheckValidity()
 {
     // プレゼント操作のサポートを確認
@@ -362,7 +362,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
         last_pnext = util::ConnectPNextChains(last_pnext, counter_ci_ext);
     }
 
-    // VkSwapchainDisplayNativeHdrCreateInfoAMDを使用して、サーフェスのローカル調光を明示的に有効または無効にすることができます。 
+    // VkSwapchainDisplayNativeHdrCreateInfoAMDを使用して、サーフェスのローカル調光を明示的に有効または無効にすることができます。
     // スワップチェーンの存続期間中、ローカル調光はvkSetLocalDimmingAMDによってオーバーライドされる場合もあります。
     VkSwapchainDisplayNativeHdrCreateInfoAMD hdr_ci_amd { VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD };
     if (false)
@@ -391,7 +391,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::SetPresentMode(VkSwapchainCreateInfoKHR& _ci)
 {
     auto pd = device->GetDeviceAdapter()->GetVkPhysicalDevice();
@@ -460,7 +460,7 @@ B3D_APIENTRY SwapChainVk::SetPresentMode(VkSwapchainCreateInfoKHR& _ci)
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::PreparePresentInfoData()
 {
     auto&& pidata = pres_info_data;
@@ -559,7 +559,7 @@ B3D_APIENTRY SwapChainVk::PreparePresentInfoData()
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::PreparePresentInfo()
 {
     //auto&& pi               = pres_info_data.present_info;
@@ -573,7 +573,7 @@ B3D_APIENTRY SwapChainVk::PreparePresentInfo()
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::PrepareAcquireNextImageInfo()
 {
     auto&& ai = acquire_info;
@@ -587,7 +587,7 @@ B3D_APIENTRY SwapChainVk::PrepareAcquireNextImageInfo()
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::PrepareFormatListCI(const void**& _last_pnext, const VkSwapchainCreateInfoKHR& _ci, VkImageFormatListCreateInfo* _format_list_ci, util::SharedPtr<util::DyArray<VkFormat>>* _dst_formats)
 {
     /*TODO: 40.1.1. Compatible formats of planes of multi-planar formats https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#formats-compatible-planes
@@ -648,7 +648,7 @@ B3D_APIENTRY SwapChainVk::GetSwapChainBuffers(VkSwapchainCreateInfoKHR& _ci)
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::ReleaseSwapChainBuffers()
 {
     //if (is_acquired)
@@ -720,7 +720,7 @@ B3D_APIENTRY SwapChainVk::Uninit()
     desc_data.reset();
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainVk::Create(DeviceVk* _device, const SWAP_CHAIN_DESC& _desc, SwapChainVk** _dst)
 {
     util::Ptr<SwapChainVk> ptr;
@@ -769,7 +769,7 @@ B3D_APIENTRY SwapChainVk::SetName(const char* _name)
 
     if (swapchain)
         B3D_RET_IF_FAILED(device->SetVkObjectName(swapchain, _name));
-    
+
     if (name && !_name)
         name.reset();
     else
@@ -802,7 +802,7 @@ B3D_APIENTRY SwapChainVk::GetDevicePFN() const
     return *devpfn;
 }
 
-const SWAP_CHAIN_DESC& 
+const SWAP_CHAIN_DESC&
 B3D_APIENTRY SwapChainVk::GetDesc() const
 {
     return desc;
@@ -888,8 +888,6 @@ B3D_APIENTRY SwapChainVk::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUFFER
     {
         vkr = devpfn->vkAcquireNextImageKHR(vkdevice, swapchain, ai.timeout, ai.semaphore, ai.fence, &next_buffer_index);
     }
-    // VK_SUCCESS以外の値が返された場合、すぐに取得可能なバッファは存在せず、この場合ここでreturnします(またはエラーが発生した場合)。
-    // VkSemaphoreを介して取得の準備が完了したタイミングを知ることができます。
     auto bmr = VKR_TRACE_IF_FAILED(vkr);
     B3D_RET_IF_FAILED(bmr);
 
@@ -1005,7 +1003,7 @@ B3D_APIENTRY SwapChainVk::GetVkSwapchain() const
     return swapchain;
 }
 
-const util::SWAP_CHAIN_DATA& 
+const util::SWAP_CHAIN_DATA&
 B3D_APIENTRY SwapChainVk::GetSwapChainData()
 {
     return *swapchain_data;

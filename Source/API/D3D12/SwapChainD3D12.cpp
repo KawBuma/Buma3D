@@ -13,10 +13,10 @@ DXGI_USAGE GetNativeBufferFlags(SWAP_CHAIN_BUFFER_FLAGS _flags)
 
     if (_flags & SWAP_CHAIN_BUFFER_FLAG_SHADER_RESOURCE)
         result |= DXGI_USAGE_SHADER_INPUT;
-    
+
     if (_flags & SWAP_CHAIN_BUFFER_FLAG_COLOR_ATTACHMENT)
         result |= DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    
+
     if (_flags & SWAP_CHAIN_BUFFER_FLAG_UNORDERED_ACCESS)
         result |= DXGI_USAGE_UNORDERED_ACCESS;
 
@@ -54,7 +54,7 @@ DXGI_SWAP_CHAIN_FLAG GetNativeSwapChainFlags(SWAP_CHAIN_FLAGS _flags)
 
     if (_flags & SWAP_CHAIN_FLAG_DISABLE_VERTICAL_SYNC)
         result |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-    
+
     if (_flags & SWAP_CHAIN_FLAG_PROTECT_CONTENTS)
         result |= DXGI_SWAP_CHAIN_FLAG_HW_PROTECTED;
 
@@ -90,7 +90,7 @@ B3D_APIENTRY SwapChainD3D12::~SwapChainD3D12()
     Uninit();
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainD3D12::Init(DeviceD3D12* _device, const SWAP_CHAIN_DESC& _desc)
 {
     (device = _device)->AddRef();
@@ -198,7 +198,7 @@ B3D_APIENTRY SwapChainD3D12::CopyDesc(const SWAP_CHAIN_DESC& _desc)
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainD3D12::CheckValidity()
 {
     // プレゼント操作のサポートを確認
@@ -226,7 +226,7 @@ B3D_APIENTRY SwapChainD3D12::CheckValidity()
     }
 
     // 排他フルスクリーンのサポートを確認
-    if (desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE && 
+    if (desc.flags & SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE &&
         desc.flags & SWAP_CHAIN_FLAG_DISABLE_VERTICAL_SYNC)
     {
         B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
@@ -237,7 +237,7 @@ B3D_APIENTRY SwapChainD3D12::CheckValidity()
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
 {
     // Recreateの場合以前のバッファを開放し破棄
@@ -372,7 +372,7 @@ B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainD3D12::PreparePresentInfo()
 {
     // VulkanではvkAcquireNextImageKHR関数により、同時にキューイング可能なプレゼント用画像の数はスワップチェイン作成時に指定したバックバッファの数に制限されます。
@@ -412,9 +412,9 @@ B3D_APIENTRY SwapChainD3D12::GetSwapChainBuffers()
     for (uint32_t i = 0; i < desc.buffer.count; i++)
     {
         util::ComPtr<ID3D12Resource> buffer;
-        auto hr = swapchain->GetBuffer(i, IID_PPV_ARGS(&buffer));  
+        auto hr = swapchain->GetBuffer(i, IID_PPV_ARGS(&buffer));
         B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
-        
+
         B3D_RET_IF_FAILED(TextureD3D12::CreateForSwapChain(this, buffer, &b3d_buffers[i]));
     }
 
@@ -422,7 +422,7 @@ B3D_APIENTRY SwapChainD3D12::GetSwapChainBuffers()
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainD3D12::ReleaseSwapChainBuffers()
 {
     //if (is_acquired)
@@ -555,7 +555,7 @@ B3D_APIENTRY SwapChainD3D12::GetDevice() const
     return device;
 }
 
-const SWAP_CHAIN_DESC& 
+const SWAP_CHAIN_DESC&
 B3D_APIENTRY SwapChainD3D12::GetDesc() const
 {
     return desc;
@@ -606,12 +606,12 @@ B3D_APIENTRY SwapChainD3D12::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUF
              引数のシグナルフェンスのペイロード(impl)をスワップして、自身(スワップチェインのフェンスペイロード)が元のペイロードであるかのように擬態します。この時元のペイロードは保持しておきます。
              これにより、引数のシグナルフェンスへスワップチェインフェンスのシグナルをクローンすることが可能です。次に、Reset時またはWait時に元のペイロードに再び戻します。
 
-             D3D12フェンスの特徴として、全て値ベース(TIMELINE)であり、スワップチェインのフェンスペイロードを複数のフェンスにクローンしてもWaitまたはResetによる非シグナル化は実際には発生しません。 
+             D3D12フェンスの特徴として、全て値ベース(TIMELINE)であり、スワップチェインのフェンスペイロードを複数のフェンスにクローンしてもWaitまたはResetによる非シグナル化は実際には発生しません。
              これにより、クローン時のシグナル値のみ保持しておけば、スワップチェインフェンスのシグナルを複数FenceD3D12に共有し、それぞれが任意のシグナル値で待機できます。
 
              問題としては、スワップチェインのフェンスを保持したフェンスが存在したままISwapChainが開放されてしまった場合があります。
              ペイロードはISwapChainが保有するため、ISwapChainが開放される前にペイロードを元に戻す必要があります。
-             適当に行うならば、ペイロードのスワップ毎に参照カウントを増加させれば良いが、AcquireNextBufferは毎フレーム呼び出される処理のため、このコストは回避すべきです。 
+             適当に行うならば、ペイロードのスワップ毎に参照カウントを増加させれば良いが、AcquireNextBufferは毎フレーム呼び出される処理のため、このコストは回避すべきです。
              内部でこれらを管理するコストが、アプリケーションによってペイロードを元に戻すコストと実装の複雑さを上回るため、新たに制約を追加する必要があります。 (SWAP_CHAIN_ACQUIRE_NEXT_BUFFER_INFO)
 
              別の問題として、グラフィックスAPIをまたぐフェンスのエクスポート、インポートが困難になります。 これについても追加の調査が必要です。
@@ -629,12 +629,12 @@ B3D_APIENTRY SwapChainD3D12::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUF
     // 引数のフェンスをプレゼント完了通知用フェンスのペイロードにすり替え
     if (_info.signal_fence)
     {
-        bmr = _info.signal_fence->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
+        auto bmr = _info.signal_fence->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
         B3D_RET_IF_FAILED(bmr);
     }
     if (_info.signal_fence_to_cpu)
     {
-        bmr = _info.signal_fence_to_cpu->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
+        auto bmr = _info.signal_fence_to_cpu->As<FenceD3D12>()->SwapPayload(present_complete_fence, present_complete_fence_val);
         B3D_RET_IF_FAILED(bmr);
     }
 
@@ -704,7 +704,7 @@ B3D_APIENTRY SwapChainD3D12::Recreate(const SWAP_CHAIN_DESC& _desc)
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY SwapChainD3D12::SetHDRMetaData(const SWAP_CHAIN_HDR_METADATA& _metadata)
 {
     DXGI_HDR_METADATA_HDR10 metadata = {
@@ -723,7 +723,7 @@ B3D_APIENTRY SwapChainD3D12::SetHDRMetaData(const SWAP_CHAIN_HDR_METADATA& _meta
     return BMRESULT_SUCCEED;
 }
 
-IDXGISwapChain4* 
+IDXGISwapChain4*
 B3D_APIENTRY SwapChainD3D12::GetDXGISwapChain() const
 {
     return swapchain;
@@ -737,7 +737,7 @@ void SwapChainD3D12::PRESENT_INFO::Set(size_t _num_rects, const SCISSOR_RECT* _r
         dirty_rects.resize(_num_rects);
         params.pDirtyRects = dirty_rects.data();
     }
-    
+
     params.DirtyRectsCount = (UINT)_num_rects;
     for (uint32_t i = 0; i < _num_rects; i++)
     {
