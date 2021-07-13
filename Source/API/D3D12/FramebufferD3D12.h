@@ -5,7 +5,7 @@ namespace buma3d
 
 class B3D_API FramebufferD3D12 : public IDeviceChildD3D12<IFramebuffer>, public util::details::NEW_DELETE_OVERRIDE
 {
-public: 
+public:
     struct SUBPASS_DESCRIPTOR_DATA
     {
         ~SUBPASS_DESCRIPTOR_DATA() { B3DSafeDeleteArray(rtvhandles); }
@@ -42,7 +42,7 @@ public:
 
                 auto&& view_desc = _view->GetDesc();
                 range = &view_desc.texture.subresource_range;
-                
+
                 auto offset = range->offset;
                 format       = util::GetNativeFormat(view_desc.view.format);
                 first_subres = util::ConvertNativeSubresourceOffset(tex_desc->mip_levels, tex_desc->array_size, offset);
@@ -72,19 +72,19 @@ public:
                   RTV
                 , DSV
                 , SRV
-            } type;
+            } type{};
 
-            TextureD3D12*               resource;
-            ID3D12Resource*             resource12;
-            DXGI_FORMAT                 format;
-            bool                        is_depth_stnecil;
+            TextureD3D12*               resource{};
+            ID3D12Resource*             resource12{};
+            DXGI_FORMAT                 format{};
+            bool                        is_depth_stnecil{};
 
-            const TEXTURE_DESC*         tex_desc;
-            const SUBRESOURCE_RANGE*    range;
-            int32_t                     plane_index;
-            int32_t                     plane_offset[2];
-            uint32_t                    first_subres;
-            uint32_t                    subres_array_step_rate;
+            const TEXTURE_DESC*         tex_desc{};
+            const SUBRESOURCE_RANGE*    range{};
+            int32_t                     plane_index{};
+            int32_t                     plane_offset[2]{};
+            uint32_t                    first_subres{};
+            uint32_t                    subres_array_step_rate{};
         };
 
         virtual ~IAttachmentOperator() {}
