@@ -55,6 +55,14 @@ public:
 private:
     void
         B3D_APIENTRY UpdateMostContainedOutput(DXGI_OUTPUT_DESC1* _output_desc);
+    void
+        B3D_APIENTRY PrepareTemporalSwapchain(util::ComPtr<ID3D12Device>& _tmp_device, util::ComPtr<ID3D12CommandQueue>& _tmp_queue, DXGI_SWAP_CHAIN_DESC1& _scdesc) const;
+    bool
+        B3D_APIENTRY GetDisplayModeLists(DXGI_FORMAT _format, util::DyArray<DXGI_MODE_DESC1>& _display_modes) const;
+    bool
+        B3D_APIENTRY CreateTemporalSwapchain(DXGI_SWAP_CHAIN_DESC1& _scdesc, const DXGI_MODE_DESC1& _mode, DXGI_FORMAT _format, IDXGIFactory6* _fac, buma3d::util::ComPtr<ID3D12CommandQueue>& tmp_queue, const HWND& hwnd, buma3d::util::ComPtr<IDXGISwapChain4>& _tmp_swapchain4) const;
+    bool
+        B3D_APIENTRY CheckColorSpaceSupport(util::ComPtr<IDXGISwapChain4>& _tmp_swapchain4, DXGI_COLOR_SPACE_TYPE _colorspace) const;
 
 private:
     std::atomic_uint32_t                  ref_count;

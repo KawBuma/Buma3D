@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 11, 0);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 11, 1);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {

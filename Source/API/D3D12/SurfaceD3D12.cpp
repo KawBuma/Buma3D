@@ -20,7 +20,7 @@ B3D_APIENTRY SurfaceD3D12::~SurfaceD3D12()
 }
 
 BMRESULT
-B3D_APIENTRY SurfaceD3D12::Init(DeviceAdapterD3D12* _adapter, const  SURFACE_DESC& _desc)
+B3D_APIENTRY SurfaceD3D12::Init(DeviceAdapterD3D12* _adapter, const SURFACE_DESC& _desc)
 {
     (adapter = _adapter)->AddRef();
 
@@ -130,28 +130,122 @@ B3D_APIENTRY SurfaceD3D12::GetSupportedSurfaceFormats(SURFACE_FORMAT* _dst)
     DXGI_OUTPUT_DESC1 output_desc1{};
     UpdateMostContainedOutput(&output_desc1);
 
+    auto fac = adapter->GetDeviceFactory()->GetDXGIFactory().Get();
+    auto hwnd = (HWND)((SURFACE_PLATFORM_DATA_WINDOWS*)desc.platform_data.data)->hwnd;
+    util::ComPtr<ID3D12Device>       tmp_device;
+    util::ComPtr<ID3D12CommandQueue> tmp_queue;
+    DXGI_SWAP_CHAIN_DESC1 scdesc{};
+    PrepareTemporalSwapchain(tmp_device, tmp_queue, scdesc);
+
+    /*
+    HACK: エラーメッセージに基づき検証するフォーマットのタイプをピックアップします:
+        > DXGI ERROR: IDXGIFactory::CreateSwapChain:
+        > Flip model swapchains (DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL and DXGI_SWAP_EFFECT_FLIP_DISCARD) only support the following Formats: 
+        >     (DXGI_FORMAT_R16G16B16A16_FLOAT,
+        >      DXGI_FORMAT_B8G8R8A8_UNORM,
+        >      DXGI_FORMAT_R8G8B8A8_UNORM,
+        >      DXGI_FORMAT_R10G10B10A2_UNORM),
+        > assuming the underlying Device does as well.
+        > [ MISCELLANEOUS ERROR #101: ]
+        フリップモデルスワップチェーン(DXGI_SWAP_EFFECT_FLIP_SEQUENTIALおよびDXGI_SWAP_EFFECT_FLIP_DISCARD)は、次の形式のみをサポートします:
+        基盤となるデバイスも同様であると想定します。
+    */
+    constexpr DXGI_FORMAT FORMATS[] = {
+          DXGI_FORMAT_B8G8R8A8_UNORM
+        , DXGI_FORMAT_R8G8B8A8_UNORM
+        , DXGI_FORMAT_R10G10B10A2_UNORM
+        , DXGI_FORMAT_R16G16B16A16_FLOAT
+    };
+
     uint32_t result = 0;
-
-    for (uint32_t i = DXGI_FORMAT_UNKNOWN + 1; i < DXGI_FORMAT_B4G4R4A4_UNORM + 1; i++)
+    util::DyArray<DXGI_MODE_DESC1> display_modes;
+    constexpr uint32_t NUM_FORMATS      = _countof(FORMATS);
+    constexpr uint32_t NUM_COLOR_SPACES = uint32_t(DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_TOPLEFT_P2020 + 1);
+    for (uint32_t i = 0; i < NUM_FORMATS; i++)
     {
-        uint32_t num_modes = 0;
-        last_most_contained_output->GetDisplayModeList1(DXGI_FORMAT(i), 0, &num_modes, nullptr);
-        if (num_modes != 0)
+        auto format = FORMATS[i];
+
+        auto b3dformat = util::GetB3DFormat(format);
+        if (b3dformat == RESOURCE_FORMAT_UNKNOWN)
+            continue;
+
+        if (!GetDisplayModeLists(format, display_modes))
+            continue;
+        auto&& mode = display_modes[0];
+
+        util::ComPtr<IDXGISwapChain4> tmp_swapchain4;
+        if (!CreateTemporalSwapchain(scdesc, mode, format, fac, tmp_queue, hwnd, tmp_swapchain4))
+            continue;
+
+        for (uint32_t i_cs = 0; i_cs < NUM_COLOR_SPACES; i_cs++)
         {
-            auto format = util::GetB3DFormat(DXGI_FORMAT(i));
-            if (format == RESOURCE_FORMAT_UNKNOWN)
+            auto colorspace = DXGI_COLOR_SPACE_TYPE(i_cs);
+            auto b3dcolorspace = util::GetB3DColorSpace(colorspace); // TODO: 共通化可能なCOLOR_SPACEを更に検証して、サポートする色空間を追加します。 
+            if (b3dcolorspace == COLOR_SPACE_CUSTOM)
                 continue;
-
-            if (util::IsSrgbFormat(format))
-                continue;
-
-            if (_dst)
-                _dst[result] = { util::GetB3DColorSpace(output_desc1.ColorSpace), format };
-            result++;
+            if (CheckColorSpaceSupport(tmp_swapchain4, colorspace))
+            {
+                if (_dst)
+                    _dst[result] = { b3dcolorspace, b3dformat };
+                result++;
+            }
         }
     }
 
     return result;
+}
+
+void
+B3D_APIENTRY SurfaceD3D12::PrepareTemporalSwapchain(util::ComPtr<ID3D12Device>& _tmp_device, util::ComPtr<ID3D12CommandQueue>& _tmp_queue, DXGI_SWAP_CHAIN_DESC1& _scdesc) const
+{
+    auto hr = D3D12CreateDevice(adapter->GetDXGIAdapter().Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&_tmp_device));
+    B3D_ASSERT(SUCCEEDED(hr));
+    hr = _tmp_device->CreateCommandQueue(&D3D12_COMMAND_QUEUE_DESC({ D3D12_COMMAND_LIST_TYPE_DIRECT }), IID_PPV_ARGS(&_tmp_queue));
+    B3D_ASSERT(SUCCEEDED(hr));
+
+    _scdesc.Stereo             = FALSE;
+    _scdesc.SampleDesc.Count   = 1;
+    _scdesc.SampleDesc.Quality = 0;
+    _scdesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    _scdesc.BufferCount        = 3;
+    _scdesc.Scaling            = DXGI_SCALING_STRETCH;
+    _scdesc.SwapEffect         = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    _scdesc.AlphaMode          = DXGI_ALPHA_MODE_UNSPECIFIED;
+    _scdesc.Flags              = 0x0;
+}
+
+bool
+B3D_APIENTRY SurfaceD3D12::GetDisplayModeLists(DXGI_FORMAT _format, buma3d::util::DyArray<DXGI_MODE_DESC1>& display_modes) const
+{
+    uint32_t num_modes = 0;
+    last_most_contained_output->GetDisplayModeList1(_format, 0, &num_modes, nullptr);
+    if (num_modes == 0)
+        return false;
+    display_modes.resize(num_modes);
+    last_most_contained_output->GetDisplayModeList1(_format, 0, &num_modes, display_modes.data());
+    return true;
+}
+
+bool
+B3D_APIENTRY SurfaceD3D12::CreateTemporalSwapchain(DXGI_SWAP_CHAIN_DESC1& _scdesc, const DXGI_MODE_DESC1& _mode, DXGI_FORMAT _format, IDXGIFactory6* _fac, buma3d::util::ComPtr<ID3D12CommandQueue>& tmp_queue, const HWND& hwnd, buma3d::util::ComPtr<IDXGISwapChain4>& _tmp_swapchain4) const
+{
+    util::ComPtr<IDXGISwapChain1> tmp_swapchain;
+    _scdesc.Width = _mode.Width;
+    _scdesc.Height = _mode.Height;
+    _scdesc.Format = _format;
+    auto hr = _fac->CreateSwapChainForHwnd(tmp_queue.Get(), hwnd, &_scdesc, nullptr, nullptr, &tmp_swapchain);
+    if (FAILED(hr))
+        return false;
+    tmp_swapchain.As(&_tmp_swapchain4);
+    return true;
+}
+
+bool B3D_APIENTRY SurfaceD3D12::CheckColorSpaceSupport(util::ComPtr<IDXGISwapChain4>& _tmp_swapchain4, DXGI_COLOR_SPACE_TYPE _colorspace) const
+{
+    UINT support = 0x0;
+    auto hr = _tmp_swapchain4->CheckColorSpaceSupport(_colorspace, &support);
+    B3D_ASSERT(SUCCEEDED(hr));
+    return support & (DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT | DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_OVERLAY_PRESENT);
 }
 
 SURFACE_STATE
