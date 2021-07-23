@@ -118,28 +118,30 @@ set(D3D12_SOURCES
 # ===============================================================================================
 # WinPIXEventRuntime
 # ===============================================================================================
-set(PIX_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime")
-set(PIX_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime/Include")
-set(PIX_LIBRARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime/bin")
+if(BUMA3D_USE_PIX)
+    set(PIX_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime")
+    set(PIX_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime/Include")
+    set(PIX_LIBRARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/WinPixEventRuntime/bin")
 
-include(FetchContent)
-FetchContent_Declare(WinPixEventRuntime
-    URL                 "https://www.nuget.org/api/v2/package/WinPixEventRuntime"
-    DOWNLOAD_DIR        ${PIX_DOWNLOAD_DIR}
-    LOG_DOWNLOAD        1
-    SOURCE_DIR          ${PIX_DOWNLOAD_DIR}
-    CONFIGURE_COMMAND   ${CMAKE_COMMAND} -E tar -xf "${PIX_DOWNLOAD_DIR}/winpixeventruntime.*.nupkg"
-    LOG_CONFIGURE       1
-)
+    include(FetchContent)
+    FetchContent_Declare(WinPixEventRuntime
+        URL                 "https://www.nuget.org/api/v2/package/WinPixEventRuntime"
+        DOWNLOAD_DIR        ${PIX_DOWNLOAD_DIR}
+        LOG_DOWNLOAD        1
+        SOURCE_DIR          ${PIX_DOWNLOAD_DIR}
+        CONFIGURE_COMMAND   ${CMAKE_COMMAND} -E tar -xf "${PIX_DOWNLOAD_DIR}/winpixeventruntime.*.nupkg"
+        LOG_CONFIGURE       1
+    )
 
-FetchContent_GetProperties(WinPixEventRuntime)
-if(NOT WinPixEventRuntime_POPULATED)
-    FetchContent_Populate(WinPixEventRuntime)
-endif()
+    FetchContent_GetProperties(WinPixEventRuntime)
+    if(NOT WinPixEventRuntime_POPULATED)
+        FetchContent_Populate(WinPixEventRuntime)
+    endif()
 
-set(WinPixEventRuntime_DLL_PATH
-    ${PIX_LIBRARY_DIR}/${CMAKE_GENERATOR_PLATFORM}/WinPixEventRuntime.dll
-    CACHE PATH "WinPixEventRuntime.dll path")
+    set(WinPixEventRuntime_DLL_PATH
+        ${PIX_LIBRARY_DIR}/${CMAKE_GENERATOR_PLATFORM}/WinPixEventRuntime.dll
+        CACHE PATH "WinPixEventRuntime.dll path")
+endif(BUMA3D_USE_PIX)
 
 # ===============================================================================================
 # D3D12用実装のライブラリ
@@ -160,8 +162,12 @@ target_link_libraries(Buma3D_D3D12
     dxguid.lib
     dxgi.lib
     d3d12.lib
-    ${PIX_LIBRARY_DIR}/${CMAKE_GENERATOR_PLATFORM}/WinPixEventRuntime.lib
 )
+
+if(BUMA3D_USE_PIX)
+    target_compile_definitions(Buma3D_D3D12 PRIVATE USE_PIX)
+    target_link_libraries(Buma3D_D3D12 PRIVATE ${PIX_LIBRARY_DIR}/${CMAKE_GENERATOR_PLATFORM}/WinPixEventRuntime.lib)
+endif(BUMA3D_USE_PIX)
 
 set_target_properties(Buma3D_D3D12 PROPERTIES FOLDER Buma3D)
 
@@ -169,4 +175,7 @@ set_target_properties(Buma3D_D3D12 PROPERTIES FOLDER Buma3D)
 # インストール
 # ===============================================================================================
 install(TARGETS Buma3D_D3D12 DESTINATION bin)
-install(FILES ${WinPixEventRuntime_DLL_PATH} DESTINATION bin)
+
+if(BUMA3D_USE_PIX)
+    install(FILES ${WinPixEventRuntime_DLL_PATH} DESTINATION bin)
+endif(BUMA3D_USE_PIX)

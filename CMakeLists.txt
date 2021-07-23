@@ -11,6 +11,7 @@ project(Buma3D C CXX)
 # オプション
 # ===============================================================================================
 option(BUMA3D_ENABLE_D3D12 "Whether to generate a d3d12 build" ON)
+option(BUMA3D_USE_PIX "Whether to use PIX for d3d12 build" ON)
 option(BUMA3D_ENABLE_VULKAN "Whether to generate a vulkan build" ON)
 
 if(NOT BUMA3D_ENABLE_D3D12 AND NOT BUMA3D_ENABLE_VULKAN)
