@@ -265,7 +265,7 @@ B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
     scdesc.SampleDesc.Quality = 0;
     scdesc.BufferUsage        = GetNativeBufferFlags(desc.buffer.flags);
     scdesc.BufferCount        = desc.buffer.count;
-    scdesc.Scaling            = DXGI_SCALING_STRETCH;
+    scdesc.Scaling            = DXGI_SCALING_NONE;
     scdesc.SwapEffect         = desc.flags & SWAP_CHAIN_FLAG_ALLOW_DISCARD_AFTER_PRESENT ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     scdesc.AlphaMode          = GetNativeAlphaMode(desc.alpha_mode);
     scdesc.Flags              = GetNativeSwapChainFlags(desc.flags);
@@ -317,8 +317,14 @@ B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
     if (desc.flags & SWAP_CHAIN_FLAG_DISABLE_VERTICAL_SYNC)
     {
         hr = swapchain->SetMaximumFrameLatency(desc.buffer.count);
-        B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
     }
+    else
+    {
+        // 垂直同期が有効の場合、フレームレイテンシは1に設定します。
+        // 直近のPresent操作をIDXGISwapChain::Present1前に待機します。
+        hr = swapchain->SetMaximumFrameLatency(1);
+    }
+    B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
     prev_present_completion_event = swapchain->GetFrameLatencyWaitableObject();
 
     // 排他フルスクリーン
@@ -375,23 +381,20 @@ B3D_APIENTRY SwapChainD3D12::CreateDXGISwapChain()
 BMRESULT
 B3D_APIENTRY SwapChainD3D12::PreparePresentInfo()
 {
-    // VulkanではvkAcquireNextImageKHR関数により、同時にキューイング可能なプレゼント用画像の数はスワップチェイン作成時に指定したバックバッファの数に制限されます。
-    // 共通化のためにDXGI_PRESENT_DO_NOT_WAITフラグを使用して、SetMaximumFrameLatencyで指定したキューイングを超える数のPresent操作がされた場合DXGI_ERROR_WAS_STILL_DRAWINGで失敗するようにします。
-    // NOTE: Vulkanとの違いとして、Vulkanの場合失敗した場合でも同期オブジェクトはシグナルされてしまう事があります。
-    present_info.flags |= DXGI_PRESENT_DO_NOT_WAIT;
-
     if (desc.flags & SWAP_CHAIN_FLAG_DISABLE_VERTICAL_SYNC)
     {
         present_info.flags         |= DXGI_PRESENT_ALLOW_TEARING;
-        present_info.sync_interval = 0;// 垂直同期を行わない。
-        present_info.params        = {};// 矩形は指定不可。
+        present_info.sync_interval = 0; // 垂直同期を行わない。
+        present_info.params        = {}; // 矩形は指定不可。
     }
     else
     {
-        present_info.sync_interval = 1;// 垂直同期間隔を1回待機。
+        // DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT フラグが指定されたスワップチェインでは、垂直同期の待機が FrameLatencyWaitableObject にオフロードされます。
+        // DXGI_PRESENT_DO_NOT_WAIT フラグは上記の動作によって無効化されます。
+        present_info.sync_interval = 1;
         if (present_info.dirty_rects.empty())
-            present_info.dirty_rects.resize(3);
-        present_info.params             = {};// 矩形を指定可能。
+            present_info.dirty_rects.resize(3); // default
+        present_info.params             = {}; // 矩形を指定可能。
         present_info.params.pDirtyRects = present_info.dirty_rects.data();
     }
 
@@ -623,8 +626,9 @@ B3D_APIENTRY SwapChainD3D12::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUF
     fences_data->SetForWait(next_buffer_index);
     auto&& present_complete_fence     = fences_data->present_fences_head[next_buffer_index];
     auto   present_complete_fence_val = fences_data->present_fence_values_head[next_buffer_index];
-    auto bmr = present_complete_fence->Wait(present_complete_fence_val, _info.timeout_millisec);
-    B3D_RET_IF_FAILED(bmr);
+
+    BMRESULT result = present_complete_fence->Wait(present_complete_fence_val, _info.timeout_millisec);
+    B3D_RET_IF_FAILED(result);
 
     // 引数のフェンスをプレゼント完了通知用フェンスのペイロードにすり替え
     if (_info.signal_fence)
@@ -641,7 +645,7 @@ B3D_APIENTRY SwapChainD3D12::AcquireNextBuffer(const SWAP_CHAIN_ACQUIRE_NEXT_BUF
     is_acquired = true;
     current_buffer_index = next_buffer_index;
     *_buffer_index = next_buffer_index;
-    return bmr;
+    return result;
 }
 
 BMRESULT
@@ -672,6 +676,15 @@ B3D_APIENTRY SwapChainD3D12::Present(const SWAP_CHAIN_PRESENT_INFO& _info)
 
     // 矩形を設定
     present_info.Set(_info.num_present_regions, _info.present_regions);
+
+    if (!(desc.flags & SWAP_CHAIN_FLAG_DISABLE_VERTICAL_SYNC))
+    {
+        // 前のPresent操作が完了するまで、今回のPresent操作をここで待機します。
+        // 初回フレームの場合に待機を避ける必要はありません: https://docs.microsoft.com/en-us/windows/win32/api/dxgi1_3/nf-dxgi1_3-idxgiswapchain2-getframelatencywaitableobject#:~:text=Note%20that%20this%20requirement%20includes%20the%20first%20frame%20the%20app%20renders%20with%20the%20swap%20chain.
+        auto wait_result = WaitForSingleObjectEx(prev_present_completion_event, INFINITE, FALSE);
+        if (wait_result != WAIT_OBJECT_0)
+            return BMRESULT_FAILED;
+    }
 
     auto hr = swapchain->Present1(present_info.sync_interval, present_info.flags, &present_info.params);
     auto bmr = HR_TRACE_IF_FAILED(hr);
