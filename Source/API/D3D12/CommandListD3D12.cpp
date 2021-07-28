@@ -696,10 +696,12 @@ B3D_APIENTRY CommandListD3D12::SetStencilReference(STENCIL_FACE _faces_to_set, u
 }
 
 void
-B3D_APIENTRY CommandListD3D12::SetShadingRate(SHADING_RATE _base_shading_rate)
+B3D_APIENTRY CommandListD3D12::SetShadingRate(const CMD_SET_SHADING_RATE& _args)
 {
-    B3D_ADD_DEBUG_MSG_INFO_B3D("TODO: CommandListD3D12::SetShadingRate");
-    //cmd.l6->RSSetShadingRate();
+    D3D12_SHADING_RATE_COMBINER combiners[D3D12_RS_SET_SHADING_RATE_COMBINER_COUNT]{
+        util::GetNativeShadingRateCombinerOp(_args.combiner_ops[0]),
+        util::GetNativeShadingRateCombinerOp(_args.combiner_ops[1]) };
+    cmd.l6->RSSetShadingRate(util::GetNativeShadingRate(_args.shading_rate), combiners);
 }
 
 void
@@ -1096,21 +1098,6 @@ B3D_APIENTRY CommandListD3D12::ClearRenderTargetView(IRenderTargetView* _view, c
     cmd.l->ClearRenderTargetView(_view->As<RenderTargetViewD3D12>()->GetCpuDescriptorAllocation()->handle, &norm_color.x, 0, nullptr);
 }
 
-void
-B3D_APIENTRY CommandListD3D12::BeginRenderPass(const RENDER_PASS_BEGIN_DESC& _render_pass_begin, const SUBPASS_BEGIN_DESC& _subpass_begin)
-{
-    auto&& rp = cmd_states->render_pass;
-    B3D_ASSERT((!rp.is_render_pass_scope) && __FUNCTION__"はレンダーパススコープ外でのみ呼び出す必要があります。");
-
-    rp.is_render_pass_scope = true;
-    rp.render_pass          = _render_pass_begin.render_pass->As<RenderPassD3D12>();
-    rp.framebuffer          = _render_pass_begin.framebuffer->As<FramebufferD3D12>();
-    rp.current_subpass      = 0;
-    rp.end_subpass_index    = rp.render_pass->GetDesc().num_subpasses;
-
-    PopulateRenderPassBeginOperations(_render_pass_begin, _subpass_begin);
-}
-
 #pragma region render pass procedure
 
 void
@@ -1123,37 +1110,79 @@ B3D_APIENTRY CommandListD3D12::PopulateRenderPassBeginOperations(const RENDER_PA
     if (buffer_size > rp.barrier_buffers.size())
         rp.barrier_buffers.resize(buffer_size, allocator);
 
-    // TODO: PopulateRenderPassBeginOperations(): load_barrier
-    //auto&& barriers_buffer = rp.barrier_buffers[rp.current_subpass];
-    //barriers_buffer.Set(rp.framebuffer->GetAttachmentOperators(), rp.render_pass->GetRenderPassBarrierData().load_barrier);
-    //
-    //if (barriers_buffer.resource_barriers_count != 0)
-    //    cmd.l->ResourceBarrier(barriers_buffer.resource_barriers_count, barriers_buffer.resource_barriers_data);
+    if (_render_pass_begin.num_clear_values > rp.clear_values.size())
+        rp.clear_values.resize(_render_pass_begin.num_clear_values);
+    util::MemCopyArray(rp.clear_values.data(), _render_pass_begin.clear_values, _render_pass_begin.num_clear_values);
 
-    // TODO: FIXME: 各アタッチメントは、それが最初に使用されるサブパスインデックスが開始する直前にロード操作を行うべきです。
-    LoadOperations(_render_pass_begin);
     PopulateSubpassBeginOperations(_subpass_begin);
 }
 
 void
-B3D_APIENTRY CommandListD3D12::LoadOperations(const RENDER_PASS_BEGIN_DESC& _render_pass_begin)
+B3D_APIENTRY CommandListD3D12::PopulateSubpassBeginOperations(const SUBPASS_BEGIN_DESC& _subpass_begin)
+{
+    LoadOperations();
+
+    SetRenderTargets();
+
+    auto&& rp = cmd_states->render_pass;
+    auto&& subpass = rp.render_pass->GetDesc().subpasses[rp.current_subpass];
+
+    // TODO: D3D12_VIEW_INSTANCING_TIERの考慮
+    if (rp.render_pass->IsEnabledMultiview())
+        cmd.l2->SetViewInstanceMask(subpass.view_mask);
+
+    auto&& workloads = rp.render_pass->GetSubpassWorkloads(rp.current_subpass);
+
+    // サブパスの開始前に必要なバリアを張ります。
+    auto&& barriers_buffer = rp.barrier_buffers[rp.current_subpass];
+    barriers_buffer.Set(rp.framebuffer->GetAttachmentOperators(), workloads);
+
+    if (barriers_buffer.resource_barriers_count != 0)
+        cmd.l->ResourceBarrier(barriers_buffer.resource_barriers_count, barriers_buffer.resource_barriers_data);
+
+    if (workloads.shading_rate_attachment)
+    {
+        // シェーディングレート画像のセット
+        cmd.l6->RSSetShadingRateImage(
+            rp.framebuffer->GetAttachmentOperators()[workloads.shading_rate_attachment->attachment_index]->GetParams().resource12
+        );
+    }
+}
+
+void
+B3D_APIENTRY CommandListD3D12::PopulateRenderPassEndOperations(const SUBPASS_END_DESC& _subpass_end)
+{
+    B3D_UNREFERENCED(_subpass_end);
+
+    StoreOperations();
+
+    auto&& rp = cmd_states->render_pass;
+    auto&& barriers_buffer = rp.barrier_buffers[rp.current_subpass];
+    barriers_buffer.Set(rp.framebuffer->GetAttachmentOperators(), rp.render_pass->GetSubpassWorkloads(rp.current_subpass));
+
+    if (barriers_buffer.resource_barriers_count != 0)
+        cmd.l->ResourceBarrier(barriers_buffer.resource_barriers_count, barriers_buffer.resource_barriers_data);
+}
+
+void
+B3D_APIENTRY CommandListD3D12::LoadOperations()
 {
     auto&& rp = cmd_states->render_pass;
     static constexpr CLEAR_VALUE DEFAULT_CLEAR = {};
 
-    auto&& rpdesc = rp.render_pass->GetDesc();
+    auto&& workload = rp.render_pass->GetSubpassWorkloads(rp.current_subpass);
+    
     auto attachment_operators_data = rp.framebuffer->GetAttachmentOperators().data();
-    for (uint32_t i = 0; i < rpdesc.num_attachments; i++)
+    for (auto& load_op : workload.load_ops)
     {
-        auto attachment = rpdesc.attachments[i];
-        auto&& view = attachment_operators_data[i];
+        auto&& view = attachment_operators_data[load_op.attachment_index];
         auto&& view_params = view->GetParams();
         auto aspect = view_params.range->offset.aspect;
 
         D3D12_CLEAR_FLAGS cleared_flags = D3D12_CLEAR_FLAGS(0);
 
         // カラー、深度プレーン
-        switch (attachment.load_op)
+        switch (load_op.attachment.load_op)
         {
         case buma3d::ATTACHMENT_LOAD_OP_LOAD:
             /* DO NOTHING */
@@ -1161,7 +1190,7 @@ B3D_APIENTRY CommandListD3D12::LoadOperations(const RENDER_PASS_BEGIN_DESC& _ren
 
         case buma3d::ATTACHMENT_LOAD_OP_CLEAR:
         {
-            auto cv = _render_pass_begin.clear_values ? &_render_pass_begin.clear_values[i] : view_params.tex_desc->optimized_clear_value;
+            auto cv = !rp.clear_values.empty() ? &rp.clear_values[load_op.attachment_index] : view_params.tex_desc->optimized_clear_value;
             if (!cv)
                 cv = &DEFAULT_CLEAR;
 
@@ -1171,7 +1200,7 @@ B3D_APIENTRY CommandListD3D12::LoadOperations(const RENDER_PASS_BEGIN_DESC& _ren
                     break;
                 // 可能なら深度とステンシルを同時にクリアします。
                 view->Clear(cmd.l, *cv
-                            , attachment.stencil_load_op == ATTACHMENT_LOAD_OP_CLEAR
+                            , load_op.attachment.stencil_load_op == ATTACHMENT_LOAD_OP_CLEAR
                             ? (cleared_flags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL)
                             : (cleared_flags = D3D12_CLEAR_FLAG_DEPTH));
             }
@@ -1202,7 +1231,7 @@ B3D_APIENTRY CommandListD3D12::LoadOperations(const RENDER_PASS_BEGIN_DESC& _ren
             continue;
 
         // ステンシルプレーン
-        switch (attachment.stencil_load_op)
+        switch (load_op.attachment.stencil_load_op)
         {
         case buma3d::ATTACHMENT_LOAD_OP_LOAD:
             /* DO NOTHING */
@@ -1213,7 +1242,7 @@ B3D_APIENTRY CommandListD3D12::LoadOperations(const RENDER_PASS_BEGIN_DESC& _ren
             if (cleared_flags & D3D12_CLEAR_FLAG_STENCIL)
                 break;
 
-            auto cv = _render_pass_begin.clear_values ? &_render_pass_begin.clear_values[i] : view_params.tex_desc->optimized_clear_value;
+            auto cv = !rp.clear_values.empty() ? &rp.clear_values[load_op.attachment_index] : view_params.tex_desc->optimized_clear_value;
             if (!cv)
                 cv = &DEFAULT_CLEAR;
 
@@ -1233,63 +1262,21 @@ B3D_APIENTRY CommandListD3D12::LoadOperations(const RENDER_PASS_BEGIN_DESC& _ren
 }
 
 void
-B3D_APIENTRY CommandListD3D12::PopulateSubpassBeginOperations(const SUBPASS_BEGIN_DESC& _subpass_begin)
-{
-    SetRenderTargets();
-
-    auto&& rp = cmd_states->render_pass;
-    auto&& subpass = rp.render_pass->GetDesc().subpasses[rp.current_subpass];
-
-    // TODO: D3D12_VIEW_INSTANCING_TIERの考慮
-    if (rp.render_pass->IsEnabledMultiview())
-        cmd.l2->SetViewInstanceMask(subpass.view_mask);
-
-    // サブパスの開始前に必要なバリアを張ります。
-    auto&& barriers_buffer = rp.barrier_buffers[rp.current_subpass];
-    barriers_buffer.Set(rp.framebuffer->GetAttachmentOperators(), rp.render_pass->GetRenderPassBarrierData().subpasses_barriers[rp.current_subpass]);
-
-    if (barriers_buffer.resource_barriers_count != 0)
-        cmd.l->ResourceBarrier(barriers_buffer.resource_barriers_count, barriers_buffer.resource_barriers_data);
-}
-
-void
-B3D_APIENTRY CommandListD3D12::SetRenderTargets()
-{
-    auto&& subpass_descriptors = cmd_states->render_pass.framebuffer->GetSubpassesDescriptorData().data()[cmd_states->render_pass.current_subpass];
-    cmd.l->OMSetRenderTargets(  subpass_descriptors.rtv.num_descriptors
-                              , subpass_descriptors.rtvhandles, /*RTsSingleHandleToDescriptorRange = */TRUE
-                              , (subpass_descriptors.dsv.ptr == 0) ? nullptr : &subpass_descriptors.dsv);
-}
-
-void
-B3D_APIENTRY CommandListD3D12::PopulateRenderPassEndOperations(const SUBPASS_END_DESC& _subpass_end)
-{
-    B3D_UNREFERENCED(_subpass_end);
-
-    /* TODO: FIXME: 各アタッチメントは、それが最後に使用されたサブパスインデックスが終了した直後にストア操作を行うべきです。*/
-    StoreOperations();
-
-    auto&& rp = cmd_states->render_pass;
-    auto&& barriers_buffer = rp.barrier_buffers[rp.current_subpass];
-    barriers_buffer.Set(rp.framebuffer->GetAttachmentOperators(), rp.render_pass->GetRenderPassBarrierData().GetEndRenderPassBarriers());
-
-    if (barriers_buffer.resource_barriers_count != 0)
-        cmd.l->ResourceBarrier(barriers_buffer.resource_barriers_count, barriers_buffer.resource_barriers_data);
-}
-
-void
 B3D_APIENTRY CommandListD3D12::StoreOperations()
 {
     auto&& rp = cmd_states->render_pass;
-    auto&& rpdesc = rp.render_pass->GetDesc();
-    for (uint32_t i = 0; i < rpdesc.num_attachments; i++)
+
+    auto&& workload = rp.render_pass->GetSubpassWorkloads(rp.current_subpass);
+    
+    auto attachment_operators_data = rp.framebuffer->GetAttachmentOperators().data();
+    for (auto& store_op : workload.store_ops)
     {
-        auto attachment = rpdesc.attachments[i];
-        auto&& view = rp.framebuffer->GetAttachmentOperators().data()[i];
-        auto aspect = view->GetParams().range->offset.aspect;
+        auto&& view = attachment_operators_data[store_op.attachment_index];
+        auto&& view_params = view->GetParams();
+        auto aspect = view_params.range->offset.aspect;
 
         // カラー、深度プレーン
-        switch (attachment.store_op)
+        switch (store_op.attachment.store_op)
         {
         case buma3d::ATTACHMENT_STORE_OP_STORE:
             /* DO NOTHING */
@@ -1317,7 +1304,7 @@ B3D_APIENTRY CommandListD3D12::StoreOperations()
             continue;
 
         // ステンシルプレーン
-        switch (attachment.stencil_store_op)
+        switch (store_op.attachment.stencil_store_op)
         {
         case buma3d::ATTACHMENT_STORE_OP_STORE:
             /* DO NOTHING */
@@ -1328,15 +1315,43 @@ B3D_APIENTRY CommandListD3D12::StoreOperations()
             break;
 
         default:
-            B3D_ASSERT(false && "attachment.load_op");
+            B3D_ASSERT(false && "attachment.store_op");
             break;
         }
     }
 }
 
 void
+B3D_APIENTRY CommandListD3D12::SetRenderTargets()
+{
+    auto&& subpass_descriptors = cmd_states->render_pass.framebuffer->GetSubpassesDescriptorData().data()[cmd_states->render_pass.current_subpass];
+    cmd.l->OMSetRenderTargets(  subpass_descriptors.rtv.num_descriptors
+                              , subpass_descriptors.rtvhandles, /*RTsSingleHandleToDescriptorRange = */TRUE
+                              , (subpass_descriptors.dsv.ptr == 0) ? nullptr : &subpass_descriptors.dsv);
+}
+
+#pragma endregion render pass procedure
+
+void
+B3D_APIENTRY CommandListD3D12::BeginRenderPass(const RENDER_PASS_BEGIN_DESC& _render_pass_begin, const SUBPASS_BEGIN_DESC& _subpass_begin)
+{
+    auto&& rp = cmd_states->render_pass;
+    B3D_ASSERT((!rp.is_render_pass_scope) && __FUNCTION__"はレンダーパススコープ外でのみ呼び出す必要があります。");
+
+    rp.is_render_pass_scope = true;
+    rp.render_pass          = _render_pass_begin.render_pass->As<RenderPassD3D12>();
+    rp.framebuffer          = _render_pass_begin.framebuffer->As<FramebufferD3D12>();
+    rp.current_subpass      = 0;
+    rp.end_subpass_index    = rp.render_pass->GetDesc().num_subpasses;
+
+    PopulateRenderPassBeginOperations(_render_pass_begin, _subpass_begin);
+}
+
+void
 B3D_APIENTRY CommandListD3D12::NextSubpass(const SUBPASS_BEGIN_DESC& _subpass_begin, const SUBPASS_END_DESC& _subpass_end)
 {
+    B3D_UNREFERENCED(_subpass_end);
+
     auto&& rp = cmd_states->render_pass;
     B3D_ASSERT(rp.is_render_pass_scope && __FUNCTION__"はレンダーパススコープ内でのみ呼び出す必要があります。");
 
@@ -1358,16 +1373,15 @@ B3D_APIENTRY CommandListD3D12::NextSubpass(const SUBPASS_BEGIN_DESC& _subpass_be
         }
     }
 
+    StoreOperations();
+
     rp.current_subpass++;
     PopulateSubpassBeginOperations(_subpass_begin);
 }
 
-#pragma endregion render pass procedure
-
 void
 B3D_APIENTRY CommandListD3D12::EndRenderPass(const SUBPASS_END_DESC& _subpass_end)
 {
-    B3D_UNREFERENCED(_subpass_end);
     auto&& rp = cmd_states->render_pass;
     B3D_ASSERT(rp.is_render_pass_scope && __FUNCTION__"はレンダーパススコープ内でのみ呼び出す必要があります。");
 
@@ -1544,21 +1558,16 @@ B3D_APIENTRY CommandListD3D12::GetD3D12GraphicsCommandList() const
 
 
 void CommandListD3D12::NativeSubpassBarrierBuffer::Set(const util::DyArray<util::UniquePtr<FramebufferD3D12::IAttachmentOperator>>& _attachments
-                                                       , const RenderPassD3D12::RENDER_PASS_BARRIER_DATA::SUBPASS_BARRIER&          _subpass_barrier)
+                                                       , const RenderPassD3D12::SubpassWorkloads&                                   _subpass_barrier)
 {
     auto attachments_data = _attachments.data();
-    auto barriers_at_begin = _subpass_barrier.barriers_at_begin.data();
 
-    // OPTIMIZE: バリア数のカウントを事前計算できないか確認
+    // バリア数のカウント
     {
         size_t total_barrier_count = 0;
-        for (size_t i = 0, size = _subpass_barrier.barriers_at_begin.size(); i < size; i++)
-        {
-            auto&& barriers     = barriers_at_begin[i];
-            auto&& params       = attachments_data[barriers.attachment_index]->GetParams();
-            auto&& subres_range = *params.range;
-            total_barrier_count += (subres_range.array_size * subres_range.mip_levels) * (params.is_depth_stnecil ? 2 : 1);
-        }
+        for (auto& barrier : _subpass_barrier.barriers)
+            total_barrier_count += attachments_data[barrier.attachment_index]->GetParams().barriers_count;
+
         if (total_barrier_count > resource_barriers.size())
             Resize(total_barrier_count);
     }
@@ -1566,43 +1575,24 @@ void CommandListD3D12::NativeSubpassBarrierBuffer::Set(const util::DyArray<util:
     // バリアデータを設定
     resource_barriers_count = 0;
     auto native_resource_barriers = resource_barriers.data();
-    for (uint32_t i = 0, size = (uint32_t)_subpass_barrier.barriers_at_begin.size(); i < size; i++)
+    for (auto& barrier : _subpass_barrier.barriers)
     {
-        auto&& barriers     = barriers_at_begin[i];
-        auto&& params       = attachments_data[barriers.attachment_index]->GetParams();
+        auto&& params       = attachments_data[barrier.attachment_index]->GetParams();
         auto&& subres_range = *params.range;
 
         for (uint32_t i_ary = 0; i_ary < subres_range.array_size; i_ary++)
         {
             for (uint32_t i_mip = 0; i_mip < subres_range.mip_levels; i_mip++)
             {
-
-                // TODO: OPTIMIZE: beforeとafterが一致するバリアの除外を事前に処理する。
-
-                if (barriers.native_states.state_before != barriers.native_states.state_after)
-                {
-                    auto&& b = native_resource_barriers[resource_barriers_count];
-                    b.Transition.pResource   = params.resource12;
-                    b.Transition.Subresource = params.CalcSubresourceIndex(i_ary, i_mip);
-                    b.Transition.StateBefore = barriers.native_states.state_before;
-                    b.Transition.StateAfter  = barriers.native_states.state_after;
-                    resource_barriers_count++;
-                }
-
                 // 深度ステンシルフォーマットの場合、各プレーン毎のバリアが必要です。
-                if (params.is_depth_stnecil)
-                {
-                    if (barriers.native_states.stencil_state_before != barriers.native_states.stencil_state_after)
-                    {
-                        params.CalcSubresourceIndex(i_ary, i_mip);
-                        auto&& bs = native_resource_barriers[resource_barriers_count];
-                        bs.Transition.pResource   = params.resource12;
-                        bs.Transition.Subresource = params.CalcSubresourceIndex(i_ary, i_mip,/*stencil*/true);
-                        bs.Transition.StateBefore = barriers.native_states.stencil_state_before;
-                        bs.Transition.StateAfter  = barriers.native_states.stencil_state_after;
-                        resource_barriers_count++;
-                    }
-                }
+                // CHECK: barrier.is_depth_stnecil && params.is_depth_stnecil
+                bool is_stencil_plane = barrier.is_stnecil&& params.is_depth_stnecil;
+                auto&& b = native_resource_barriers[resource_barriers_count];
+                b.Transition.pResource   = params.resource12;
+                b.Transition.Subresource = params.CalcSubresourceIndex(i_ary, i_mip, is_stencil_plane);
+                b.Transition.StateBefore = barrier.state_before;
+                b.Transition.StateAfter  = barrier.state_after;
+                resource_barriers_count++;
             }
         }
     }

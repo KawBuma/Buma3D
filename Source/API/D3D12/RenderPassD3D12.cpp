@@ -8,163 +8,166 @@ namespace buma3d
           ただし、Vulkanでは実際にメモリの依存関係の定義はアプリケーションの責任であり、これを無視すると常に最悪のパフォーマンスケースを取る事になります。
           Vulkanのレンダーパスのメリットの効果を受けるために、SUBPASS_DEPENDENCYインターフェースは公開します。*/
 
-void RenderPassD3D12::RENDER_PASS_BARRIER_DATA::Prepare(const RENDER_PASS_DESC& _desc)
-{
-    // TODO: begin_stateがUNDEFINEDの際の実装。
-    //uint32_t num_load_barriers = 0;;
-    //for (uint32_t i_at = 0; i_at < _desc.num_attachments; i_at++)
-    //{
-    //    auto&& at = _desc.attachments[i_at];
-    //    if (at.begin_state == RESOURCE_STATE_UNDEFINED && at.load_op != ATTACHMENT_LOAD_OP_LOAD)
-    //        num_load_barriers++;
-    //}
-
-    //load_barrier.barriers_at_begin.reserve(num_load_barriers);
-
-    barriers_per_attachments.resize(_desc.num_attachments);
-    for (uint32_t i_at = 0; i_at < _desc.num_attachments; i_at++)
-    {
-        auto&& b = barriers_per_attachments[i_at];
-        b.desc              = &_desc.attachments[i_at];
-        b.min_subpass_index = ~0u;
-        b.max_subpass_index =  0;
-
-        auto FindAttachmentReference = [&b, i_at](uint32_t _subpass_index, uint32_t _num_attachments, const ATTACHMENT_REFERENCE* _attachments, ATTACHMENT_REF_TYPE _type)
-        {
-            for (uint32_t i = 0; i < _num_attachments; i++)
-            {
-                auto&& at = _attachments[i];
-                if (at.attachment_index == i_at)
-                {
-                    auto&& hist = b.histories[_subpass_index];
-                    hist.next_ref_type  = _type;
-                    hist.next_ref       = &at;
-                    b.min_subpass_index = std::min(b.min_subpass_index, _subpass_index);
-                    b.max_subpass_index = std::max(b.max_subpass_index, _subpass_index);
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        // 特定のアタッチメントについて、サブパスでの｢現在の｣状態の参照を格納していく。
-        for (uint32_t i_sp = 0; i_sp < _desc.num_subpasses; i_sp++)
-        {
-            auto&& sp = _desc.subpasses[i_sp];
-
-            bool is_found = false;
-            if (sp.depth_stencil_attachment)
-                is_found = FindAttachmentReference(i_sp, 1, sp.depth_stencil_attachment, ATTACHMENT_REF_TYPE::DEPTH_STENCIL);
-
-            if (!is_found && sp.color_attachments)
-                is_found = FindAttachmentReference(i_sp, sp.num_color_attachments, sp.color_attachments, ATTACHMENT_REF_TYPE::COLOR);
-
-            if (!is_found && sp.resolve_attachments)
-                is_found = FindAttachmentReference(i_sp, sp.num_color_attachments, sp.resolve_attachments, ATTACHMENT_REF_TYPE::COLOR_RESOLVE);
-
-            if (!is_found && sp.input_attachments)
-                is_found = FindAttachmentReference(i_sp, sp.num_input_attachments, sp.input_attachments, ATTACHMENT_REF_TYPE::INPUT);
-        }
-
-        // 次に、上記の参照を各アタッチメント毎に｢以前の状態｣として、変数にセットしていく。上の処理で参照が見つからなければスルーされます
-        for (auto& [it_subpass_index, it_hist] : b.histories)
-        {
-            auto&& it_next_subpass = b.histories.upper_bound(it_subpass_index);
-            if (it_next_subpass == b.histories.end())
-                break;
-
-            auto&& next_hist = it_next_subpass->second;
-            next_hist.prev_ref_type      = it_hist.next_ref_type;
-            next_hist.prev_ref           = it_hist.next_ref;
-            next_hist.prev_subpass_index = it_subpass_index;
-        }
-
-        // 開始->最初に参照されるサブパス
-        {
-            auto&& at_begin = b.histories[b.min_subpass_index];
-            at_begin.prev_subpass_index = ~0u;// begin (SUBPASS_EXTERNAL)
-            at_begin.prev_ref_type      = ATTACHMENT_REF_TYPE::RENDER_PASS_BEGIN;
-            at_begin.prev_ref           = &b.begin_ref;
-            b.begin_ref                       = *at_begin.next_ref;
-            b.begin_ref.state_at_pass         = b.desc->begin_state;
-            b.begin_ref.stencil_state_at_pass = b.desc->stencil_begin_state;
-        }
-
-        // 最後に参照されるサブパス->終了
-        {
-            auto&& last_subpass = b.histories[b.max_subpass_index];
-            auto&& at_end       = b.histories[b.max_subpass_index + 1];// max_subpass_index + 1 にレンダーパス終了時のバリアを格納します。
-            at_end.prev_subpass_index = b.max_subpass_index; // end (SUBPASS_EXTERNAL)
-            at_end.prev_ref_type      = last_subpass.next_ref_type;
-            at_end.next_ref_type      = ATTACHMENT_REF_TYPE::RENDER_PASS_END;
-            at_end.prev_ref           = last_subpass.next_ref;
-            at_end.next_ref           = &b.end_ref;
-            b.end_ref                       = *at_end.next_ref;
-            b.end_ref.state_at_pass         = b.desc->end_state;
-            b.end_ref.stencil_state_at_pass = b.desc->stencil_end_state;
-        }
-    }
-
-    // barriers_per_attachmentsの必要サイズ(end含む)をreserve
-    uint32_t num_barriers_at_end = 0;
-    subpasses_barriers.resize(_desc.num_subpasses + 1);
-    for (uint32_t i_sp = 0; i_sp < _desc.num_subpasses; i_sp++)
-    {
-        uint32_t num_barriers_per_subpasses = 0;
-        for (auto& it_barriers_attachment : barriers_per_attachments) // アタッチメント毎に存在する、
-            for (auto& [it_subpass_index, it_hist] : it_barriers_attachment.histories) // 特定のサブパスインデックスのバリアの数を集める
-                if (it_subpass_index == i_sp)
-                    num_barriers_per_subpasses++;
-
-                else if (it_subpass_index == (it_barriers_attachment.max_subpass_index + 1))
-                    num_barriers_at_end++;
-
-        auto&& spb = subpasses_barriers[i_sp];
-        spb.barriers_at_begin.reserve(num_barriers_per_subpasses);
-    }
-    // end
-    subpasses_barriers[_desc.num_subpasses/*end*/].barriers_at_begin.reserve(num_barriers_at_end);
-
-    // 最後に、これらの情報を用いてSUBPASS_BARRIER_DATAを構築する。
-    for (uint32_t i_at = 0; i_at < _desc.num_attachments; i_at++)
-    {
-        auto&& b = barriers_per_attachments[i_at];
-        for (auto& [it_subpass_index, it_hist] : b.histories)// endが含まれます。
-        {
-            auto&& hist = b.histories[it_subpass_index];
-            auto&& spb  = subpasses_barriers[it_subpass_index];
-
-            auto&& new_barrier = spb.barriers_at_begin.emplace_back();
-            new_barrier.subpass_index    = it_subpass_index;
-            new_barrier.attachment_index = i_at;
-            new_barrier.history          = &hist;
-
-            // BEGIN, ENDも考慮された各ネイティブステートを設定
-            {
-                auto&& native_states = new_barrier.native_states;
-                native_states.state_before               = util::GetNativeResourceState(hist.prev_ref->state_at_pass);
-                hist.prev_ref->stencil_state_at_pass != RESOURCE_STATE_UNDEFINED
-                    ? native_states.stencil_state_before = util::GetNativeResourceState(hist.prev_ref->stencil_state_at_pass)
-                    : native_states.stencil_state_before = native_states.state_before;
-
-                native_states.state_after               = util::GetNativeResourceState(hist.next_ref->state_at_pass);
-                hist.next_ref->stencil_state_at_pass != RESOURCE_STATE_UNDEFINED
-                    ? native_states.stencil_state_after = util::GetNativeResourceState(hist.next_ref->stencil_state_at_pass)
-                    : native_states.stencil_state_after = native_states.state_after;
-            }
-        }
-    }
-}
+//void RenderPassD3D12::RENDER_PASS_BARRIER_DATA::Prepare(const RENDER_PASS_DESC& _desc)
+//{
+//    // TODO: begin_stateがUNDEFINEDの際の実装。
+//    //uint32_t num_load_barriers = 0;;
+//    //for (uint32_t i_at = 0; i_at < _desc.num_attachments; i_at++)
+//    //{
+//    //    auto&& at = _desc.attachments[i_at];
+//    //    if (at.begin_state == RESOURCE_STATE_UNDEFINED && at.load_op != ATTACHMENT_LOAD_OP_LOAD)
+//    //        num_load_barriers++;
+//    //}
+//
+//    //load_barrier.barriers_at_begin.reserve(num_load_barriers);
+//
+//    barriers_per_attachments.resize(_desc.num_attachments);
+//    for (uint32_t i_at = 0; i_at < _desc.num_attachments; i_at++)
+//    {
+//        auto&& b = barriers_per_attachments[i_at];
+//        b.desc              = &_desc.attachments[i_at];
+//        b.min_subpass_index = ~0u;
+//        b.max_subpass_index =  0;
+//
+//        auto FindAttachmentReference = [&b, i_at](uint32_t _subpass_index, uint32_t _num_attachments, const ATTACHMENT_REFERENCE* _attachments, ATTACHMENT_REF_TYPE _type)
+//        {
+//            for (uint32_t i = 0; i < _num_attachments; i++)
+//            {
+//                auto&& at = _attachments[i];
+//                if (at.attachment_index == i_at)
+//                {
+//                    auto&& hist = b.histories[_subpass_index];
+//                    hist.next_ref_type  = _type;
+//                    hist.next_ref       = &at;
+//                    b.min_subpass_index = std::min(b.min_subpass_index, _subpass_index);
+//                    b.max_subpass_index = std::max(b.max_subpass_index, _subpass_index);
+//                    return true;
+//                }
+//            }
+//            return false;
+//        };
+//
+//        // 特定のアタッチメントについて、サブパスでの｢現在の｣状態の参照を格納していく。
+//        for (uint32_t i_sp = 0; i_sp < _desc.num_subpasses; i_sp++)
+//        {
+//            auto&& sp = _desc.subpasses[i_sp];
+//
+//            bool is_found = false;
+//            if (sp.depth_stencil_attachment)
+//                is_found = FindAttachmentReference(i_sp, 1, sp.depth_stencil_attachment, ATTACHMENT_REF_TYPE::DEPTH_STENCIL);
+//
+//            if (!is_found && sp.color_attachments)
+//                is_found = FindAttachmentReference(i_sp, sp.num_color_attachments, sp.color_attachments, ATTACHMENT_REF_TYPE::COLOR);
+//
+//            if (!is_found && sp.resolve_attachments)
+//                is_found = FindAttachmentReference(i_sp, sp.num_color_attachments, sp.resolve_attachments, ATTACHMENT_REF_TYPE::COLOR_RESOLVE);
+//
+//            if (!is_found && sp.input_attachments)
+//                is_found = FindAttachmentReference(i_sp, sp.num_input_attachments, sp.input_attachments, ATTACHMENT_REF_TYPE::INPUT);
+//
+//            if (!is_found && sp.shading_rate_attachment)
+//                is_found = FindAttachmentReference(i_sp, 1, sp.shading_rate_attachment->shading_rate_attachment, ATTACHMENT_REF_TYPE::SHADING_RATE_IMAGE);
+//        }
+//
+//        // 次に、上記の参照を各アタッチメント毎に｢以前の状態｣として、変数にセットしていく。上の処理で参照が見つからなければスルーされます
+//        for (auto& [it_subpass_index, it_hist] : b.histories)
+//        {
+//            auto&& it_next_subpass = b.histories.upper_bound(it_subpass_index);
+//            if (it_next_subpass == b.histories.end())
+//                break;
+//
+//            auto&& next_hist = it_next_subpass->second;
+//            next_hist.prev_ref_type      = it_hist.next_ref_type;
+//            next_hist.prev_ref           = it_hist.next_ref;
+//            next_hist.prev_subpass_index = it_subpass_index;
+//        }
+//
+//        // 開始->最初に参照されるサブパス
+//        {
+//            auto&& at_begin = b.histories[b.min_subpass_index];
+//            at_begin.prev_subpass_index = ~0u;// begin (SUBPASS_EXTERNAL)
+//            at_begin.prev_ref_type      = ATTACHMENT_REF_TYPE::RENDER_PASS_BEGIN;
+//            at_begin.prev_ref           = &b.begin_ref;
+//            b.begin_ref                       = *at_begin.next_ref;
+//            b.begin_ref.state_at_pass         = b.desc->begin_state;
+//            b.begin_ref.stencil_state_at_pass = b.desc->stencil_begin_state;
+//        }
+//
+//        // 最後に参照されるサブパス->終了
+//        {
+//            auto&& last_subpass = b.histories[b.max_subpass_index];
+//            auto&& at_end       = b.histories[b.max_subpass_index + 1];// max_subpass_index + 1 にレンダーパス終了時のバリアを格納します。
+//            at_end.prev_subpass_index = b.max_subpass_index; // end (SUBPASS_EXTERNAL)
+//            at_end.prev_ref_type      = last_subpass.next_ref_type;
+//            at_end.next_ref_type      = ATTACHMENT_REF_TYPE::RENDER_PASS_END;
+//            at_end.prev_ref           = last_subpass.next_ref;
+//            at_end.next_ref           = &b.end_ref;
+//            b.end_ref                       = *at_end.next_ref;
+//            b.end_ref.state_at_pass         = b.desc->end_state;
+//            b.end_ref.stencil_state_at_pass = b.desc->stencil_end_state;
+//        }
+//    }
+//
+//    // barriers_per_attachmentsの必要サイズ(end含む)をreserve
+//    uint32_t num_barriers_at_end = 0;
+//    subpasses_barriers.resize(_desc.num_subpasses + 1);
+//    for (uint32_t i_sp = 0; i_sp < _desc.num_subpasses; i_sp++)
+//    {
+//        uint32_t num_barriers_per_subpasses = 0;
+//        for (auto& it_barriers_attachment : barriers_per_attachments) // アタッチメント毎に存在する、
+//            for (auto& [it_subpass_index, it_hist] : it_barriers_attachment.histories) // 特定のサブパスインデックスのバリアの数を集める
+//                if (it_subpass_index == i_sp)
+//                    num_barriers_per_subpasses++;
+//
+//                else if (it_subpass_index == (it_barriers_attachment.max_subpass_index + 1))
+//                    num_barriers_at_end++;
+//
+//        auto&& spb = subpasses_barriers[i_sp];
+//        spb.barriers_at_begin.reserve(num_barriers_per_subpasses);
+//    }
+//    // end
+//    subpasses_barriers[_desc.num_subpasses/*end*/].barriers_at_begin.reserve(num_barriers_at_end);
+//
+//    // 最後に、これらの情報を用いてSUBPASS_BARRIER_DATAを構築する。
+//    for (uint32_t i_at = 0; i_at < _desc.num_attachments; i_at++)
+//    {
+//        auto&& b = barriers_per_attachments[i_at];
+//        for (auto& [it_subpass_index, it_hist] : b.histories)// endが含まれます。
+//        {
+//            auto&& hist = b.histories[it_subpass_index];
+//            auto&& spb  = subpasses_barriers[it_subpass_index];
+//
+//            auto&& new_barrier = spb.barriers_at_begin.emplace_back();
+//            new_barrier.subpass_index    = it_subpass_index;
+//            new_barrier.attachment_index = i_at;
+//            new_barrier.history          = &hist;
+//
+//            // BEGIN, ENDも考慮された各ネイティブステートを設定
+//            {
+//                auto&& native_states = new_barrier.native_states;
+//                native_states.state_before               = util::GetNativeResourceState(hist.prev_ref->state_at_pass);
+//                hist.prev_ref->stencil_state_at_pass != RESOURCE_STATE_UNDEFINED
+//                    ? native_states.stencil_state_before = util::GetNativeResourceState(hist.prev_ref->stencil_state_at_pass)
+//                    : native_states.stencil_state_before = native_states.state_before;
+//
+//                native_states.state_after               = util::GetNativeResourceState(hist.next_ref->state_at_pass);
+//                hist.next_ref->stencil_state_at_pass != RESOURCE_STATE_UNDEFINED
+//                    ? native_states.stencil_state_after = util::GetNativeResourceState(hist.next_ref->stencil_state_at_pass)
+//                    : native_states.stencil_state_after = native_states.state_after;
+//            }
+//        }
+//    }
+//}
 
 
 B3D_APIENTRY RenderPassD3D12::RenderPassD3D12()
-    : ref_count     { 1 }
-    , name          {}
-    , device        {}
-    , desc          {}
-    , desc_data     {}
-    , device12      {}
-    , barriers_data {}
+    : ref_count         { 1 }
+    , name              {}
+    , device            {}
+    , desc              {}
+    , desc_data         {}
+    , device12          {}
+    , subpass_workloads {}
 {
 
 }
@@ -183,7 +186,10 @@ B3D_APIENTRY RenderPassD3D12::Init(DeviceD3D12* _device, const RENDER_PASS_DESC&
     CopyDesc(_desc);
     B3D_RET_IF_FAILED(CheckValid());
 
-    barriers_data.Prepare(desc);
+    subpass_workloads.resize(desc.num_subpasses);
+    uint32_t idx = 0;
+    for (auto& i : subpass_workloads)
+        PrepareSubpassWorkloads(idx++, i);
 
     return BMRESULT_SUCCEED;
 }
@@ -193,7 +199,7 @@ B3D_APIENTRY RenderPassD3D12::CheckValid()
 {
     for (auto& i : desc_data.subpasses)
     {
-        if (desc_data.is_enable_multiview && i.view_mask == 0)
+        if (desc_data.is_enabled_multiview && i.view_mask == 0)
         {
             B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
                               , "いすれかのサブパスでマルチビューが有効の場合、RENDER_PASS_DESC::subpassesの全ての要素のview_maskメンバーの値は0であってはなりません。");
@@ -255,11 +261,23 @@ B3D_APIENTRY RenderPassD3D12::CopyDesc(const RENDER_PASS_DESC& _desc)
             dst_data.depth_stencil_attachment = B3DMakeUniqueArgs(ATTACHMENT_REFERENCE, *_src.depth_stencil_attachment);
             dst_desc.depth_stencil_attachment = dst_data.depth_stencil_attachment.get();
         }
+
+        // シェーディングレートアタッチメント
+        if (_src.shading_rate_attachment)
+        {
+            dst_data.shading_rate_attachment = B3DMakeUniqueArgs(SHADING_RATE_ATTACHMENT, *_src.shading_rate_attachment);
+            dst_desc.shading_rate_attachment = dst_data.shading_rate_attachment.get();
+            if (_src.shading_rate_attachment->shading_rate_attachment)
+            {
+                dst_data.shading_rate_attachment_ref = B3DMakeUniqueArgs(ATTACHMENT_REFERENCE, *_src.shading_rate_attachment->shading_rate_attachment);
+                dst_data.shading_rate_attachment->shading_rate_attachment = dst_data.shading_rate_attachment_ref.get();
+            }
+        }
     }
 
     // ビューマスクが有効かどうかをキャッシュ
     for (auto& i : desc_data.subpasses)
-        desc_data.is_enable_multiview |= i.view_mask != 0;
+        desc_data.is_enabled_multiview |= i.view_mask != 0;
 
 }
 
@@ -344,13 +362,148 @@ B3D_APIENTRY RenderPassD3D12::GetDesc() const
 bool
 B3D_APIENTRY RenderPassD3D12::IsEnabledMultiview() const
 {
-    return desc_data.is_enable_multiview;
+    return desc_data.is_enabled_multiview;
 }
 
-const RenderPassD3D12::RENDER_PASS_BARRIER_DATA&
-B3D_APIENTRY RenderPassD3D12::GetRenderPassBarrierData() const
+const RenderPassD3D12::SubpassWorkloads&
+B3D_APIENTRY RenderPassD3D12::GetSubpassWorkloads(uint32_t _subpass) const
 {
-    return barriers_data;
+    return subpass_workloads.data()[_subpass];
+}
+
+void
+B3D_APIENTRY RenderPassD3D12::PrepareSubpassWorkloads(uint32_t _subpass_index, SubpassWorkloads& _workloads)
+{
+    // バリアを張るための事前処理
+    // for([idx, sp] : 各サブパス) {
+    //     for (at : アタッチメント) {
+    //         if (sp.HasAttachmentRef(at)) {
+    //             // ここは、実際には各アタッチメントタイプ毎の処理を施す
+    //             ATTACHMENT_REFERENCE ref = sp.GetAttachmentRef(at);
+    //             RESOURCE_STATE before = at.initial_state;
+    //             RESOURCE_STATE after  = ref.state;
+    //             if (各サブパス.HasPrevRef(at, idx)) before = 各サブパス.GetPrevRef(at, idx).current_state;
+    //             if (各サブパス.IsFinalRef(at, idx)) after = at.final_state;
+    //             サブパスバリアコンテナ[idx].Add(sp, before, after);
+    //         }
+    //     }
+    // }
+
+    auto GetAttachmentRef = [&](uint32_t _attachment_index, uint32_t _current_subpass_index) {
+        auto&& subpasses = desc.subpasses[_current_subpass_index];
+        auto Find = [_attachment_index](const ATTACHMENT_REFERENCE& _at) { return _at.attachment_index == _attachment_index; };
+        const ATTACHMENT_REFERENCE* ref = nullptr;
+        if (subpasses.num_input_attachments) ref = std::find_if(subpasses.input_attachments, subpasses.input_attachments + subpasses.num_input_attachments, Find);
+        if (ref) return ref;
+
+        if (subpasses.num_color_attachments) ref = std::find_if(subpasses.color_attachments, subpasses.color_attachments + subpasses.num_color_attachments, Find);
+        if (ref) return ref;
+
+        if (subpasses.num_color_attachments) ref = std::find_if(subpasses.resolve_attachments, subpasses.resolve_attachments + subpasses.num_color_attachments, Find);
+        if (ref) return ref;
+
+        if (subpasses.depth_stencil_attachment)
+            ref = subpasses.depth_stencil_attachment->attachment_index == _attachment_index
+            ? subpasses.depth_stencil_attachment : nullptr;
+        if (ref) return ref;
+
+        if (subpasses.shading_rate_attachment && subpasses.shading_rate_attachment->shading_rate_attachment)
+            ref = subpasses.shading_rate_attachment->shading_rate_attachment->attachment_index == _attachment_index
+            ? subpasses.shading_rate_attachment->shading_rate_attachment : nullptr;
+        if (ref) return ref;
+            
+        return ref;
+    };
+    auto HasAttachmentRef = [&](uint32_t _attachment_index, uint32_t _current_subpass_index) {
+        return GetAttachmentRef(_attachment_index, _current_subpass_index) != nullptr;
+    };
+    auto IsPerservedRef   = [&](uint32_t _attachment_index, uint32_t _current_subpass_index) {
+        auto&& subpasses = desc.subpasses[_current_subpass_index];
+        const uint32_t* ref = nullptr;
+        if (subpasses.num_input_attachments) ref = std::find(subpasses.preserve_attachments, subpasses.preserve_attachments + subpasses.num_preserve_attachment, _attachment_index);
+        return ref != nullptr;
+    };
+
+    auto GetPrevRefPassIndex = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+        while (_current_subpass_index != 0)
+        {
+            if (HasAttachmentRef(_ref.attachment_index, _current_subpass_index--))
+                return _current_subpass_index;
+        }
+        return ~0u;
+    };
+    auto GetPrevRef = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+        const ATTACHMENT_REFERENCE* ref = nullptr;
+        if (auto prev_pass_index = GetPrevRefPassIndex(_ref, _current_subpass_index); prev_pass_index != ~0u)
+            ref = GetAttachmentRef(_ref.attachment_index, prev_pass_index);
+        return ref;
+    };
+    auto HasPrevRef = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+        return GetPrevRef(_ref, _current_subpass_index) != nullptr;
+    };
+    auto IsFinalRef = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+        while (_current_subpass_index != desc.num_subpasses)
+        {
+            if (HasAttachmentRef(_ref.attachment_index, _current_subpass_index++))
+                return false;
+        }
+        return true;
+    };
+
+    auto&& current_subpass = desc.subpasses[_subpass_index];
+
+    if (current_subpass.shading_rate_attachment && current_subpass.shading_rate_attachment->shading_rate_attachment)
+        _workloads.shading_rate_attachment = current_subpass.shading_rate_attachment->shading_rate_attachment;
+
+    for (uint32_t i_at = 0; i_at < desc.num_attachments; i_at++)
+    {
+        if (!HasAttachmentRef(i_at, _subpass_index))
+            continue;
+
+        const ATTACHMENT_DESC&      attachment     = desc.attachments[i_at];
+        const ATTACHMENT_REFERENCE& attachment_ref = *GetAttachmentRef(i_at, _subpass_index);
+
+        bool has_prev_ref = HasPrevRef(attachment_ref, _subpass_index);
+        bool is_final_ref = IsFinalRef(attachment_ref, _subpass_index);
+
+        if (has_prev_ref)
+        {
+            // 以前に参照されたサブパスが存在しない場合、ロード操作を定義します。
+            _workloads.load_ops.emplace_back(LoadOp(i_at, attachment));
+        }
+
+        if (is_final_ref)
+        {
+            // FIXME: IsPerservedRef
+            // 現在のサブパス以降に参照されるサブパスが存在しない場合、ストア操作を定義します。
+            _workloads.store_ops.emplace_back(StoreOp(i_at, attachment));
+        }
+
+        // バリアを追加します。
+        // フラグに応じて、LoadOp、またはStoreOpのバリアなのかを切り替えます。
+        Barrier barrier{};
+
+        // バリアを追加
+        barrier.is_stnecil                     = false;
+        barrier.state_before                   = util::GetNativeResourceState(attachment.begin_state);
+        barrier.state_after                    = util::GetNativeResourceState(attachment_ref.state_at_pass);
+        if (has_prev_ref) barrier.state_before = util::GetNativeResourceState(GetPrevRef(attachment_ref, _subpass_index)->state_at_pass);
+        if (is_final_ref) barrier.state_after  = util::GetNativeResourceState(attachment.end_state);
+        if (barrier.state_before != barrier.state_after)
+            _workloads.barriers.emplace_back(barrier);
+
+        // ステンシルが分離されたバリアを追加
+        barrier.is_stnecil                     = true;
+        barrier.state_before                   = util::GetNativeResourceState(attachment.stencil_begin_state      );
+        barrier.state_after                    = util::GetNativeResourceState(attachment_ref.stencil_state_at_pass);
+        if (has_prev_ref) barrier.state_before = util::GetNativeResourceState(GetPrevRef(attachment_ref, _subpass_index)->stencil_state_at_pass);
+        if (is_final_ref) barrier.state_after  = util::GetNativeResourceState(attachment.stencil_end_state);
+        if (barrier.state_before == RESOURCE_STATE_UNDEFINED && barrier.state_after == RESOURCE_STATE_UNDEFINED)
+            continue;
+        if (barrier.state_before != barrier.state_after)
+            _workloads.barriers.emplace_back(barrier);
+    }
+
 }
 
 

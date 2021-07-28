@@ -112,10 +112,12 @@ DECLARE_D3D12_SHARED_PTR(AccelerationStructureD3D12);
 
 // directx include
 #define NOMINMAX
+#include <directx/d3d12.h>
+#include <directx/d3dx12.h>
+
 #include <dxgidebug.h>
 #include <dxgi1_6.h>
-#include <d3d12.h>
-#include <directx/d3dx12.h>
+
 #include <wrl.h>
 #include <WinPixEventRuntime/pix3.h>
 
@@ -157,8 +159,8 @@ DECLARE_D3D12_SHARED_PTR(AccelerationStructureD3D12);
 #include "SamplerViewD3D12.h"
 #include "StreamOutputBufferViewD3D12.h"
 
-#include "RenderPassD3D12.h"
 #include "FramebufferD3D12.h"
+#include "RenderPassD3D12.h"
 
 #include "RootSignatureD3D12.h"
 #include "DescriptorPool0D3D12.h"

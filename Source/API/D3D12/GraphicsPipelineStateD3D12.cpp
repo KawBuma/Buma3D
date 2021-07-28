@@ -417,19 +417,24 @@ class GraphicsPipelineStateD3D12::NonDynamicStateSetterViewportShadingRate : pub
 {
 public:
     NonDynamicStateSetterViewportShadingRate(GraphicsPipelineStateD3D12& _owner)
+        : rate{ util::GetNativeShadingRate(_owner.desc_data->shading_rate_state_desc->shading_rate) }
+        , combiners{  util::GetNativeShadingRateCombinerOp(_owner.desc_data->shading_rate_state_desc->combiner_ops[0])
+                    , util::GetNativeShadingRateCombinerOp(_owner.desc_data->shading_rate_state_desc->combiner_ops[1]) }
     {
     }
     ~NonDynamicStateSetterViewportShadingRate()
     {
     }
 
-    DYNAMIC_STATE GetState() const { return DYNAMIC_STATE_VIEWPORT_SHADING_RATE; }
+    DYNAMIC_STATE GetState() const { return DYNAMIC_STATE_SHADING_RATE; }
 
     void SetState(ID3D12GraphicsCommandList* _list) const override
     {
-        // TODO: GraphicsPipelineStateD3D12::NonDynamicStateSetterViewportShadingRate 
-        //RCAST<ID3D12GraphicsCommandList5*>(_list)->RSSetShadingRate();
+        RCAST<ID3D12GraphicsCommandList5*>(_list)->RSSetShadingRate(rate, combiners);
     }
+
+    D3D12_SHADING_RATE          rate;
+    D3D12_SHADING_RATE_COMBINER combiners[D3D12_RS_SET_SHADING_RATE_COMBINER_COUNT];
 
 };
 
@@ -520,6 +525,9 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyDesc(const GRAPHICS_PIPELINE_STATE_
 
     if (_desc.rasterization_state)
         B3D_RET_IF_FAILED(CopyRasterizationState(dd, _desc));
+
+    if (_desc.shading_rate_state)
+        B3D_RET_IF_FAILED(CopyShadingRateState(dd, _desc));
 
     if (_desc.stream_output)
         B3D_RET_IF_FAILED(CopyStreamOutput(dd, _desc));
@@ -699,6 +707,14 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyRasterizationState(DESC_DATA* _dd, 
 }
 
 BMRESULT
+B3D_APIENTRY GraphicsPipelineStateD3D12::CopyShadingRateState(DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc)
+{
+    _dd->shading_rate_state_desc = B3DMakeUniqueArgs(SHADING_RATE_STATE_DESC, *_desc.shading_rate_state);
+    desc.shading_rate_state = _dd->shading_rate_state_desc.get();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY GraphicsPipelineStateD3D12::CopyStreamOutput(DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc)
 {
     auto&& _stream_output = *_desc.stream_output;
@@ -813,7 +829,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyDynamicState(DESC_DATA* _dd, const 
         case buma3d::DYNAMIC_STATE_DEPTH_BOUNDS:
         case buma3d::DYNAMIC_STATE_STENCIL_REFERENCE:
         case buma3d::DYNAMIC_STATE_SAMPLE_POSITIONS:
-        case buma3d::DYNAMIC_STATE_VIEWPORT_SHADING_RATE:
+        case buma3d::DYNAMIC_STATE_SHADING_RATE:
         case buma3d::DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE:
             break;
 
@@ -1261,8 +1277,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateNonDynamicStateSetters()
         non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterSamplePositions, *this));
     }
 
-    // TODO: non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterViewportShadingRate, *this));
-    if (std::find(begin, end, DYNAMIC_STATE_VIEWPORT_SHADING_RATE) == end)
+    if (std::find(begin, end, DYNAMIC_STATE_SHADING_RATE) == end)
         non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterViewportShadingRate, *this));
 
 //  if (std::find(begin, end, DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE  ) == end)

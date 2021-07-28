@@ -115,7 +115,7 @@ public:
 
     void
         B3D_APIENTRY SetShadingRate(
-            SHADING_RATE _base_shading_rate) override;
+            const CMD_SET_SHADING_RATE& _args) override;
 
     void
         B3D_APIENTRY SetDepthBounds(
@@ -240,26 +240,24 @@ public:
               uint32_t            _num_scissor_rects
             , const SCISSOR_RECT* _scissor_rects) override;
 
+#pragma region render pass procedure
+private:
+    void B3D_APIENTRY PopulateRenderPassBeginOperations(const RENDER_PASS_BEGIN_DESC& _render_pass_begin, const SUBPASS_BEGIN_DESC& _subpass_begin);
+    void B3D_APIENTRY PopulateSubpassBeginOperations(const SUBPASS_BEGIN_DESC& _subpass_begin);
+    void B3D_APIENTRY PopulateRenderPassEndOperations(const SUBPASS_END_DESC& _subpass_end);
+
+    void B3D_APIENTRY LoadOperations();
+    void B3D_APIENTRY StoreOperations();
+
+    void B3D_APIENTRY SetRenderTargets();
+
+public:
+#pragma endregion render pass procedure
+
     void
         B3D_APIENTRY BeginRenderPass(
               const RENDER_PASS_BEGIN_DESC& _render_pass_begin
             , const SUBPASS_BEGIN_DESC&     _subpass_begin) override;
-
-#pragma region render pass procedure
-    private:
-
-    void B3D_APIENTRY PopulateRenderPassBeginOperations(const RENDER_PASS_BEGIN_DESC& _render_pass_begin, const SUBPASS_BEGIN_DESC& _subpass_begin);
-    void B3D_APIENTRY LoadOperations(const RENDER_PASS_BEGIN_DESC& _render_pass_begin);// TODO: リファクタリング
-
-    void B3D_APIENTRY PopulateSubpassBeginOperations(const SUBPASS_BEGIN_DESC& _subpass_begin);
-    void B3D_APIENTRY SetRenderTargets();
-
-    void B3D_APIENTRY PopulateRenderPassEndOperations(const SUBPASS_END_DESC& _subpass_end);
-    void B3D_APIENTRY StoreOperations();// TODO: リファクタリング
-
-    public:
-#pragma endregion render pass procedure
-
 
     /* Begin render pass scope */
 
@@ -368,7 +366,7 @@ private:
         }
 
         void Set(const util::DyArray<util::UniquePtr<FramebufferD3D12::IAttachmentOperator>>&   _attachments
-                 , const RenderPassD3D12::RENDER_PASS_BARRIER_DATA::SUBPASS_BARRIER&            _subpass_barrier);
+                 , const RenderPassD3D12::SubpassWorkloads&                                     _subpass_barrier);
 
     private:
         void Resize(size_t _size)
@@ -395,6 +393,7 @@ private:
             , render_pass           {}
             , framebuffer           {}
         //  , render_area           {}
+            , clear_values          { _al }
             , current_subpass       {}
             , end_subpass_index     {}
             , subpass_contents      {}
@@ -413,6 +412,7 @@ private:
         void BeginRecord()
         {
             barrier_buffers.BeginRecord();
+            clear_values.BeginRecord();
         }
 
         WeakSimpleArray<NativeSubpassBarrierBuffer>     barrier_buffers;        // サブパス毎のバリアバッファ
@@ -420,6 +420,7 @@ private:
         RenderPassD3D12*                                render_pass;
         FramebufferD3D12*                               framebuffer;
         //SCISSOR_RECT                                  render_area;
+        WeakSimpleArray<CLEAR_VALUE>                    clear_values;
         uint32_t                                        current_subpass;
         uint32_t                                        end_subpass_index;
         SUBPASS_CONTENTS                                subpass_contents;

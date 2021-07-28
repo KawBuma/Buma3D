@@ -22,6 +22,7 @@ private:
     BMRESULT B3D_APIENTRY CopyTessellationState (DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyViewportState     (DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyRasterizationState(DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
+    BMRESULT B3D_APIENTRY CopyShadingRateState  (DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyStreamOutput      (DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyMultisampleState  (DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
     BMRESULT B3D_APIENTRY CopyDepthStencilState (DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc);
@@ -172,6 +173,7 @@ private:
         util::UniquePtr<TESSELLATION_STATE_DESC>        tessellation_state_desc;
         util::UniquePtr<VIEWPORT_STATE_DESC_DATA>       viewport_state;
         util::UniquePtr<RASTERIZATION_STATE_DESC>       rasterization_state_desc;
+        util::UniquePtr<SHADING_RATE_STATE_DESC>        shading_rate_state_desc;
         util::UniquePtr<STREAM_OUTPUT_DESC_DATA>        stream_output;
         util::UniquePtr<MULTISAMPLE_STATE_DESC_DATA>    multisample_state;
         util::UniquePtr<DEPTH_STENCIL_STATE_DESC>       depth_stencil_state_desc;
