@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 11, 1);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 12, 0);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -1405,13 +1405,12 @@ enum RESOURCE_ACCESS_FLAG : EnumT
     , RESOURCE_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ              = 0x400000      // D3D12_RAYTRACING_ACCELERATION_STRUCTURE      ACCELERATION_STRUCTURE_READ_BIT_KHR             n/a
     , RESOURCE_ACCESS_FLAG_ACCELERATION_STRUCTURE_WRITE             = 0x800000      // D3D12_RAYTRACING_ACCELERATION_STRUCTURE      ACCELERATION_STRUCTURE_WRITE_BIT_KHR            n/a
 
-    , RESOURCE_ACCESS_FLAG_SHADING_RATE_IMAGE_READ                  = 0x1000000     // D3D12_SHADING_RATE_SOURCE                    SHADING_RATE_IMAGE_READ_BIT_NV                  SHADING_RATE_OPTIMAL_NV
+    , RESOURCE_ACCESS_FLAG_SHADING_RATE_ATTACHMENT_READ             = 0x1000000     // D3D12_SHADING_RATE_SOURCE                    SHADING_RATE_ATTACHMENT_READ_BIT_KHR            SHADING_RATE_ATTACHMENT_OPTIMAL_KHR
 
     , RESOURCE_ACCESS_FLAG_PRESENT                                  = RESOURCE_ACCESS_FLAG_NONE //                                  0x0                                             PRESENT_KHR
 
 
     //, RESOURCE_ACCESS_FLAG_MEMORY_WRITE                         = 0x00010000  // D3D12_GENERIC_READ                                                                            GENERAL , PREINITIALIZED  
-    //, RESOURCE_ACCESS_FLAG_FRAGMENT_DENSITY_MAP_READ            = 0x01000000  // D3D12_SHADING_RATE_SOURCE                                                                     FRAGMENT_DENSITY_MAP_OPTIMAL_EXT
     //, RESOURCE_ACCESS_FLAG_COMMAND_PREPROCESS_READ              = 0x00020000                                                  COMMAND_PREPROCESS_READ_BIT_NV 
     //, RESOURCE_ACCESS_FLAG_COMMAND_PREPROCESS_WRITE             = 0x00040000                                                  COMMAND_PREPROCESS_WRITE_BIT_NV 
 };
@@ -1468,12 +1467,11 @@ enum RESOURCE_STATE : EnumT
     , RESOURCE_STATE_ACCELERATION_STRUCTURE_WRITE           // D3D12_RAYTRACING_ACCELERATION_STRUCTURE      ACCELERATION_STRUCTURE_WRITE_BIT_KHR            n/a
     , RESOURCE_STATE_ACCELERATION_STRUCTURE_READ_WRITE      // D3D12_RAYTRACING_ACCELERATION_STRUCTURE      ACCELERATION_STRUCTURE_{READ|WRITE}_BIT_KHR     n/a
 
-    , RESOURCE_STATE_SHADING_RATE_IMAGE_READ                // D3D12_SHADING_RATE_SOURCE                    SHADING_RATE_IMAGE_READ_BIT_NV                  SHADING_RATE_OPTIMAL_NV
+    , RESOURCE_STATE_SHADING_RATE_ATTACHMENT_READ           // D3D12_SHADING_RATE_SOURCE                    FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR   FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR
 
     , RESOURCE_STATE_PRESENT                                // D3D12_PRESENT                                0x0                                             PRESENT_KHR
 
     //, RESOURCE_STATE_MEMORY_WRITE                         // D3D12_GENERIC_READ                           MEMORY_WRITE_BIT                                GENERAL
-    //, RESOURCE_STATE_FRAGMENT_DENSITY_MAP_READ            // D3D12_SHADING_RATE_SOURCE                    FRAGMENT_DENSITY_MAP_READ_BIT                   FRAGMENT_DENSITY_MAP_OPTIMAL_EXT
     //, RESOURCE_STATE_COMMAND_PREPROCESS_READ                                                              COMMAND_PREPROCESS_READ_BIT_NV 
     //, RESOURCE_STATE_COMMAND_PREPROCESS_WRITE                                                             COMMAND_PREPROCESS_WRITE_BIT_NV 
 };
@@ -1528,7 +1526,7 @@ VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT     PIPELINE_STAGE_COLOR_ATT
 VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV                PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV
 VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV               PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV
 VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT            PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT
-VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV                PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV
+VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
 VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT              PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT
 VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT      PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT
 VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT       PIPELINE_STAGE_DRAW_INDIRECT_BIT
@@ -1556,7 +1554,7 @@ VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL
 VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL
 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR
-VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV
+VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR
 VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT
 */
 
@@ -1589,7 +1587,7 @@ enum PIPELINE_STAGE_FLAG : EnumT
 
     , PIPELINE_STAGE_FLAG_STREAM_OUTPUT                     = 0x20000   // TRANSFORM_FEEDBACK
     , PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING             = 0x40000
-    , PIPELINE_STAGE_FLAG_SHADING_RATE_IMAGE                = 0x80000   // SHADING_RATE_SOURCE
+    , PIPELINE_STAGE_FLAG_SHADING_RATE_ATTACHMENT           = 0x80000   // SHADING_RATE_SOURCE
     , PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER                = 0x100000 
     , PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD      = 0x200000
     , PIPELINE_STAGE_FLAG_TASK_SHADER                       = 0x400000  // AMPLIFICATION
@@ -1657,7 +1655,7 @@ enum TEXTURE_USAGE_FLAG : EnumT
     , TEXTURE_USAGE_FLAG_DEPTH_STENCIL_ATTACHMENT = 0x20
     , TEXTURE_USAGE_FLAG_TRANSIENT_ATTACHMENT     = 0x40
     , TEXTURE_USAGE_FLAG_INPUT_ATTACHMENT         = 0x80
-    , TEXTURE_USAGE_FLAG_SHADING_RATE_IMAGE       = 0x100
+    , TEXTURE_USAGE_FLAG_SHADING_RATE_ATTACHMENT  = 0x100
 };
 using TEXTURE_USAGE_FLAGS = EnumFlagsT;
 
@@ -3233,21 +3231,24 @@ enum DEPENDENCY_FLAG : EnumT
 };
 using DEPENDENCY_FLAGS = EnumFlagsT;
 
-// TODO: SUBPASS_EXTERNALの定義
+struct SHADING_RATE_ATTACHMENT;
+
 struct SUBPASS_DESC
 {
-    SUBPASS_FLAGS               flags;
-    PIPELINE_BIND_POINT         pipeline_bind_point;        // 現在、pipeline_bind_pointはPIPELINE_BIND_POINT_GRAPHICSである必要があります。
-    uint32_t                    view_mask;                  // いずれかのビューマスクに有効なビットが存在する場合、マルチビューレンダリングが有効であると定義されます。 この場合、他の全てのサブパスでも有効なビットが存在する必要があります。
-    uint32_t                    num_input_attachments;
-    const ATTACHMENT_REFERENCE* input_attachments;
-    uint32_t                    num_color_attachments;
-    const ATTACHMENT_REFERENCE* color_attachments;
-    const ATTACHMENT_REFERENCE* resolve_attachments;        // nullptr、ATTACHMENT_UNUSED(-1)でない限り、この要素のそれぞれがcolor_attachmentsの要素に対応し、アタッチメント毎にマルチサンプル解決操作が定義されます。
-    const ATTACHMENT_REFERENCE* depth_stencil_attachment;
-//  const ATTACHMENT_REFERENCE* resolve_depth_stencil_attachment;
-    uint32_t                    num_preserve_attachment;
-    const uint32_t*             preserve_attachments;       // 各要素のインデックスのアタッチメントは、このサブパスでは使用されず、このサブパス実行中において値の保持が保証されることを定義します。
+    SUBPASS_FLAGS                   flags;
+    PIPELINE_BIND_POINT             pipeline_bind_point;        // 現在、pipeline_bind_pointはPIPELINE_BIND_POINT_GRAPHICSである必要があります。
+    uint32_t                        view_mask;                  // いずれかのビューマスクに有効なビットが存在する場合、マルチビューレンダリングが有効であると定義されます。 この場合、他の全てのサブパスでも有効なビットが存在する必要があります。
+    uint32_t                        num_input_attachments;
+    const ATTACHMENT_REFERENCE*     input_attachments;
+    uint32_t                        num_color_attachments;
+    const ATTACHMENT_REFERENCE*     color_attachments;
+    const ATTACHMENT_REFERENCE*     resolve_attachments;        // nullptr、ATTACHMENT_UNUSED(-1)でない限り、この要素のそれぞれがcolor_attachmentsの要素に対応し、アタッチメント毎にマルチサンプル解決操作が定義されます。
+    const ATTACHMENT_REFERENCE*     depth_stencil_attachment;
+//  const ATTACHMENT_REFERENCE*     resolve_depth_stencil_attachment;
+    uint32_t                        num_preserve_attachment;
+    const uint32_t*                 preserve_attachments;       // 各要素のインデックスのアタッチメントは、このサブパスでは使用されず、このサブパス実行中において値の保持が保証されることを定義します。
+
+    const SHADING_RATE_ATTACHMENT*  shading_rate_attachment;
 };
 
 struct SUBPASS_DEPENDENCY
@@ -3593,15 +3594,45 @@ struct RASTERIZATION_STATE_DESC
     float                   line_width;                     // D3D12では、ライン幅が1に固定されるため、値は無視されます。
 };
 
-enum SHADING_RATE : EnumT
+/**
+ * @brief コンバイナー操作を定義します。
+ * @remark コンバイナー操作は2つのシェーディングレート A と B を入力にして行われ、 C のシェーディングレートを結果として出力します。
+*/
+enum SHADING_RATE_COMBINER_OP : EnumT
 {
-      SHADING_RATE_ONE_INVOCATION_PER_1X1
-    , SHADING_RATE_ONE_INVOCATION_PER_1X2
-    , SHADING_RATE_ONE_INVOCATION_PER_2X1
-    , SHADING_RATE_ONE_INVOCATION_PER_2X2
-    , SHADING_RATE_ONE_INVOCATION_PER_2X4
-    , SHADING_RATE_ONE_INVOCATION_PER_4X2
-    , SHADING_RATE_ONE_INVOCATION_PER_4X4
+      SHADING_RATE_COMBINER_OP_KEEP    // C.xy = A.xy
+    , SHADING_RATE_COMBINER_OP_REPLACE // C.xy = B.xy
+    , SHADING_RATE_COMBINER_OP_MIN     // C.xy = min(A.xy, B.xy)
+    , SHADING_RATE_COMBINER_OP_MAX     // C.xy = max(A.xy, B.xy)
+    , SHADING_RATE_COMBINER_OP_MUL     // C.xy = A.xy * B.xy; または C.xy = A.xy + B.xy
+};
+
+struct SHADING_RATE_ATTACHMENT
+{
+    /**
+     * @brief 参照するシェーディングレートアタッチメントを識別するATTACHMENT_REFERENCEを指定します。
+    */
+    const ATTACHMENT_REFERENCE* shading_rate_attachment;
+
+    /**
+     * @brief ピクセルがシェーディングレートアタッチメントを参照する際のタイルサイズを指定します。
+    */
+    EXTENT2D                    shading_rate_attachment_texel_size;
+};
+
+struct SHADING_RATE_STATE_DESC
+{
+    /**
+     * @brief シェーディングレートを指定します。
+    */
+    EXTENT2D                    shading_rate;
+
+    /**
+     * @brief 各コンバイナー操作での動作を指定します。
+     *        combiner_ops[0]: パイプライン と プリミティブ のコンバイナー操作
+     *        combiner_ops[1]: combiner_ops[0]による結果 と シェーディングレートアタッチメント のコンバイナー操作
+    */
+    SHADING_RATE_COMBINER_OP    combiner_ops[2];
 };
 
 enum PIPELINE_STATE_FLAG : EnumT
@@ -3710,7 +3741,7 @@ enum DYNAMIC_STATE : EnumT
     , DYNAMIC_STATE_STENCIL_REFERENCE             // OMSetStencilRef
     , DYNAMIC_STATE_SAMPLE_POSITIONS              // SetSamplePositions _EXT
     , DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE   // IASetVertexBuffers::pBufferStrides _EXT
-    , DYNAMIC_STATE_VIEWPORT_SHADING_RATE         // RSSetShadingRate _NV 
+    , DYNAMIC_STATE_SHADING_RATE                  // RSSetShadingRate 
     , DYNAMIC_STATE_LINE_WIDTH                    // Vulkan only
     , DYNAMIC_STATE_DEPTH_BIAS                    // Vulkan only
     , DYNAMIC_STATE_STENCIL_COMPARE_MASK          // Vulkan only
@@ -3742,8 +3773,9 @@ struct GRAPHICS_PIPELINE_STATE_DESC
     const INPUT_ASSEMBLY_STATE_DESC*            input_assembly_state;
     const TESSELLATION_STATE_DESC*              tessellation_state; // PRIMITIVE_TOPOLOGY_PATCH_LISTの場合に使用します。
     const VIEWPORT_STATE_DESC*                  viewport_state;
-    const RASTERIZATION_STATE_DESC*             rasterization_state;
     const STREAM_OUTPUT_DESC*                   stream_output;
+    const RASTERIZATION_STATE_DESC*             rasterization_state;
+    const SHADING_RATE_STATE_DESC*              shading_rate_state;
     const MULTISAMPLE_STATE_DESC*               multisample_state;
     const DEPTH_STENCIL_STATE_DESC*             depth_stencil_state;
     const BLEND_STATE_DESC*                     blend_state;
@@ -4070,6 +4102,12 @@ struct CMD_SET_DEPTH_BIAS
     float depth_bias_scale;
     float depth_bias_clamp;
     float depth_bias_slope_scale;
+};
+
+struct CMD_SET_SHADING_RATE
+{
+    EXTENT2D                    shading_rate;
+    SHADING_RATE_COMBINER_OP    combiner_ops[2];
 };
 
 #pragma endregion command list arguments
@@ -5618,7 +5656,7 @@ public:
 
     virtual void
         B3D_APIENTRY SetShadingRate(
-            SHADING_RATE _base_shading_rate) = 0;
+            const CMD_SET_SHADING_RATE& _args) = 0;
 
     virtual void
         B3D_APIENTRY SetDepthBounds(
