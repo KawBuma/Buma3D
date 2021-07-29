@@ -124,7 +124,7 @@ public:
 
     void
         B3D_APIENTRY SetShadingRate(
-            SHADING_RATE _base_shading_rate) override;
+            const CMD_SET_SHADING_RATE& _args) override;
 
     void
         B3D_APIENTRY SetDepthBounds(

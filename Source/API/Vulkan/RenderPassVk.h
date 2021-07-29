@@ -65,18 +65,19 @@ private:
 
         struct SUBPASS_DATA
         {
-            util::DyArray<ATTACHMENT_REFERENCE>   input_attachments;
-            util::DyArray<ATTACHMENT_REFERENCE>   color_attachments;
-            util::DyArray<ATTACHMENT_REFERENCE>   resolve_attachments;
-            util::UniquePtr<ATTACHMENT_REFERENCE> depth_stencil_attachment;
-            util::DyArray<uint32_t>               preserve_attachments;
+            util::DyArray<ATTACHMENT_REFERENCE>         input_attachments;
+            util::DyArray<ATTACHMENT_REFERENCE>         color_attachments;
+            util::DyArray<ATTACHMENT_REFERENCE>         resolve_attachments;
+            util::UniquePtr<ATTACHMENT_REFERENCE>       depth_stencil_attachment;
+            util::DyArray<uint32_t>                     preserve_attachments;
+
+            util::UniquePtr<SHADING_RATE_ATTACHMENT>    shading_rate_attachment;
+            util::UniquePtr<ATTACHMENT_REFERENCE>       shading_rate_attachment_ref;
         };
         util::DyArray<SUBPASS_DATA> subpasses_data;
     };
     struct DESC_DATA_VK
     {
-        // VkRenderPassFragmentDensityMapCreateInfoEXT fragment_dencity_ci{ VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
-
         util::DyArray<VkAttachmentDescription2>                              attachments;
         util::DyArray<util::UniquePtr<VkAttachmentDescriptionStencilLayout>> attachments_stencil_layout;// 必要に応じて、各アタッチメント用
         util::DyArray<VkSubpassDescription2>                                 subpasses;
@@ -91,6 +92,8 @@ private:
             util::UniquePtr<VkAttachmentReference2>                            depth_stencil_attachment;
             util::DyArray<uint32_t>                                            preserve_attachments;
             util::UniquePtr<VkSubpassDescriptionDepthStencilResolve>           dsv_resolve;// TODO: VkSubpassDescriptionDepthStencilResolve
+            util::UniquePtr<VkFragmentShadingRateAttachmentInfoKHR>            shading_rate_attachment;
+            util::UniquePtr<VkAttachmentReference2>                            shading_rate_attachment_ref;
         };
         util::DyArray<SUBPASS_DATA> subpasses_data;
     };

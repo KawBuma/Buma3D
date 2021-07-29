@@ -540,10 +540,14 @@ B3D_APIENTRY CommandListVk::SetStencilReference(STENCIL_FACE _faces_to_set, uint
 }
 
 void
-B3D_APIENTRY CommandListVk::SetShadingRate(SHADING_RATE _base_shading_rate)
+B3D_APIENTRY CommandListVk::SetShadingRate(const CMD_SET_SHADING_RATE& _args)
 {
-    B3D_ADD_DEBUG_MSG_INFO_B3D("TODO: CommandListVk::SetShadingRate");
-    //vkCmdSetViewportShadingRatePaletteNV(command_buffer, );
+    if (!devpfn->vkCmdSetFragmentShadingRateKHR)
+        return;
+    VkFragmentShadingRateCombinerOpKHR combiners[2]{
+        util::GetNativeShadingRateCombinerOp(_args.combiner_ops[0]),
+        util::GetNativeShadingRateCombinerOp(_args.combiner_ops[1]) };
+    devpfn->vkCmdSetFragmentShadingRateKHR(command_buffer, RCAST<const VkExtent2D*>(&_args.shading_rate), combiners);
 }
 
 void

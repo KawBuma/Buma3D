@@ -285,8 +285,8 @@ inline VkImageUsageFlags GetNativeTextureUsageFlags(TEXTURE_USAGE_FLAGS _usage_f
     if (_usage_flags & TEXTURE_USAGE_FLAG_INPUT_ATTACHMENT)
         result |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 
-    if (_usage_flags & TEXTURE_USAGE_FLAG_SHADING_RATE_IMAGE)
-        result |= VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT | VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV;
+    if (_usage_flags & TEXTURE_USAGE_FLAG_SHADING_RATE_ATTACHMENT)
+        result |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
 
     return result;
 }
@@ -794,7 +794,7 @@ inline VkAccessFlags GetNativeResourceState(RESOURCE_STATE _state)
     case buma3d::RESOURCE_STATE_ACCELERATION_STRUCTURE_READ             : return VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     case buma3d::RESOURCE_STATE_ACCELERATION_STRUCTURE_WRITE            : return VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     case buma3d::RESOURCE_STATE_ACCELERATION_STRUCTURE_READ_WRITE       : return VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-    case buma3d::RESOURCE_STATE_SHADING_RATE_IMAGE_READ                 : return VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
+    case buma3d::RESOURCE_STATE_SHADING_RATE_ATTACHMENT_READ            : return VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
     case buma3d::RESOURCE_STATE_PRESENT                                 : return 0x0;
 
     default:
@@ -842,7 +842,7 @@ inline VkImageLayout GetNativeResourceStateForLayout(RESOURCE_STATE _state, TEXT
     case buma3d::RESOURCE_STATE_ACCELERATION_STRUCTURE_READ         : return VK_IMAGE_LAYOUT_UNDEFINED;
     case buma3d::RESOURCE_STATE_ACCELERATION_STRUCTURE_WRITE        : return VK_IMAGE_LAYOUT_UNDEFINED;
     case buma3d::RESOURCE_STATE_ACCELERATION_STRUCTURE_READ_WRITE   : return VK_IMAGE_LAYOUT_UNDEFINED;
-    case buma3d::RESOURCE_STATE_SHADING_RATE_IMAGE_READ             : return VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV;
+    case buma3d::RESOURCE_STATE_SHADING_RATE_ATTACHMENT_READ        : return VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
     case buma3d::RESOURCE_STATE_PRESENT                             : return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     default:
@@ -876,7 +876,7 @@ inline VkAccessFlags GetNativeResourceAccessFlags(RESOURCE_ACCESS_FLAGS _flags)
     if (_flags & buma3d::RESOURCE_ACCESS_FLAG_CONDITIONAL_RENDERING_READ       ) result |= VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT;
     if (_flags & buma3d::RESOURCE_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ      ) result |= VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     if (_flags & buma3d::RESOURCE_ACCESS_FLAG_ACCELERATION_STRUCTURE_WRITE     ) result |= VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-    if (_flags & buma3d::RESOURCE_ACCESS_FLAG_SHADING_RATE_IMAGE_READ          ) result |= VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
+    if (_flags & buma3d::RESOURCE_ACCESS_FLAG_SHADING_RATE_ATTACHMENT_READ     ) result |= VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
 //  if (_flags & buma3d::RESOURCE_ACCESS_FLAG_PRESENT                          ) result |= 0;
 
     return result;
@@ -905,7 +905,7 @@ inline VkPipelineStageFlags GetNativePipelineStageFlags(PIPELINE_STAGE_FLAGS _fl
     if (_flags & buma3d::PIPELINE_STAGE_FLAG_ALL_COMMANDS                ) result |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     if (_flags & buma3d::PIPELINE_STAGE_FLAG_STREAM_OUTPUT               ) result |= VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
     if (_flags & buma3d::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING       ) result |= VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
-    if (_flags & buma3d::PIPELINE_STAGE_FLAG_SHADING_RATE_IMAGE          ) result |= VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
+    if (_flags & buma3d::PIPELINE_STAGE_FLAG_SHADING_RATE_ATTACHMENT     ) result |= VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
     if (_flags & buma3d::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER          ) result |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
     if (_flags & buma3d::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD) result |= VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
     if (_flags & buma3d::PIPELINE_STAGE_FLAG_TASK_SHADER                 ) result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
@@ -1230,6 +1230,21 @@ inline uint32_t GetUpdateTemplateDataStride(VkDescriptorType _type)
     }
 }
 
+inline VkFragmentShadingRateCombinerOpKHR GetNativeShadingRateCombinerOp(SHADING_RATE_COMBINER_OP _op)
+{
+    switch (_op)
+    {
+    case buma3d::SHADING_RATE_COMBINER_OP_KEEP    : return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+    case buma3d::SHADING_RATE_COMBINER_OP_REPLACE : return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
+    case buma3d::SHADING_RATE_COMBINER_OP_MIN     : return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN_KHR;
+    case buma3d::SHADING_RATE_COMBINER_OP_MAX     : return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX_KHR;
+    case buma3d::SHADING_RATE_COMBINER_OP_MUL     : return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
+
+    default:
+        return VkFragmentShadingRateCombinerOpKHR(-1);
+    }
+}
+
 
 }// namespace util
 }// namespace buma3d
@@ -1254,7 +1269,6 @@ util::String GetVkResultDescriptionJP(VkResult _vkr);
 
 BMRESULT GetBMResultFromVk(VkResult _vkr);
 
-// NOTE: 各構造のpNext変数の型は const void* だったり void* だったりする。ポインタ渡しではconst void** に強制する。
 // pNextチェインを接続します。
 // 最後の構造のpNextポインタのポインタが帰ります
 inline const void** ConnectPNextChains(const void** _next) { return _next; }
@@ -1268,6 +1282,26 @@ template<typename Head, typename ...Types>
 inline const void** ConnectPNextChains(Head& _head, Types& ..._chains)
 {
     return ConnectPNextChains((const void**)&_head.pNext, _chains...);
+}
+
+inline VkBaseOutStructure* ConnectPNextChains2(VkBaseOutStructure* _next) { return _next; }
+template<typename Head, typename ...Tail>
+inline VkBaseOutStructure* ConnectPNextChains2(VkBaseOutStructure* _next, Head& _head, Tail& ..._chains)
+{
+    B3D_ASSERT(_next->pNext);
+    _next->pNext = (VkBaseOutStructure*)&_head;
+    return ConnectPNextChains2((VkBaseOutStructure*)&_head, _chains...);
+}
+// pNextチェインを接続します。
+// 親の構造_headが既にpNextを接続している場合、その接続されている構造は_chainsの最後の引数のpNextに再接続されます。 
+template<typename Head, typename ...Types>
+inline void ConnectPNextChains2(Head& _head, Types& ..._chains)
+{
+    auto tmp = (VkBaseOutStructure*)_head.pNext;
+    _head.pNext = nullptr;
+    auto last_pnext = ConnectPNextChains2((VkBaseOutStructure*)&_head, _chains...);
+    if (tmp)
+        ConnectPNextChains2(last_pnext, *tmp);
 }
 
 template<typename T>

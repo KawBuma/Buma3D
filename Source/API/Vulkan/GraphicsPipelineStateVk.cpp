@@ -214,7 +214,7 @@ inline VkDynamicState GetNativeDynamicState(DYNAMIC_STATE _dynamic_state)
     case buma3d::DYNAMIC_STATE_STENCIL_REFERENCE           : return VK_DYNAMIC_STATE_STENCIL_REFERENCE;
     case buma3d::DYNAMIC_STATE_SAMPLE_POSITIONS            : return VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT;
     case buma3d::DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE : return VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT;
-    case buma3d::DYNAMIC_STATE_VIEWPORT_SHADING_RATE       : return VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV;
+    case buma3d::DYNAMIC_STATE_SHADING_RATE                : return VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR;
     case buma3d::DYNAMIC_STATE_LINE_WIDTH                  : return VK_DYNAMIC_STATE_LINE_WIDTH;
     case buma3d::DYNAMIC_STATE_DEPTH_BIAS                  : return VK_DYNAMIC_STATE_DEPTH_BIAS;
     case buma3d::DYNAMIC_STATE_STENCIL_COMPARE_MASK        : return VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK;
@@ -321,6 +321,9 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyDesc(const GRAPHICS_PIPELINE_STATE_DES
 
     if (_desc.rasterization_state)
         B3D_RET_IF_FAILED(CopyRasterizationState(dd, _desc));
+
+    if (_desc.shading_rate_state)
+        B3D_RET_IF_FAILED(CopyShadingRateState(dd, _desc));
 
     if (_desc.stream_output)
         B3D_RET_IF_FAILED(CopyStreamOutput(dd, _desc));
@@ -500,6 +503,14 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyRasterizationState(DESC_DATA* _dd, con
 }
 
 BMRESULT
+B3D_APIENTRY GraphicsPipelineStateVk::CopyShadingRateState(DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc)
+{
+    _dd->shading_rate_state_desc = B3DMakeUniqueArgs(SHADING_RATE_STATE_DESC, *_desc.shading_rate_state);
+    desc.shading_rate_state = _dd->shading_rate_state_desc.get();
+    return BMRESULT_SUCCEED;
+}
+
+BMRESULT
 B3D_APIENTRY GraphicsPipelineStateVk::CopyStreamOutput(DESC_DATA* _dd, const GRAPHICS_PIPELINE_STATE_DESC& _desc)
 {
     auto&& _stream_output = *_desc.stream_output;
@@ -616,7 +627,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyDynamicState(DESC_DATA* _dd, const GRA
         case buma3d::DYNAMIC_STATE_DEPTH_BOUNDS:
         case buma3d::DYNAMIC_STATE_STENCIL_REFERENCE:
         case buma3d::DYNAMIC_STATE_SAMPLE_POSITIONS:
-        case buma3d::DYNAMIC_STATE_VIEWPORT_SHADING_RATE:
+        case buma3d::DYNAMIC_STATE_SHADING_RATE:
         case buma3d::DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE:
             break;
 
@@ -681,6 +692,9 @@ B3D_APIENTRY GraphicsPipelineStateVk::CreateGraphicsVkPipeline()
 
     if (desc.rasterization_state)
         PrepareRasterizationState(&ci, &desc_data_vk);
+
+    if (desc.shading_rate_state)
+        PrepareShadingRateState(&ci, &desc_data_vk);
 
     if (desc.multisample_state)
         PrepareMultisampleState(&ci, &desc_data_vk);
@@ -938,6 +952,20 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareRasterizationState(VkGraphicsPipeli
     last_pnext = util::ConnectPNextChains(last_pnext, rasterization_statevk.conservative_ci_ext);
 
     _ci->pRasterizationState = &rasterization_statevk.ci;
+}
+
+void
+B3D_APIENTRY GraphicsPipelineStateVk::PrepareShadingRateState(VkGraphicsPipelineCreateInfo* _ci, DESC_DATA_VK* _dd)
+{
+    auto&& shading_rate_state   = *desc.shading_rate_state;
+    auto&& shading_rate_statevk = *(_dd->shading_rate_state = B3DMakeUnique(SHADING_RATE_STATE_DATA_VK)).get();
+
+    shading_rate_statevk.ci.combinerOps[0] = util::GetNativeShadingRateCombinerOp(shading_rate_state.combiner_ops[0]);
+    shading_rate_statevk.ci.combinerOps[1] = util::GetNativeShadingRateCombinerOp(shading_rate_state.combiner_ops[1]);
+    shading_rate_statevk.ci.fragmentSize.width  = shading_rate_state.shading_rate.width;
+    shading_rate_statevk.ci.fragmentSize.height = shading_rate_state.shading_rate.height;
+
+    util::ConnectPNextChains2(*_ci, shading_rate_statevk.ci);
 }
 
 void

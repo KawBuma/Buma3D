@@ -74,11 +74,23 @@ B3D_APIENTRY RenderPassVk::CopyDesc(const RENDER_PASS_DESC& _desc)
         if (_src.resolve_attachments)// 解決アタッチメントが存在すると定義されるのは、nullptrでない場合のみです。
             Create(_src.resolve_attachments, _src.num_color_attachments, dst_data.resolve_attachments, dst_desc.resolve_attachments);
 
-        Create(_src.preserve_attachments, _src.num_preserve_attachment  , dst_data.preserve_attachments , dst_desc.preserve_attachments);
         if (_src.depth_stencil_attachment)
         {
             dst_data.depth_stencil_attachment = B3DMakeUniqueArgs(ATTACHMENT_REFERENCE, *_src.depth_stencil_attachment);
             dst_desc.depth_stencil_attachment = dst_data.depth_stencil_attachment.get();
+        }
+
+        Create(_src.preserve_attachments, _src.num_preserve_attachment  , dst_data.preserve_attachments , dst_desc.preserve_attachments);
+
+        if (_src.shading_rate_attachment)
+        {
+            dst_data.shading_rate_attachment = B3DMakeUniqueArgs(SHADING_RATE_ATTACHMENT, *_src.shading_rate_attachment);
+            dst_desc.shading_rate_attachment = dst_data.shading_rate_attachment.get();
+            if (_src.shading_rate_attachment->shading_rate_attachment)
+            {
+                dst_data.shading_rate_attachment_ref = B3DMakeUniqueArgs(ATTACHMENT_REFERENCE, *_src.shading_rate_attachment->shading_rate_attachment);
+                dst_data.shading_rate_attachment->shading_rate_attachment = dst_data.shading_rate_attachment_ref.get();
+            }
         }
     }
 }
@@ -134,6 +146,17 @@ B3D_APIENTRY RenderPassVk::PrepareCreateInfo(VkRenderPassCreateInfo2* _ci, DESC_
         {
             dst_data.depth_stencil_attachment = B3DMakeUniqueArgs(VkAttachmentReference2, VkAttachmentReference2{ VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2 });
             dst_desc.pDepthStencilAttachment = dst_data.depth_stencil_attachment.get();
+        }
+
+        if (src.shading_rate_attachment)
+        {
+            auto&& sravk = *(dst_data.shading_rate_attachment = B3DMakeUniqueArgs(VkFragmentShadingRateAttachmentInfoKHR, { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR }));
+            util::ConnectPNextChains(dst_desc, sravk);
+            if (src.shading_rate_attachment->shading_rate_attachment)
+            {
+                dst_data.shading_rate_attachment_ref = B3DMakeUniqueArgs(VkAttachmentReference2, { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2 });
+                sravk.pFragmentShadingRateAttachment = dst_data.shading_rate_attachment_ref.get();
+            }
         }
     }
 
@@ -239,7 +262,7 @@ B3D_APIENTRY RenderPassVk::PrepareCreateInfo(VkRenderPassCreateInfo2* _ci, DESC_
         if (sp.depth_stencil_attachment)
         {
             auto&& dsa   = *sp.depth_stencil_attachment;
-            auto&& dsavk = *(spvk.depth_stencil_attachment = B3DMakeUniqueArgs(VkAttachmentReference2, { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2 }));
+            auto&& dsavk = *spvk.depth_stencil_attachment;
             SetReferences(dsa, dsavk);
         }
         
@@ -248,6 +271,18 @@ B3D_APIENTRY RenderPassVk::PrepareCreateInfo(VkRenderPassCreateInfo2* _ci, DESC_
         {
             auto&& pavk = spvk.preserve_attachments[count++];
             pavk = pa;
+        }
+
+        if (sp.shading_rate_attachment)
+        {
+            auto&& sra   = *sp.shading_rate_attachment;
+            auto&& sravk = *spvk.shading_rate_attachment;
+            sravk.shadingRateAttachmentTexelSize.width  = sra.shading_rate_attachment_texel_size.width;
+            sravk.shadingRateAttachmentTexelSize.height = sra.shading_rate_attachment_texel_size.height;
+            if (sra.shading_rate_attachment)
+            {
+                SetReferences(*sra.shading_rate_attachment, *spvk.shading_rate_attachment_ref);
+            }
         }
     }
 
@@ -268,9 +303,6 @@ B3D_APIENTRY RenderPassVk::PrepareCreateInfo(VkRenderPassCreateInfo2* _ci, DESC_
         // TODO: D3D12と違い、ViewportArrayIndexが指定出来ないが、shaderOutputLayer機能が有効な場合、頂点バッファからSV_ViewportArrayIndexと同等の値を指定出来るので互換性があるか検証。(SV_ViewportArrayIndexの仕様上、そもそもDXC側で対応してくれない気はする。)
     }
 
-    //auto last_pnext = &ci.pNext;
-    //TODO: RenderPassVk: ci_data.fragment_dencity_ci{ VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
-    
     return BMRESULT_SUCCEED;
 }
 
