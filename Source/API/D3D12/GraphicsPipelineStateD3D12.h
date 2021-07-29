@@ -196,7 +196,7 @@ private:
     class NonDynamicStateSetterDepthBounds;
     class NonDynamicStateSetterStencilReference;
     class NonDynamicStateSetterSamplePositions;
-    class NonDynamicStateSetterViewportShadingRate;
+    class NonDynamicStateSetterShadingRate;
 
     // class NonDynamicStateSetterLineWidth;
     // class NonDynamicStateSetterDepthBias;
