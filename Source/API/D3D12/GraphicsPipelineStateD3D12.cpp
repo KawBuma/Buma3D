@@ -78,7 +78,7 @@ inline D3D12_PRIMITIVE_TOPOLOGY GetNativePrimitiveTopology(PRIMITIVE_TOPOLOGY _t
     case buma3d::PRIMITIVE_TOPOLOGY_LINE_STRIP_ADJACENCY     : return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
     case buma3d::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_ADJACENCY  : return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
     case buma3d::PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_ADJACENCY : return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
-    case buma3d::PRIMITIVE_TOPOLOGY_PATCH_LIST               : return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST; // 33 戻り値はオフセットして使用します。 
+    case buma3d::PRIMITIVE_TOPOLOGY_PATCH_LIST               : return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST; // 33 戻り値はオフセットして使用します。
 
     default:
         return D3D_PRIMITIVE_TOPOLOGY(-1);
@@ -90,7 +90,7 @@ inline D3D12_FILL_MODE GetNativeFillMode(FILL_MODE _fill_mode)
     switch (_fill_mode)
     {
     case buma3d::FILL_MODE_WIREFRAME : return D3D12_FILL_MODE_WIREFRAME;
-    case buma3d::FILL_MODE_POINT     : return D3D12_FILL_MODE_SOLID; // NOTE: 検証した限り、D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINTが指定されている場合、WIREFRAMEかSOLIDのどちらでもかまいません(ただし列挙の範囲外の場合失敗します)。 
+    case buma3d::FILL_MODE_POINT     : return D3D12_FILL_MODE_SOLID; // NOTE: 検証した限り、D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINTが指定されている場合、WIREFRAMEかSOLIDのどちらでもかまいません(ただし列挙の範囲外の場合失敗します)。
     case buma3d::FILL_MODE_SOLID     : return D3D12_FILL_MODE_SOLID;
 
     default:
@@ -413,16 +413,16 @@ private:
     D3D12_SAMPLE_POSITION*               sample_positions_data;
 
 };
-class GraphicsPipelineStateD3D12::NonDynamicStateSetterViewportShadingRate : public GraphicsPipelineStateD3D12::INonDynamicStateSetter
+class GraphicsPipelineStateD3D12::NonDynamicStateSetterShadingRate : public GraphicsPipelineStateD3D12::INonDynamicStateSetter
 {
 public:
-    NonDynamicStateSetterViewportShadingRate(GraphicsPipelineStateD3D12& _owner)
+    NonDynamicStateSetterShadingRate(GraphicsPipelineStateD3D12& _owner)
         : rate{ util::GetNativeShadingRate(_owner.desc_data->shading_rate_state_desc->shading_rate) }
         , combiners{  util::GetNativeShadingRateCombinerOp(_owner.desc_data->shading_rate_state_desc->combiner_ops[0])
                     , util::GetNativeShadingRateCombinerOp(_owner.desc_data->shading_rate_state_desc->combiner_ops[1]) }
     {
     }
-    ~NonDynamicStateSetterViewportShadingRate()
+    ~NonDynamicStateSetterShadingRate()
     {
     }
 
@@ -606,7 +606,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyInputLayout(DESC_DATA* _dd, const G
                 auto&& element       = input_layout.input_elements              [element_offst + i_elem];
                 auto&& semantic_name = input_layout.input_element_semantic_names[element_offst + i_elem];
 
-                // 同じセマンティック名を探し、なければ作成                
+                // 同じセマンティック名を探し、なければ作成
                 auto&& it_find = std::find_if(input_layout.input_element_semantic_names.begin(), input_layout.input_element_semantic_names.end(), [&_element](const util::SharedPtr<util::String>& _str)
                 { return (!_str) ? false : (*_str) == _element.semantic_name; });
                 if (it_find != input_layout.input_element_semantic_names.end())
@@ -643,7 +643,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyTessellationState(DESC_DATA* _dd, c
                           , "TESSELLATION_STATE_DESC::patch_control_pointsの数は0より大きい必要があります。");
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
-    
+
     _dd->tessellation_state_desc = B3DMakeUniqueArgs(TESSELLATION_STATE_DESC, *_desc.tessellation_state);
     desc.tessellation_state = _dd->tessellation_state_desc.get();
     return BMRESULT_SUCCEED;
@@ -1151,7 +1151,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
             ? D3D12_CONSERVATIVE_RASTERIZATION_MODE_ON
             : D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
-        // ForcedSampleCount 
+        // ForcedSampleCount
         {
             auto samples = GetRef(stream.SampleDesc).Count;
             if (samples == 0 || desc.multisample_state->rasterization_samples == 0)
@@ -1165,7 +1165,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
                      GetRef(stream.DepthStencilState).DepthEnable == FALSE)
                 RasterizerState.ForcedSampleCount = desc.multisample_state->rasterization_samples;
 
-            else 
+            else
             {
                 B3D_ADD_DEBUG_MSG2(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION, "MULTISAMPLE_STATE_DESC::rasterization_samplesに無効な値が指定されました。");
                 return BMRESULT_FAILED_INVALID_PARAMETER;
@@ -1259,7 +1259,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateNonDynamicStateSetters()
     auto is_enabled_depth   = desc_data->depth_stencil_state_desc && desc_data->depth_stencil_state_desc->is_enabled_depth_test;
     auto is_enabled_stencil = desc_data->depth_stencil_state_desc && desc_data->depth_stencil_state_desc->is_enabled_stencil_test;
     if (is_enabled_depth && std::find(begin, end, DYNAMIC_STATE_DEPTH_BOUNDS) == end)
-    {        
+    {
         if (desc_data->depth_stencil_state_desc->is_enabled_depth_bounds_test)
             non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterDepthBounds, *this));
     }
@@ -1277,8 +1277,8 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateNonDynamicStateSetters()
         non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterSamplePositions, *this));
     }
 
-    if (std::find(begin, end, DYNAMIC_STATE_SHADING_RATE) == end)
-        non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterViewportShadingRate, *this));
+    if (desc.shading_rate_state && std::find(begin, end, DYNAMIC_STATE_SHADING_RATE) == end)
+        non_dynamic_state_setters.emplace_back(B3DMakeUniqueArgs(NonDynamicStateSetterShadingRate, *this));
 
 //  if (std::find(begin, end, DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE  ) == end)
     // NOTE: D3D12でDYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDEは常に有効であり、DYNAMIC_STATEとして設定しません。
@@ -1327,14 +1327,14 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::Create(DeviceD3D12* _device, const GRAP
 }
 
 void
-B3D_APIENTRY GraphicsPipelineStateD3D12::AddRef() 
+B3D_APIENTRY GraphicsPipelineStateD3D12::AddRef()
 {
     ++ref_count;
     B3D_REFCOUNT_DEBUG(ref_count);
 }
 
 uint32_t
-B3D_APIENTRY GraphicsPipelineStateD3D12::Release() 
+B3D_APIENTRY GraphicsPipelineStateD3D12::Release()
 {
     B3D_REFCOUNT_DEBUG(ref_count - 1);
     auto count = --ref_count;
@@ -1345,19 +1345,19 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::Release()
 }
 
 uint32_t
-B3D_APIENTRY GraphicsPipelineStateD3D12::GetRefCount() const 
+B3D_APIENTRY GraphicsPipelineStateD3D12::GetRefCount() const
 {
     return ref_count;
 }
 
 const char*
-B3D_APIENTRY GraphicsPipelineStateD3D12::GetName() const 
+B3D_APIENTRY GraphicsPipelineStateD3D12::GetName() const
 {
     return name ? name->c_str() : nullptr;
 }
 
 BMRESULT
-B3D_APIENTRY GraphicsPipelineStateD3D12::SetName(const char* _name) 
+B3D_APIENTRY GraphicsPipelineStateD3D12::SetName(const char* _name)
 {
     if (!util::IsEnabledDebug(this))
         return BMRESULT_FAILED;
@@ -1373,7 +1373,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::SetName(const char* _name)
 }
 
 IDevice*
-B3D_APIENTRY GraphicsPipelineStateD3D12::GetDevice() const 
+B3D_APIENTRY GraphicsPipelineStateD3D12::GetDevice() const
 {
     return device;
 }
