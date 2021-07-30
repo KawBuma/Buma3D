@@ -273,7 +273,7 @@ inline D3D12_RESOURCE_FLAGS GetNativeResourceTexFlags(RESOURCE_FLAGS _flags, TEX
 {
     D3D12_RESOURCE_FLAGS result = D3D12_RESOURCE_FLAG_NONE;
 
-    if (!(_tex_usage & TEXTURE_USAGE_FLAG_SHADER_RESOURCE) && !(_tex_usage & TEXTURE_USAGE_FLAG_INPUT_ATTACHMENT) && 
+    if (!(_tex_usage & TEXTURE_USAGE_FLAG_SHADER_RESOURCE) && !(_tex_usage & TEXTURE_USAGE_FLAG_INPUT_ATTACHMENT) &&
         _tex_usage & TEXTURE_USAGE_FLAG_DEPTH_STENCIL_ATTACHMENT)// D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCILと一緒に使用する必要があります。
         result |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 
@@ -291,7 +291,7 @@ inline D3D12_RESOURCE_FLAGS GetNativeResourceTexFlags(RESOURCE_FLAGS _flags, TEX
 
     if (_flags & RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS)
         result |= D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
-    
+
     //if (_flags & /*TODO: Vulkanのビデオ用インターフェースが登場したら*/)
     // result |= D3D12_RESOURCE_FLAG_VIDEO_DECODE_REFERENCE_ONLY;
 
@@ -433,7 +433,7 @@ inline uint32_t GetNativeAspectFlags(TEXTURE_ASPECT_FLAGS _flags)
 
     // if (_flags & buma3d::TEXTURE_ASPECT_FLAG_METADATA)
     // if (_flags & buma3d::TEXTURE_ASPECT_FLAG_PLANE_3)
-    
+
     return (uint32_t)-1;
 }
 
@@ -504,7 +504,7 @@ inline bool IsIdentifyComponentMapping(const COMPONENT_MAPPING& _mapping)
 inline D3D12_DSV_FLAGS GetNativeDepthStencilViewFlags(DEPTH_STENCIL_VIEW_FLAGS _flags)
 {
     D3D12_DSV_FLAGS result = D3D12_DSV_FLAG_NONE;
-    
+
     if (_flags & DEPTH_STENCIL_VIEW_FLAG_READ_ONLY_DEPTH)
         result |= D3D12_DSV_FLAG_READ_ONLY_DEPTH;
 
@@ -550,9 +550,9 @@ inline D3D12_FILTER_TYPE GetNativeTextureSampleMode(const TEXTURE_SAMPLE_MODE _s
     switch (_sample_mode)
     {
     case buma3d::TEXTURE_SAMPLE_MODE_POINT  : return D3D12_FILTER_TYPE_POINT;
-    case buma3d::TEXTURE_SAMPLE_MODE_LINEAR : return D3D12_FILTER_TYPE_LINEAR; 
+    case buma3d::TEXTURE_SAMPLE_MODE_LINEAR : return D3D12_FILTER_TYPE_LINEAR;
 
-    //case buma3d::TEXTURE_SAMPLE_MODE_CUBIC_IMG: 
+    //case buma3d::TEXTURE_SAMPLE_MODE_CUBIC_IMG:
     default:
         return D3D12_FILTER_TYPE(-1);
     }
@@ -563,9 +563,9 @@ inline D3D12_FILTER_REDUCTION_TYPE GetNativeFilterReductionMode(SAMPLER_FILTER_R
     switch (_reduction_mode)
     {
     case buma3d::SAMPLER_FILTER_REDUCTION_MODE_STANDARD   : return D3D12_FILTER_REDUCTION_TYPE_STANDARD;
-    case buma3d::SAMPLER_FILTER_REDUCTION_MODE_COMPARISON : return D3D12_FILTER_REDUCTION_TYPE_COMPARISON; 
-    case buma3d::SAMPLER_FILTER_REDUCTION_MODE_MIN        : return D3D12_FILTER_REDUCTION_TYPE_MINIMUM; 
-    case buma3d::SAMPLER_FILTER_REDUCTION_MODE_MAX        : return D3D12_FILTER_REDUCTION_TYPE_MAXIMUM; 
+    case buma3d::SAMPLER_FILTER_REDUCTION_MODE_COMPARISON : return D3D12_FILTER_REDUCTION_TYPE_COMPARISON;
+    case buma3d::SAMPLER_FILTER_REDUCTION_MODE_MIN        : return D3D12_FILTER_REDUCTION_TYPE_MINIMUM;
+    case buma3d::SAMPLER_FILTER_REDUCTION_MODE_MAX        : return D3D12_FILTER_REDUCTION_TYPE_MAXIMUM;
     default:
         return D3D12_FILTER_REDUCTION_TYPE(-1);
     }
@@ -952,7 +952,8 @@ inline D3D12_SAMPLE_POSITION* ConvertNativeSamplePosition(const buma3d::SAMPLE_P
 
 inline D3D12_SHADING_RATE GetNativeShadingRate(const EXTENT2D& _rate)
 {
-    return SCAST<D3D12_SHADING_RATE>(D3D12_MAKE_COARSE_SHADING_RATE(_rate.width, _rate.height));
+    // D3D12_SHADING_RATE 列挙値にマップします: 4 2 1 -> 2 1 0
+    return SCAST<D3D12_SHADING_RATE>(D3D12_MAKE_COARSE_SHADING_RATE(_rate.width >> 1, _rate.height >> 1));
 }
 
 inline D3D12_SHADING_RATE_COMBINER GetNativeShadingRateCombinerOp(SHADING_RATE_COMBINER_OP _op)
@@ -1059,7 +1060,7 @@ namespace buma3d
 namespace util
 {
 
-template<typename T> 
+template<typename T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 
@@ -1232,7 +1233,7 @@ inline void HRAddDebugMessageIfFailed(T* _b3d_obj, HRESULT _hr, const char* _fil
         {
             util::StringStream ss;
             util::String hrmsg; util::GetHRESULTMessage(_hr, &hrmsg);
-            ss  << "HRESULT Failed: " << hrmsg << " Code: 0x" << std::hex << _hr 
+            ss  << "HRESULT Failed: " << hrmsg << " Code: 0x" << std::hex << _hr
                 << ", File: " << _file << " , Line: " << std::dec << _line;
             _b3d_obj->AddMessageFromB3D(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_MISCELLANEOUS, ss.str().c_str());
         }
@@ -1251,7 +1252,7 @@ inline void HRTraceIfFailed(HRESULT _hr, const char* _file, int _line)
         {
             util::StringStream ss;
             util::String hrmsg; util::GetHRESULTMessage(_hr, &hrmsg);
-            ss  << "HRESULT Failed: " << hrmsg << " Code: 0x" << std::hex << _hr 
+            ss  << "HRESULT Failed: " << hrmsg << " Code: 0x" << std::hex << _hr
                 << ", File: " << _file << " , Line: " << std::dec << _line;
             buma3d::hlp::OutDebugStr(ss.str().c_str());
         }
@@ -1276,7 +1277,7 @@ inline BMRESULT HRCheckResult(T* _b3d_obj, HRESULT _hr, const char* _file, int _
         if (dev->IsEnabledDebug())
         {
             dev->CheckDXGIInfoQueue();
-            buma3d::util::HRAddDebugMessageIfFailed(dev, _hr, _file, _line);   
+            buma3d::util::HRAddDebugMessageIfFailed(dev, _hr, _file, _line);
         }
     }
     else
