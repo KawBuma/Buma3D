@@ -6,65 +6,6 @@ namespace buma3d
 class B3D_API RenderPassD3D12 : public IDeviceChildD3D12<IRenderPass>, public util::details::NEW_DELETE_OVERRIDE
 {
 public:
-    //struct RENDER_PASS_BARRIER_DATA
-    //{
-    //    void Prepare(const RENDER_PASS_DESC& _desc);
-    //
-    //    enum class ATTACHMENT_REF_TYPE {
-    //          RENDER_PASS_BEGIN
-    //        , RENDER_PASS_END
-    //        , INPUT
-    //        , COLOR
-    //        , COLOR_RESOLVE
-    //        , DEPTH_STENCIL
-    //        , DEPTH_STENCIL_RESOLVE
-    //        , SHADING_RATE_IMAGE
-    //    };
-    //    struct SUBPASS_REF_HISTORY {
-    //        uint32_t                    prev_subpass_index;
-    //        ATTACHMENT_REF_TYPE         prev_ref_type;
-    //        ATTACHMENT_REF_TYPE         next_ref_type;
-    //        const ATTACHMENT_REFERENCE* prev_ref;
-    //        const ATTACHMENT_REFERENCE* next_ref;
-    //    };
-    //
-    //    struct SUBPASS_BARRIER
-    //    {
-    //        struct BARRIER_DATA {
-    //
-    //            struct CONVERTED_STATES {
-    //                D3D12_RESOURCE_STATES state_before;
-    //                D3D12_RESOURCE_STATES state_after;
-    //                D3D12_RESOURCE_STATES stencil_state_before;
-    //                D3D12_RESOURCE_STATES stencil_state_after;
-    //            };
-    //
-    //            // フレームバッファのビュー自体はレンダーパスに依存していないのでサブリソースの数を特定出来ません。
-    //            uint32_t                    attachment_index;
-    //            uint32_t                    subpass_index;
-    //            const SUBPASS_REF_HISTORY*  history;
-    //            CONVERTED_STATES            native_states;
-    //        };
-    //        util::DyArray<BARRIER_DATA> barriers_at_begin;// サブパスの全バリアをまとめたもの。
-    //    };
-    //    //SUBPASS_BARRIER                load_barrier;      // TODO: LOAD_OP_CLEAR/_DONT_CAREと begin_stateがUNDEFINEDのような特殊なケースで必要なバリア。
-    //    util::DyArray<SUBPASS_BARRIER> subpasses_barriers;// レンダーパスの全バリアをまとめたもの。
-    //    const SUBPASS_BARRIER& GetEndRenderPassBarriers() const { return subpasses_barriers.back(); }
-    //
-    //
-    //    // アタッチメントに対する全てのバリア
-    //    struct ATTACHMENT_BARRIER_DATA {
-    //        const ATTACHMENT_DESC*                              desc;
-    //        util::Map<uint32_t/*subpass*/, SUBPASS_REF_HISTORY> histories;// サブパス毎に存在するこのアタッチメントの状態。  max_subpass_index + 1 にレンダーパス終了時のバリアを格納します。
-    //        uint32_t                                            min_subpass_index;
-    //        uint32_t                                            max_subpass_index;
-    //        ATTACHMENT_REFERENCE                                begin_ref;
-    //        ATTACHMENT_REFERENCE                                end_ref;
-    //    };
-    //    util::DyArray<ATTACHMENT_BARRIER_DATA> barriers_per_attachments;
-    //
-    //};
-
     enum class ATTACHMENT_REF_TYPE{
           INPUT
         , COLOR
@@ -109,15 +50,6 @@ public:
 
     };
 
-    //class AttachmentReference
-    //{
-    //public:
-    //    ATTACHMENT_REF_TYPE type;
-    //    const Barrier*      bar;
-    //    const LoadOp*       lop;
-    //    const StoreOp*      sop;
-    //};
-
     class SubpassWorkloads
     {
     public:
@@ -125,7 +57,6 @@ public:
         ~SubpassWorkloads() {}
 
     public:
-        //util::DyArray<AttachmentReference>  attachments;
         util::DyArray<LoadOp>               load_ops;  // NextSubpass、またはBeginRenderPassで最初に実行されるロード操作です。
         util::DyArray<Barrier>              barriers;  // Subpassの開始時に実行されるバリアです。初回参照されるアタッチメントのバリアを含みます。
         util::DyArray<StoreOp>              store_ops; // NextSubpass、またはEndRenderPassで最後に実行されるストア操作です。
@@ -135,57 +66,6 @@ public:
         const ATTACHMENT_REFERENCE* shading_rate_attachment{};
 
     };
-
-/*
-
-バリアを張るための事前処理
-for([idx, sp] : 各サブパス) {
-    for (at : アタッチメント) {
-        if (sp.HasAttachmentRef(at)) {
-            // ここは、実際には各アタッチメントタイプ毎の処理を施す
-            ATTACHMENT_REFERENCE ref = sp.GetAttachmentRef(at);
-            RESOURCE_STATE before = at.initial_state;
-            RESOURCE_STATE after  = ref.state;
-            if (各サブパス.HasPrevRef(at, idx)) before = 各サブパス.GetPrevRef(at, idx).current_state;
-            if (各サブパス.IsFinalRef(at, idx)) after = at.final_state;
-            サブパスバリアコンテナ[idx].Add(sp, before, after);
-        }
-    }
-}
-
-*/
-
-/*
-アタッチメントの記述
-エイリアスするかどうか。
-サンプル数
-LoadOP
-StoreOP
-初期ステート
-最終ステート
-*/
-/*
-ある1つのカラーアタッチメントについてのレンダーパスの流れ
-ステート等は事前処理済み
-
-BeginRenderPass
-LOAD_OP
-レイアウトの遷移
-RTVのセット
-
-NextSubpass
-レイアウトの遷移
-
-NextSubpass
-レイアウトの遷移
-解決操作
-
-EndRenderPass
-STORE_OP
-レイアウトの遷移
-
-
-*/
 
 protected:
     B3D_APIENTRY RenderPassD3D12();
