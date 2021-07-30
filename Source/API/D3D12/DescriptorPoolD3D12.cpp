@@ -63,11 +63,11 @@ B3D_APIENTRY DescriptorPoolD3D12::Init(DeviceD3D12* _device, const DESCRIPTOR_PO
 
     for (auto& i : desc_data->pool_sizes)
         pool_remains[i.type] += i.num_descriptors;
-    
+
     return BMRESULT_SUCCEED;
 }
 
-void 
+void
 B3D_APIENTRY DescriptorPoolD3D12::CopyDesc(const DESCRIPTOR_POOL_DESC& _desc)
 {
     desc = _desc;
@@ -161,7 +161,7 @@ B3D_APIENTRY DescriptorPoolD3D12::Uninit()
     name.reset();
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY DescriptorPoolD3D12::Create(DeviceD3D12* _device, const DESCRIPTOR_POOL_DESC& _desc, DescriptorPoolD3D12** _dst)
 {
     util::Ptr<DescriptorPoolD3D12> ptr;
@@ -253,6 +253,9 @@ B3D_APIENTRY DescriptorPoolD3D12::ResetPoolAndInvalidateAllocatedSets()
     }
     allocation_count = 0;
     ++reset_id;
+
+    for (auto& i : desc_data->pool_sizes)
+        pool_remains[i.type] = i.num_descriptors;
 }
 
 BMRESULT
