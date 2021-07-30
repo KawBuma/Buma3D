@@ -303,13 +303,16 @@ B3D_APIENTRY CommandListD3D12::CreateD3D12CommandList()
 void
 B3D_APIENTRY CommandListD3D12::Uninit()
 {
-    name.reset();
-    desc = {};
-
     if (state == COMMAND_LIST_STATE_RECORDING)
     {
-        auto bmr = EndRecord();
-        B3D_ASSERT(hlp::IsSucceed(bmr));
+        /*
+        NOTE: Reset()メソッドを記録状態に呼び出せないという制約は、D3D12によるものです。(https://docs.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-reset)
+              記録途中にRelease()によってインスタンスが解放される場合がありますが、この際Close()を行うとコマンドの内容によってはエラーが出力されてしまいます。
+              ただし、IUnknown::Release()によってインスタンス自体を開放すると記録中であっても解放を行う事が可能なようです。
+              Release()によるインスタンス解放時に記録中であった場合、Close()せずに解放することでエラーの出力を回避します。
+        */
+        auto has_released = allocator->ReleaseRecordingOwnership();
+        B3D_ASSERT(has_released == true);
     }
 
     cmd_states.reset();
@@ -319,6 +322,9 @@ B3D_APIENTRY CommandListD3D12::Uninit()
     hlp::SafeRelease(allocator);
     hlp::SafeRelease(device);
     device12 = nullptr;
+
+    name.reset();
+    desc = {};
 }
 
 BMRESULT
@@ -403,7 +409,7 @@ B3D_APIENTRY CommandListD3D12::Reset(COMMAND_LIST_RESET_FLAGS _flags)
     auto lock = allocator->AcquireScopedRecordingOwnership();
     if (!lock)
         return BMRESULT_FAILED_INVALID_CALL;
-    
+
     // ID3D12GraphicsCommandList::Reset()にはコマンドアロケータが必ず必要です。
     auto hr = command_list->Reset(allocator->GetD3D12CommandAllocator(), nullptr);
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
@@ -534,7 +540,7 @@ B3D_APIENTRY CommandListD3D12::BindDescriptorSet0(PIPELINE_BIND_POINT _bind_poin
 void
 B3D_APIENTRY CommandListD3D12::Push32BitConstants0(PIPELINE_BIND_POINT _bind_point, const CMD_PUSH_32BIT_CONSTANTS0& _args)
 {
-    if constexpr (false) // NOTE: DescriptorSet0D3D12::SetConstantsBatchによるディスクリプタの設定メソッド抽象化のメリットは、現状存在しません。 
+    if constexpr (false) // NOTE: DescriptorSet0D3D12::SetConstantsBatchによるディスクリプタの設定メソッド抽象化のメリットは、現状存在しません。
     {
         auto&& batch = cmd_states->descriptor0.current_set0->GetDescriptorBatch();
         batch.descriptor_batch.data()[_args.root_parameter_index]->Set(_bind_point, cmd.l, &_args);
@@ -1035,7 +1041,7 @@ B3D_APIENTRY CommandListD3D12::ResolveTextureRegion(const CMD_RESOLVE_TEXTURE_RE
         data.resolve_extent = r.resolve_extent ? *r.resolve_extent : util::CalcMipExtents2D<EXTENT2D>(r.src_subresource.mip_slice, data.src_desc->texture.extent);
         util::ConvertNativeScissorRect(data.src_offset, data.resolve_extent, &data.src_rect);
         data.format = util::GetNativeFormat(data.src_desc->texture.format_desc.format);
-        
+
         uint32_t plane_slice = util::GetNativeAspectFlags(r.src_subresource.aspect);
         for (uint32_t i_ary = 0; i_ary < r.array_count; i_ary++)
         {
