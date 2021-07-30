@@ -1288,7 +1288,7 @@ inline VkBaseOutStructure* ConnectPNextChains2(VkBaseOutStructure* _next) { retu
 template<typename Head, typename ...Tail>
 inline VkBaseOutStructure* ConnectPNextChains2(VkBaseOutStructure* _next, Head& _head, Tail& ..._chains)
 {
-    B3D_ASSERT(_next->pNext);
+    B3D_ASSERT(_next->pNext == nullptr);
     _next->pNext = (VkBaseOutStructure*)&_head;
     return ConnectPNextChains2((VkBaseOutStructure*)&_head, _chains...);
 }
