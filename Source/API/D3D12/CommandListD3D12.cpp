@@ -1106,10 +1106,6 @@ B3D_APIENTRY CommandListD3D12::PopulateRenderPassBeginOperations(const RENDER_PA
     auto&& rp = cmd_states->render_pass;
     rp.subpass_contents = _subpass_begin.contents;
 
-    auto buffer_size = rp.end_subpass_index + 1/*end render pass barriers*/;
-    if (buffer_size > rp.barrier_buffers.size())
-        rp.barrier_buffers.resize(buffer_size, allocator);
-
     if (_render_pass_begin.num_clear_values > rp.clear_values.size())
         rp.clear_values.resize(_render_pass_begin.num_clear_values);
     util::MemCopyArray(rp.clear_values.data(), _render_pass_begin.clear_values, _render_pass_begin.num_clear_values);
@@ -1120,31 +1116,25 @@ B3D_APIENTRY CommandListD3D12::PopulateRenderPassBeginOperations(const RENDER_PA
 void
 B3D_APIENTRY CommandListD3D12::PopulateSubpassBeginOperations(const SUBPASS_BEGIN_DESC& _subpass_begin)
 {
+    auto&& rp = cmd_states->render_pass;
+    rp.workloads = &rp.render_pass->GetSubpassWorkloads(rp.current_subpass);
+
     LoadOperations();
 
-    SetRenderTargets();
-
-    auto&& rp = cmd_states->render_pass;
-    auto&& subpass = rp.render_pass->GetDesc().subpasses[rp.current_subpass];
+    // サブパスの開始前に必要なバリアを張ります。
+    SubpassBarriers(rp.workloads->barriers);
 
     // TODO: D3D12_VIEW_INSTANCING_TIERの考慮
     if (rp.render_pass->IsEnabledMultiview())
-        cmd.l2->SetViewInstanceMask(subpass.view_mask);
+        cmd.l2->SetViewInstanceMask(rp.render_pass->GetDesc().subpasses[rp.current_subpass].view_mask);
 
-    auto&& workloads = rp.render_pass->GetSubpassWorkloads(rp.current_subpass);
+    SetRenderTargets();
 
-    // サブパスの開始前に必要なバリアを張ります。
-    auto&& barriers_buffer = rp.barrier_buffers[rp.current_subpass];
-    barriers_buffer.Set(rp.framebuffer->GetAttachmentOperators(), workloads);
-
-    if (barriers_buffer.resource_barriers_count != 0)
-        cmd.l->ResourceBarrier(barriers_buffer.resource_barriers_count, barriers_buffer.resource_barriers_data);
-
-    if (workloads.shading_rate_attachment)
+    if (rp.workloads->shading_rate_attachment)
     {
         // シェーディングレート画像のセット
         cmd.l6->RSSetShadingRateImage(
-            rp.framebuffer->GetAttachmentOperators()[workloads.shading_rate_attachment->attachment_index]->GetParams().resource12
+            rp.framebuffer->GetAttachmentOperators().data()[rp.workloads->shading_rate_attachment->attachment_index]->GetParams().resource12
         );
     }
 }
@@ -1153,15 +1143,15 @@ void
 B3D_APIENTRY CommandListD3D12::PopulateRenderPassEndOperations(const SUBPASS_END_DESC& _subpass_end)
 {
     B3D_UNREFERENCED(_subpass_end);
+    auto&& rp = cmd_states->render_pass;
+
+    SubpassBarriers(rp.workloads->resolve_barriers);
+    SubpassResolve();
 
     StoreOperations();
 
-    auto&& rp = cmd_states->render_pass;
-    auto&& barriers_buffer = rp.barrier_buffers[rp.current_subpass];
-    barriers_buffer.Set(rp.framebuffer->GetAttachmentOperators(), rp.render_pass->GetSubpassWorkloads(rp.current_subpass));
-
-    if (barriers_buffer.resource_barriers_count != 0)
-        cmd.l->ResourceBarrier(barriers_buffer.resource_barriers_count, barriers_buffer.resource_barriers_data);
+    // サブパスの終了時に必要なバリアを張ります。
+    SubpassBarriers(rp.workloads->final_barriers);
 }
 
 void
@@ -1169,11 +1159,9 @@ B3D_APIENTRY CommandListD3D12::LoadOperations()
 {
     auto&& rp = cmd_states->render_pass;
     static constexpr CLEAR_VALUE DEFAULT_CLEAR = {};
-
-    auto&& workload = rp.render_pass->GetSubpassWorkloads(rp.current_subpass);
     
     auto attachment_operators_data = rp.framebuffer->GetAttachmentOperators().data();
-    for (auto& load_op : workload.load_ops)
+    for (auto& load_op : rp.workloads->load_ops)
     {
         auto&& view = attachment_operators_data[load_op.attachment_index];
         auto&& view_params = view->GetParams();
@@ -1265,11 +1253,9 @@ void
 B3D_APIENTRY CommandListD3D12::StoreOperations()
 {
     auto&& rp = cmd_states->render_pass;
-
-    auto&& workload = rp.render_pass->GetSubpassWorkloads(rp.current_subpass);
     
     auto attachment_operators_data = rp.framebuffer->GetAttachmentOperators().data();
-    for (auto& store_op : workload.store_ops)
+    for (auto& store_op : rp.workloads->store_ops)
     {
         auto&& view = attachment_operators_data[store_op.attachment_index];
         auto&& view_params = view->GetParams();
@@ -1322,6 +1308,38 @@ B3D_APIENTRY CommandListD3D12::StoreOperations()
 }
 
 void
+B3D_APIENTRY CommandListD3D12::SubpassBarriers(const util::DyArray<RenderPassD3D12::Barrier>& _barriers)
+{
+    if (_barriers.empty())
+        return;
+
+    auto&& rp = cmd_states->render_pass;
+    rp.barrier_buffers.Set(rp.framebuffer->GetAttachmentOperators(), _barriers);
+    cmd.l->ResourceBarrier(rp.barrier_buffers.resource_barriers_count, rp.barrier_buffers.resource_barriers_data);
+}
+
+void
+B3D_APIENTRY CommandListD3D12::SubpassResolve()
+{
+    auto&& rp = cmd_states->render_pass;
+
+    // 現在のサブパスの終了直後に解決アタッチメントへ解決操作を行います。
+    auto&& attachments  = cmd_states->render_pass.framebuffer->GetAttachmentOperators().data();
+    auto&& subpass      = rp.render_pass->GetDesc().subpasses[rp.current_subpass];
+    if (subpass.resolve_attachments)
+    {
+        for (uint32_t i = 0; i < subpass.num_color_attachments; i++)
+        {
+            auto attachment_index = subpass.resolve_attachments[i].attachment_index;
+            if (attachment_index == B3D_UNUSED_ATTACHMENT)
+                continue;
+
+            attachments[attachment_index]->Resolve(cmd.l1, nullptr, attachments[i].get());
+        }
+    }
+}
+
+void
 B3D_APIENTRY CommandListD3D12::SetRenderTargets()
 {
     auto&& subpass_descriptors = cmd_states->render_pass.framebuffer->GetSubpassesDescriptorData().data()[cmd_states->render_pass.current_subpass];
@@ -1358,22 +1376,13 @@ B3D_APIENTRY CommandListD3D12::NextSubpass(const SUBPASS_BEGIN_DESC& _subpass_be
     if (rp.current_subpass > rp.end_subpass_index)
         return;
 
-    // 現在のサブパスの終了直後に解決アタッチメントへ解決操作を行います。
-    auto&& attachments  = cmd_states->render_pass.framebuffer->GetAttachmentOperators().data();
-    auto&& subpass      = rp.render_pass->GetDesc().subpasses[rp.current_subpass];
-    if (subpass.resolve_attachments)
-    {
-        for (uint32_t i = 0; i < subpass.num_color_attachments; i++)
-        {
-            auto attachment_index = subpass.resolve_attachments[i].attachment_index;
-            if (attachment_index == B3D_UNUSED_ATTACHMENT)
-                continue;
-
-            attachments[attachment_index]->Resolve(cmd.l1, nullptr, attachments[i].get());
-        }
-    }
+    SubpassBarriers(rp.workloads->resolve_barriers);
+    SubpassResolve();
 
     StoreOperations();
+
+    // サブパスの終了時に必要なバリアを張ります。
+    SubpassBarriers(rp.workloads->final_barriers);
 
     rp.current_subpass++;
     PopulateSubpassBeginOperations(_subpass_begin);
@@ -1391,6 +1400,7 @@ B3D_APIENTRY CommandListD3D12::EndRenderPass(const SUBPASS_END_DESC& _subpass_en
     rp.render_pass          = nullptr;
     rp.framebuffer          = nullptr;
     rp.current_subpass      = ~0u;
+    rp.workloads            = nullptr;
 }
 
 void
@@ -1558,14 +1568,14 @@ B3D_APIENTRY CommandListD3D12::GetD3D12GraphicsCommandList() const
 
 
 void CommandListD3D12::NativeSubpassBarrierBuffer::Set(const util::DyArray<util::UniquePtr<FramebufferD3D12::IAttachmentOperator>>& _attachments
-                                                       , const RenderPassD3D12::SubpassWorkloads&                                   _subpass_barrier)
+                                                       , const util::DyArray<RenderPassD3D12::Barrier>&                             _barriers)
 {
     auto attachments_data = _attachments.data();
 
     // バリア数のカウント
     {
         size_t total_barrier_count = 0;
-        for (auto& barrier : _subpass_barrier.barriers)
+        for (auto& barrier : _barriers)
             total_barrier_count += attachments_data[barrier.attachment_index]->GetParams().barriers_count;
 
         if (total_barrier_count > resource_barriers.size())
@@ -1575,7 +1585,7 @@ void CommandListD3D12::NativeSubpassBarrierBuffer::Set(const util::DyArray<util:
     // バリアデータを設定
     resource_barriers_count = 0;
     auto native_resource_barriers = resource_barriers.data();
-    for (auto& barrier : _subpass_barrier.barriers)
+    for (auto& barrier : _barriers)
     {
         auto&& params       = attachments_data[barrier.attachment_index]->GetParams();
         auto&& subres_range = *params.range;

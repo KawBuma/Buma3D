@@ -56,9 +56,9 @@ public:
     //    struct ATTACHMENT_BARRIER_DATA {
     //        const ATTACHMENT_DESC*                              desc;
     //        util::Map<uint32_t/*subpass*/, SUBPASS_REF_HISTORY> histories;// サブパス毎に存在するこのアタッチメントの状態。  max_subpass_index + 1 にレンダーパス終了時のバリアを格納します。
-    //        uint32_t                                            min_subpass_index; 
+    //        uint32_t                                            min_subpass_index;
     //        uint32_t                                            max_subpass_index;
-    //        ATTACHMENT_REFERENCE                                begin_ref; 
+    //        ATTACHMENT_REFERENCE                                begin_ref;
     //        ATTACHMENT_REFERENCE                                end_ref;
     //    };
     //    util::DyArray<ATTACHMENT_BARRIER_DATA> barriers_per_attachments;
@@ -104,7 +104,7 @@ public:
         ~StoreOp() {}
 
     public:
-        uint32_t attachment_index;
+        uint32_t               attachment_index;
         const ATTACHMENT_DESC& attachment;
 
     };
@@ -114,8 +114,8 @@ public:
     //public:
     //    ATTACHMENT_REF_TYPE type;
     //    const Barrier*      bar;
-    //    const LoadOp*       lop;  
-    //    const StoreOp*      sop; 
+    //    const LoadOp*       lop;
+    //    const StoreOp*      sop;
     //};
 
     class SubpassWorkloads
@@ -127,8 +127,10 @@ public:
     public:
         //util::DyArray<AttachmentReference>  attachments;
         util::DyArray<LoadOp>               load_ops;  // NextSubpass、またはBeginRenderPassで最初に実行されるロード操作です。
-        util::DyArray<Barrier>              barriers;  // Subpassの開始時に実行されるバリアです。
+        util::DyArray<Barrier>              barriers;  // Subpassの開始時に実行されるバリアです。初回参照されるアタッチメントのバリアを含みます。
         util::DyArray<StoreOp>              store_ops; // NextSubpass、またはEndRenderPassで最後に実行されるストア操作です。
+        util::DyArray<Barrier>              resolve_barriers; // カラーアタッチメントをリゾルブアタッチメントにリゾルブする必要がある際のバリアです。
+        util::DyArray<Barrier>              final_barriers; // 各アタッチメントが最後に参照される際のバリアです。
 
         const ATTACHMENT_REFERENCE* shading_rate_attachment{};
 
@@ -311,11 +313,11 @@ private:
         //*/
         //struct RENDER_PASS_ENDING_ACCESS_RESOLVE_PARAMETERS
         //{
-        //    ID3D12Resource*                                                 pSrcResource;// color_attachment 
+        //    ID3D12Resource*                                                 pSrcResource;// color_attachment
         //    ID3D12Resource*                                                 pDstResource;// resolve_attachment
         //    /*RTの配列スライスのサブセットにすることはできますが、RTV/DSVの一部ではないサブリソースを対象にすることはできません。*/
         //    UINT                                                            SubresourceCount;
-        //    const RENDER_PASS_ENDING_ACCESS_RESOLVE_SUBRESOURCE_PARAMETERS* pSubresourceParameters; // _Field_size_full_(SubresourceCount)  
+        //    const RENDER_PASS_ENDING_ACCESS_RESOLVE_SUBRESOURCE_PARAMETERS* pSubresourceParameters; // _Field_size_full_(SubresourceCount)
         //    DXGI_FORMAT                                                     Format;
         //    D3D12_RESOLVE_MODE                                              ResolveMode;
         //    BOOL                                                            PreserveResolveSource;// color_attachmentのSTORE_OPがATTACHMENT_STORE_OP_STORE アプリケーションが将来このリソースの書き込まれた内容に依存することを意味します（それらは保持する必要があります）。

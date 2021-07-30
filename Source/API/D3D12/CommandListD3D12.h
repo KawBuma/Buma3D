@@ -248,6 +248,8 @@ private:
 
     void B3D_APIENTRY LoadOperations();
     void B3D_APIENTRY StoreOperations();
+    void B3D_APIENTRY SubpassBarriers(const util::DyArray<RenderPassD3D12::Barrier>& _barriers);
+    void B3D_APIENTRY SubpassResolve();
 
     void B3D_APIENTRY SetRenderTargets();
 
@@ -366,7 +368,7 @@ private:
         }
 
         void Set(const util::DyArray<util::UniquePtr<FramebufferD3D12::IAttachmentOperator>>&   _attachments
-                 , const RenderPassD3D12::SubpassWorkloads&                                     _subpass_barrier);
+                 , const util::DyArray<RenderPassD3D12::Barrier>&                               _barriers);
 
     private:
         void Resize(size_t _size)
@@ -397,6 +399,7 @@ private:
             , current_subpass       {}
             , end_subpass_index     {}
             , subpass_contents      {}
+            , workloads             {}
         {}
 
         void Reset()
@@ -407,6 +410,7 @@ private:
             current_subpass         = ~0ul;
             end_subpass_index       = ~0ul;
             subpass_contents        = {};
+            workloads               = nullptr;
         }
 
         void BeginRecord()
@@ -415,7 +419,7 @@ private:
             clear_values.BeginRecord();
         }
 
-        WeakSimpleArray<NativeSubpassBarrierBuffer>     barrier_buffers;        // サブパス毎のバリアバッファ
+        NativeSubpassBarrierBuffer                      barrier_buffers;
         bool                                            is_render_pass_scope;
         RenderPassD3D12*                                render_pass;
         FramebufferD3D12*                               framebuffer;
@@ -424,6 +428,7 @@ private:
         uint32_t                                        current_subpass;
         uint32_t                                        end_subpass_index;
         SUBPASS_CONTENTS                                subpass_contents;
+        const RenderPassD3D12::SubpassWorkloads*        workloads;
     };
 
     struct PREDICATION_STATE_DATA
