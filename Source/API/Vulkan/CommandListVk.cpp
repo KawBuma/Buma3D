@@ -80,7 +80,7 @@ B3D_APIENTRY CommandListVk::CommandListVk()
     , inspfn                {}
     , devpfn                {}
     , command_buffer        {}
-    , inheritance_info_data {}   
+    , inheritance_info_data {}
     , begin_info_data       {}
     , debug_name_setter     {}
 {
@@ -152,13 +152,11 @@ B3D_APIENTRY CommandListVk::CreateVkCommandList()
 void
 B3D_APIENTRY CommandListVk::Uninit()
 {
-    name.reset();
-    desc = {};
-
     if (state == COMMAND_LIST_STATE_RECORDING)
     {
-        auto bmr = EndRecord();
-        B3D_ASSERT(hlp::IsSucceed(bmr));
+        // NOTE: Reset()メソッドを記録状態に呼び出せないという制約は、D3D12によるものです。 詳細について、 CommandListD3D12::Reset() を参照してください。
+        auto has_released = allocator->ReleaseRecordingOwnership();
+        B3D_ASSERT(has_released == true);
     }
 
     if (command_buffer)
@@ -170,6 +168,9 @@ B3D_APIENTRY CommandListVk::Uninit()
     vkdevice = VK_NULL_HANDLE;
     inspfn = nullptr;
     devpfn = nullptr;
+
+    name.reset();
+    desc = {};
 }
 
 BMRESULT
@@ -840,7 +841,7 @@ B3D_APIENTRY CommandListVk::ResolveTextureRegion(const CMD_RESOLVE_TEXTURE_REGIO
 
         util::ConvertNativeSubresourceOffsetWithArraySize(region.array_count, region.src_subresource, &regionvk.srcSubresource);
         util::ConvertNativeSubresourceOffsetWithArraySize(region.array_count, region.dst_subresource, &regionvk.dstSubresource);
-        
+
         regionvk.srcOffset = region.src_offset ? VkOffset3D{ region.src_offset->x, region.src_offset->y, 0 } : VkOffset3D();
         regionvk.dstOffset = region.dst_offset ? VkOffset3D{ region.dst_offset->x, region.dst_offset->y, 0 } : VkOffset3D();
 

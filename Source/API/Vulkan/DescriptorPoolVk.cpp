@@ -18,8 +18,8 @@ B3D_APIENTRY DescriptorPoolVk::DescriptorPoolVk()
     , inspfn            {}
     , devpfn            {}
     , descriptor_pool   {}
-{     
-      
+{
+
 }
 
 B3D_APIENTRY DescriptorPoolVk::~DescriptorPoolVk()
@@ -49,11 +49,11 @@ B3D_APIENTRY DescriptorPoolVk::Init(DeviceVk* _device, const DESCRIPTOR_POOL_DES
 
     for (auto& i : desc_data->pool_sizes)
         pool_remains[i.type] = i.num_descriptors;
-    
+
     return BMRESULT_SUCCEED;
 }
 
-void 
+void
 B3D_APIENTRY DescriptorPoolVk::CopyDesc(const DESCRIPTOR_POOL_DESC& _desc)
 {
     desc = _desc;
@@ -117,7 +117,7 @@ B3D_APIENTRY DescriptorPoolVk::Uninit()
     name.reset();
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY DescriptorPoolVk::Create(DeviceVk* _device, const DESCRIPTOR_POOL_DESC& _desc, DescriptorPoolVk** _dst)
 {
     util::Ptr<DescriptorPoolVk> ptr;
@@ -219,6 +219,9 @@ B3D_APIENTRY DescriptorPoolVk::ResetPoolAndInvalidateAllocatedSets()
 
     allocation_count = 0;
     ++reset_id;
+
+    for (auto& i : desc_data->pool_sizes)
+        pool_remains[i.type] = i.num_descriptors;
 }
 
 BMRESULT
