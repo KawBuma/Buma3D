@@ -326,7 +326,6 @@ B3D_APIENTRY DescriptorSetD3D12::VerifyWriteDescriptorSets(const WRITE_DESCRIPTO
     {
         auto&& db = _write.dynamic_bindings[i_binding];
         B3D_RET_IF_FAILED(CheckCommon(db));
-        B3D_RET_IF_FAILED(CheckViewCompatibility(l.bindings[db.dst_binding_index], db.src_view));
     }
 
     return BMRESULT_SUCCEED;
@@ -412,13 +411,10 @@ inline bool DescriptorSetD3D12::IsCompatibleView(const DESCRIPTOR_SET_LAYOUT_BIN
                !(_view->As<IShaderResourceView>()->GetDesc().flags & SHADER_RESOURCE_VIEW_FLAG_DENY_INPUT_ATTACHMENT);
 
     case buma3d::DESCRIPTOR_TYPE_CBV                        : return view_desc.type == VIEW_TYPE_CONSTANT_BUFFER;
-    case buma3d::DESCRIPTOR_TYPE_CBV_DYNAMIC                : return view_desc.type == VIEW_TYPE_CONSTANT_BUFFER;
     case buma3d::DESCRIPTOR_TYPE_SRV_TEXTURE                : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && IsInRange(view_desc.dimension, VIEW_DIMENSION_TEXTURE_1D, VIEW_DIMENSION_TEXTURE_CUBE_ARRAY);
     case buma3d::DESCRIPTOR_TYPE_UAV_TEXTURE                : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && IsInRange(view_desc.dimension, VIEW_DIMENSION_TEXTURE_1D, VIEW_DIMENSION_TEXTURE_CUBE_ARRAY);
     case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER                 : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && IsBufferDim(view_desc.dimension);
     case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER                 : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && IsBufferDim(view_desc.dimension);
-    case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER_DYNAMIC         : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && IsBufferDim(view_desc.dimension);
-    case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER_DYNAMIC         : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && IsBufferDim(view_desc.dimension);
     case buma3d::DESCRIPTOR_TYPE_SRV_TYPED_BUFFER           : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && view_desc.dimension == VIEW_DIMENSION_BUFFER_TYPED;
     case buma3d::DESCRIPTOR_TYPE_UAV_TYPED_BUFFER           : return view_desc.type == VIEW_TYPE_UNORDERED_ACCESS && view_desc.dimension == VIEW_DIMENSION_BUFFER_TYPED;
     case buma3d::DESCRIPTOR_TYPE_SRV_ACCELERATION_STRUCTURE : return view_desc.type == VIEW_TYPE_SHADER_RESOURCE  && view_desc.dimension == VIEW_DIMENSION_BUFFER_ACCELERATION_STRUCTURE;

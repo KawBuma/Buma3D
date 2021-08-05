@@ -238,8 +238,9 @@ void DescriptorSetUpdateCache::PopulateWriteDynamicDescriptorBinding(DescriptorS
 
     auto&& buffer_info = _updator.data->buffer_infos.Add();
     wvk.pBufferInfo = &buffer_info;
-    buffer_info = *GetViewVk(_write.src_view)->GetVkDescriptorBufferInfo();
-    buffer_info.offset += _write.src_view_buffer_offset;
+    buffer_info.buffer = _write.src_buffer->As<BufferVk>()->GetVkBuffer();
+    buffer_info.offset = _write.src_buffer_offset;
+    buffer_info.range  = _write.size_in_bytes;
     if (data->is_enabled_copy)
         (*data->template_data->GetEntryInfo<VkDescriptorBufferInfo>(e, e.dstArrayElement)) = buffer_info;
 }

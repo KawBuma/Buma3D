@@ -285,7 +285,7 @@ void DescriptorSetUpdateCache::PopulateWriteDescriptorBinding(DescriptorSetUpdat
 void DescriptorSetUpdateCache::PopulateWriteDynamicDescriptorBinding(DescriptorSetUpdater& _updator, const WRITE_DYNAMIC_DESCRIPTOR_BINDING& _write)
 {
     auto dst_batch = SCAST<DescriptorSetD3D12::SetRootDescriptorBatch*>(data->batch[_write.dst_binding_index].get());
-    dst_batch->WriteRootDescriptor(SCAST<D3D12_GPU_VIRTUAL_ADDRESS>((*GetViewD3D12(_write.src_view)->GetGpuVirtualAddress()) + _write.src_view_buffer_offset));
+    dst_batch->WriteRootDescriptor(SCAST<D3D12_GPU_VIRTUAL_ADDRESS>((_write.src_buffer->GetGPUVirtualAddress()) + _write.src_buffer_offset), _write.size_in_bytes);
 }
 
 void DescriptorSetUpdateCache::PopulateCopyDescriptorBinding(DescriptorSetUpdater& _updator, const COPY_DESCRIPTOR_BINDING& _copy, const DescriptorSetUpdateCache& _src_cache)

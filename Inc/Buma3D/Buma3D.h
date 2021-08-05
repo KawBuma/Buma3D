@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 12, 0);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 13, 0);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -207,25 +207,28 @@ using NodeMask              = uint32_t;
 
 using SampleMask            = uint32_t;
 
-inline constexpr NodeMask B3D_DEFAULT_NODE_MASK = 0x1;
-inline constexpr uint32_t B3D_MAX_NODE_COUNT    = 32;
+inline constexpr NodeMask   B3D_DEFAULT_NODE_MASK               = 0x1;
+inline constexpr uint32_t   B3D_MAX_NODE_COUNT                  = 32;
 
 inline constexpr SampleMask B3D_DEFAULT_SAMPLE_MASK[]           = { ~0u, ~0u };
 inline constexpr uint32_t   B3D_DEFAULT_STENCIL_COMPARE_MASK    = ~0u;
 inline constexpr uint32_t   B3D_DEFAULT_STENCIL_WRITE_MASK      = ~0u;
 inline constexpr uint32_t   B3D_DEFAULT_STENCIL_REFERENCE       = ~0u;
 
-inline constexpr uint32_t B3D_USE_ALL_MIPS              = ~0u; // RESOURCE_DESC::num_mipsに指定された場合、利用可能な全てのミップレベルが割り当てられます。
-inline constexpr uint32_t B3D_USE_REMAINING_MIP_LEVELS  = ~0u; // SUBRESOURCE_RANGE::mip_levelsに指定された場合、offsetから利用可能な全てのミップレベルをビューに含めます。
-inline constexpr uint32_t B3D_USE_REMAINING_ARRAY_SIZES = ~0u; // SUBRESOURCE_RANGE::array_sizeに指定された場合、offsetから利用可能な全ての配列をビューに含めます。
-inline constexpr uint32_t B3D_APPEND_ALIGNED_ELEMENT    = ~0u; // INPUT_ELEMENT_DESC::aligned_byte_offsetに指定された場合、オフセットが自動的に計算されます。
-//inline constexpr uint64_t B3D_USE_WHOLE_SIZE          = ~0ull;
-inline constexpr uint32_t B3D_UNUSED_ATTACHMENT         = ~0u;
-inline constexpr uint32_t B3D_SUBPASS_EXTERNAL          = ~0u;
-//inline constexpr uint32_t B3D_QUEUE_FAMILY_IGNORED    = ~0u;
+inline constexpr uint32_t   B3D_USE_ALL_MIPS                    = ~0u;      // RESOURCE_DESC::num_mipsに指定された場合、利用可能な全てのミップレベルが割り当てられます。
+inline constexpr uint32_t   B3D_USE_REMAINING_MIP_LEVELS        = ~0u;      // SUBRESOURCE_RANGE::mip_levelsに指定された場合、offsetから利用可能な全てのミップレベルをビューに含めます。
+inline constexpr uint32_t   B3D_USE_REMAINING_ARRAY_SIZES       = ~0u;      // SUBRESOURCE_RANGE::array_sizeに指定された場合、offsetから利用可能な全ての配列をビューに含めます。
+inline constexpr uint32_t   B3D_APPEND_ALIGNED_ELEMENT          = ~0u;      // INPUT_ELEMENT_DESC::aligned_byte_offsetに指定された場合、オフセットが自動的に計算されます。
 
-inline constexpr float B3D_VIEWPORT_MIN_DEPTH = 0.f;
-inline constexpr float B3D_VIEWPORT_MAX_DEPTH = 1.f;
+//// TODO: 対応する構造にて、 B3D_WHOLE_SIZE が指定された際の動作を実装
+//inline constexpr uint64_t   B3D_WHOLE_SIZE                      = ~0ull;    // 特定のバッファのサイズに対して、オフセット値以降の残りのサイズをすべて指定します; size_range = buffer.size - offset
+
+inline constexpr uint32_t   B3D_UNUSED_ATTACHMENT               = ~0u;
+inline constexpr uint32_t   B3D_SUBPASS_EXTERNAL                = ~0u;
+//inline constexpr uint32_t B3D_QUEUE_FAMILY_IGNORED            = ~0u;
+
+inline constexpr float      B3D_VIEWPORT_MIN_DEPTH              = 0.f;
+inline constexpr float      B3D_VIEWPORT_MAX_DEPTH              = 1.f;
 
 
 enum BMRESULT : EnumT
@@ -2860,8 +2863,9 @@ struct WRITE_DESCRIPTOR_BINDING
 struct WRITE_DYNAMIC_DESCRIPTOR_BINDING
 {
     uint32_t                                dst_binding_index;          // 宛先バインディングのインデックスです。
-    IView*                                  src_view;                   // 宛先バインディングに関連付けるバッファーリソースのビューです。 テクスチャリソース、型付きバッファのビューを含めることはできません。
-    int64_t                                 src_view_buffer_offset;     // 指定のビューを基準にしたオフセットです。 
+    IBuffer*                                src_buffer;                 // 宛先バインディングに関連付けるバッファーリソースです。
+    uint64_t                                src_buffer_offset;          // src_bufferを動的ディスクリプタとして関連付ける際の開始オフセットです。
+    uint64_t                                size_in_bytes;              // src_buffer_offsetからのサイズです。 動的ディスクリプタの範囲を定義します。 値は DEVICE_ADAPTER_LIMITS::max_constant_buffer_range, max_unordered_access_buffer_range 以下である必要があります。
 };
 
 struct WRITE_DESCRIPTOR_SET

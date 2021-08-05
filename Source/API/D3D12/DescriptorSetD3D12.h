@@ -129,7 +129,7 @@ public:
     public:
         SetRootDescriptorBatch(uint32_t _root_parameter_index, D3D12_ROOT_PARAMETER_TYPE _type)
             : batch             { _root_parameter_index, _type }
-            , offset            {}
+            , range             {}
             , SetForGraphics    {}
             , SetForCompute     {}
         {
@@ -159,17 +159,22 @@ public:
 
         void Set(uint32_t _root_parameter_offset, PIPELINE_BIND_POINT _bind_point, ID3D12GraphicsCommandList* _list, const void* _data) override
         {
-            UpdateOffset(*RCAST<const uint32_t*>(_data));
+            D3D12_GPU_VIRTUAL_ADDRESS buffer_location = batch.root_descriptor + SCAST<D3D12_GPU_VIRTUAL_ADDRESS>(*RCAST<const uint32_t*>(_data));
+            if (!IsInRange(buffer_location))
+            {
+                // TODO: SetRootDescriptorBatch::Set: エラーメッセージ
+                return;
+            }
 
             switch (_bind_point)
             {
             case buma3d::PIPELINE_BIND_POINT_GRAPHICS:
-                (_list->*SetForGraphics)(batch.root_parameter_index + _root_parameter_offset, D3D12_GPU_VIRTUAL_ADDRESS{ batch.root_descriptor + offset });
+                (_list->*SetForGraphics)(batch.root_parameter_index + _root_parameter_offset, buffer_location);
                 break;
 
             case buma3d::PIPELINE_BIND_POINT_COMPUTE:
             case buma3d::PIPELINE_BIND_POINT_RAY_TRACING:
-                (_list->*SetForCompute)(batch.root_parameter_index + _root_parameter_offset, D3D12_GPU_VIRTUAL_ADDRESS{ batch.root_descriptor + offset });
+                (_list->*SetForCompute)(batch.root_parameter_index + _root_parameter_offset, buffer_location);
                 break;
 
             default:// エラー処理は上流の関数で行われます。
@@ -177,14 +182,16 @@ public:
             }
         }
 
-        void WriteRootDescriptor(D3D12_GPU_VIRTUAL_ADDRESS _root_descriptor)
+        void WriteRootDescriptor(D3D12_GPU_VIRTUAL_ADDRESS _root_descriptor, uint64_t _size_in_bytes)
         {
             batch.root_descriptor = _root_descriptor;
+            range = _root_descriptor + SCAST<D3D12_GPU_VIRTUAL_ADDRESS>(_size_in_bytes);
         }
 
-        void CopyRootDescriptor(const ISetDescriptorBatch* _src)
+        void CopyRootDescriptor(const SetRootDescriptorBatch* _src)
         {
             batch.root_descriptor = _src->GetData().root_descriptor;
+            range = _src->range;
         }
 
         const SET_DESCRIPTOR_BATCH& GetData() const override
@@ -193,16 +200,16 @@ public:
         }
 
     private:
-        void UpdateOffset(uint32_t _offset)
+        bool IsInRange(D3D12_GPU_VIRTUAL_ADDRESS _location)
         {
-            offset = SCAST<SIZE_T>(_offset);
+            return _location < range;
         }
 
     private:
-        SET_DESCRIPTOR_BATCH    batch;
-        SIZE_T                  offset;
-        PFN_SetRootDescriptor   SetForGraphics;
-        PFN_SetRootDescriptor   SetForCompute;
+        SET_DESCRIPTOR_BATCH        batch;
+        D3D12_GPU_VIRTUAL_ADDRESS   range; // 動的ディスクリプタ書き込み時に指定されたサイズに基づく範囲です。
+        PFN_SetRootDescriptor       SetForGraphics;
+        PFN_SetRootDescriptor       SetForCompute;
 
     };
 
