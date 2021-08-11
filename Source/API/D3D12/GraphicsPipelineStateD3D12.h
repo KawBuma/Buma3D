@@ -90,6 +90,9 @@ public:
     const GRAPHICS_PIPELINE_STATE_DESC&
         B3D_APIENTRY GetDesc() const;
 
+    uint32_t
+        B3D_APIENTRY GetInputSlotStride(uint32_t _slot_number) const;
+
 private:
     struct SHADER_STAGE_DESC_DATA
     {
@@ -114,10 +117,11 @@ private:
 
     struct INPUT_LAYOUT_DESC_DATA
     {
-        INPUT_LAYOUT_DESC                               desc;
-        util::DyArray<INPUT_SLOT_DESC>                  input_slots;
-        util::DyArray<INPUT_ELEMENT_DESC>               input_elements; // 全てのinput_slots::elementsを格納し、オフセットして使用します。
-        util::DyArray<util::SharedPtr<util::String>>    input_element_semantic_names;
+        INPUT_LAYOUT_DESC                                                           desc;
+        util::DyArray<INPUT_SLOT_DESC>                                              input_slots;
+        util::Map<uint32_t/*slot*/, util::DyArray<INPUT_ELEMENT_DESC>>              input_elements;
+        util::Map<uint32_t/*slot*/, util::DyArray<util::SharedPtr<util::String>>>   input_element_semantic_names;
+        util::DyArray<uint32_t>                                                     slot_strides; // 最大スロット番号でreserveされます。 頂点バッファバインドでのストライド設定時に使用します。
     };
 
     struct VIEWPORT_STATE_DESC_DATA

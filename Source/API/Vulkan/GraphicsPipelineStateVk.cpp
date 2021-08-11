@@ -374,46 +374,39 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyInputLayout(DESC_DATA* _dd, const GRAP
     {
         uint32_t num_total_elements = 0;
         for (auto& i : input_layout.input_slots)
+        {
             num_total_elements += i.num_elements;
+            input_layout.input_elements[i.slot_number].resize(i.num_elements);
+            input_layout.input_element_semantic_names[i.slot_number].resize(i.num_elements);
+        }
 
-        input_layout.input_elements              .resize(num_total_elements);
-        input_layout.input_element_semantic_names.resize(num_total_elements);
-
-        uint32_t element_offst = 0;
         for (auto& i : input_layout.input_slots)
         {
-            i.elements = input_layout.input_elements.data() + element_offst;
-            element_offst += i.num_elements;
+            i.elements = input_layout.input_elements[i.slot_number].data();
         }
     }
 
     // エレメント、セマンティック名をコピー
     {
-        uint32_t element_offst = 0;
         for (uint32_t i_slot = 0; i_slot < _input_layout.num_input_slots; i_slot++)
         {
             auto&& _slot = _input_layout.input_slots[i_slot];
-            auto&& slot = input_layout.input_slots[i_slot];
+            auto&& elements       = input_layout.input_elements              [_slot.slot_number];
+            auto&& semantic_names = input_layout.input_element_semantic_names[_slot.slot_number];
+            auto&& slot           = input_layout.input_slots[i_slot];
             slot = _slot;
-
+            slot.elements = elements.data();
             for (uint32_t i_elem = 0; i_elem < _slot.num_elements; i_elem++)
             {
                 auto&& _element = _slot.elements[i_elem];
-                auto&& element       = input_layout.input_elements              [element_offst + i_elem];
-                auto&& semantic_name = input_layout.input_element_semantic_names[element_offst + i_elem];
+                auto&& element       = elements      .at(i_elem);
+                auto&& semantic_name = semantic_names.at(i_elem);
 
-                // 同じセマンティック名を探し、なければ作成
-                auto&& it_find = std::find_if(input_layout.input_element_semantic_names.begin(), input_layout.input_element_semantic_names.end(), [&_element](const util::SharedPtr<util::String>& _str)
-                { return (!_str) ? false : (*_str) == _element.semantic_name; });
-                if (it_find != input_layout.input_element_semantic_names.end())
-                    semantic_name = *it_find;
-                else
-                    semantic_name = B3DMakeSharedArgs(util::String, _element.semantic_name);
+                semantic_name = B3DMakeSharedArgs(util::String, _element.semantic_name);
 
                 element = _element;
                 element.semantic_name = semantic_name->data();
             }
-            element_offst += _slot.num_elements;
         }
     }
 

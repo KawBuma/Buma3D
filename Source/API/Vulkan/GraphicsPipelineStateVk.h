@@ -116,10 +116,10 @@ private:
 
     struct INPUT_LAYOUT_DESC_DATA
     {
-        INPUT_LAYOUT_DESC                               desc;
-        util::DyArray<INPUT_SLOT_DESC>                  input_slots;
-        util::DyArray<INPUT_ELEMENT_DESC>               input_elements; // 全てのinput_slots::elementsを格納し、オフセットして使用します。
-        util::DyArray<util::SharedPtr<util::String>>    input_element_semantic_names;
+        INPUT_LAYOUT_DESC                                                           desc;
+        util::DyArray<INPUT_SLOT_DESC>                                              input_slots;
+        util::Map<uint32_t/*slot*/, util::DyArray<INPUT_ELEMENT_DESC>>              input_elements;
+        util::Map<uint32_t/*slot*/, util::DyArray<util::SharedPtr<util::String>>>   input_element_semantic_names;
     };
 
     struct VIEWPORT_STATE_DESC_DATA

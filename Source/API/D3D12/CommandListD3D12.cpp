@@ -713,12 +713,12 @@ B3D_APIENTRY CommandListD3D12::BindVertexBuffers(const CMD_BIND_VERTEX_BUFFERS& 
     }
     else
     {
-        auto&& il = cmd_states->pipeline.current_pso->As<GraphicsPipelineStateD3D12>()->GetDesc().input_layout;
+        auto&& pso = cmd_states->pipeline.current_pso->As<GraphicsPipelineStateD3D12>();
         for (uint32_t i = 0; i < _args.num_buffers; i++)
         {
             views_data[i].BufferLocation = _args.buffers[i]->GetGPUVirtualAddress() + _args.buffer_offsets[i];
             views_data[i].SizeInBytes    = SCAST<UINT>(_args.sizes_in_bytes[i]);
-            views_data[i].StrideInBytes  = il->input_slots[_args.start_slot + i].stride_in_bytes;
+            views_data[i].StrideInBytes  = pso->GetInputSlotStride(_args.start_slot + i);
         }
     }
     cmd.l->IASetVertexBuffers(_args.start_slot, _args.num_buffers, views_data);
