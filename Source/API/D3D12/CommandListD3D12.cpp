@@ -484,6 +484,8 @@ B3D_APIENTRY CommandListD3D12::SetPipelineState(IPipelineState* _pipeline_state)
     auto&& p = cmd_states->pipeline;
     p.current_pso = _pipeline_state->As<IPipelineStateD3D12>();
     p.current_pso->BindPipeline(cmd.l);
+
+    p.is_dynamic_vertex_stride = p.current_pso->HasDynamicState(DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
 }
 
 void
@@ -668,6 +670,16 @@ B3D_APIENTRY CommandListD3D12::BindIndexBufferView(IIndexBufferView* _view)
 }
 
 void
+B3D_APIENTRY CommandListD3D12::BindIndexBuffer(const CMD_BIND_INDEX_BUFFER& _args)
+{
+    auto&& view = cmd_states->input_assembly.index_buffer_view;
+    view.BufferLocation = _args.buffer->GetGPUVirtualAddress() + _args.buffer_offset;
+    view.SizeInBytes    = SCAST<uint32_t>(_args.size_in_bytes);
+    view.Format         = util::GetNativeIndexType(_args.index_type);
+    cmd.l->IASetIndexBuffer(&view);
+}
+
+void
 B3D_APIENTRY CommandListD3D12::BindVertexBufferViews(const CMD_BIND_VERTEX_BUFFER_VIEWS& _args)
 {
     uint32_t start_slot = _args.start_slot;
@@ -678,6 +690,34 @@ B3D_APIENTRY CommandListD3D12::BindVertexBufferViews(const CMD_BIND_VERTEX_BUFFE
         cmd.l->IASetVertexBuffers(start_slot, size, native_views.data());
         start_slot += size;
     }
+}
+
+void
+B3D_APIENTRY CommandListD3D12::BindVertexBuffers(const CMD_BIND_VERTEX_BUFFERS& _args)
+{
+    auto&& ia = cmd_states->input_assembly;
+    ia.Resize(_args.num_buffers);
+    auto views_data = ia.vertex_buffer_views.data();
+    if (cmd_states->pipeline.is_dynamic_vertex_stride)
+    {
+        for (uint32_t i = 0; i < _args.num_buffers; i++)
+        {
+            views_data[i].BufferLocation = _args.buffers[i]->GetGPUVirtualAddress() + _args.buffer_offsets[i];
+            views_data[i].SizeInBytes    = SCAST<UINT>(_args.sizes_in_bytes[i]);
+            views_data[i].StrideInBytes  = SCAST<UINT>(_args.strides_in_bytes[i]);
+        }
+    }
+    else
+    {
+        auto&& il = cmd_states->pipeline.current_pso->As<GraphicsPipelineStateD3D12>()->GetDesc().input_layout;
+        for (uint32_t i = 0; i < _args.num_buffers; i++)
+        {
+            views_data[i].BufferLocation = _args.buffers[i]->GetGPUVirtualAddress() + _args.buffer_offsets[i];
+            views_data[i].SizeInBytes    = SCAST<UINT>(_args.sizes_in_bytes[i]);
+            views_data[i].StrideInBytes  = il->input_slots[_args.start_slot + i].stride_in_bytes;
+        }
+    }
+    cmd.l->IASetVertexBuffers(_args.start_slot, _args.num_buffers, views_data);
 }
 
 void

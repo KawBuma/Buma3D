@@ -346,6 +346,8 @@ B3D_APIENTRY CommandListVk::SetPipelineState(IPipelineState* _pipeline_state)
     auto&& p = cmd_states->pipeline;
     p.current_pso = _pipeline_state->As<IPipelineStateVk>();
     vkCmdBindPipeline(command_buffer, util::GetNativePipelineBindPoint(p.current_pso->GetPipelineBindPoint()), p.current_pso->GetVkPipeline());
+
+    p.is_dynamic_vertex_stride = p.current_pso->HasDynamicState(DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
 }
 
 void
@@ -483,9 +485,18 @@ B3D_APIENTRY CommandListVk::BindIndexBufferView(IIndexBufferView* _view)
 }
 
 void
+B3D_APIENTRY CommandListVk::BindIndexBuffer(const CMD_BIND_INDEX_BUFFER& _args)
+{
+    vkCmdBindIndexBuffer(command_buffer
+                         , _args.buffer->As<BufferVk>()->GetVkBuffer()
+                         , _args.buffer_offset
+                         , util::GetNativeIndexType(_args.index_type));
+}
+
+void
 B3D_APIENTRY CommandListVk::BindVertexBufferViews(const CMD_BIND_VERTEX_BUFFER_VIEWS& _args)
 {
-    if (cmd_states->pipeline.current_pso->HasDynamicState(DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE))
+    if (cmd_states->pipeline.is_dynamic_vertex_stride)
     {
         if (!devpfn->vkCmdBindVertexBuffers2EXT)
             return;
@@ -506,6 +517,27 @@ B3D_APIENTRY CommandListVk::BindVertexBufferViews(const CMD_BIND_VERTEX_BUFFER_V
             vkCmdBindVertexBuffers(command_buffer, start_slot, data.binding_count, data.buffers, data.offsets);
             start_slot += data.binding_count;
         }
+    }
+}
+
+void
+B3D_APIENTRY CommandListVk::BindVertexBuffers(const CMD_BIND_VERTEX_BUFFERS& _args)
+{
+    cmd_states->BeginTempAlloc();
+    auto vkbuffers = cmd_states->TempAlloc<VkBuffer>(_args.num_buffers);
+    for (uint32_t i = 0; i < _args.num_buffers; i++)
+        vkbuffers[i] = _args.buffers[i]->As<BufferVk>()->GetVkBuffer();
+
+    if (cmd_states->pipeline.is_dynamic_vertex_stride)
+    {
+        if (!devpfn->vkCmdBindVertexBuffers2EXT)
+            return;
+        devpfn->vkCmdBindVertexBuffers2EXT(command_buffer, _args.start_slot, _args.num_buffers, vkbuffers
+                                           , _args.buffer_offsets, _args.sizes_in_bytes, _args.strides_in_bytes);
+    }
+    else
+    {
+        vkCmdBindVertexBuffers(command_buffer, _args.start_slot, _args.num_buffers, vkbuffers, _args.buffer_offsets);
     }
 }
 

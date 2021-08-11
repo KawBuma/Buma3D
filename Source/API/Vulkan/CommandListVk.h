@@ -106,8 +106,16 @@ public:
             IIndexBufferView* _view) override;
 
     void
+        B3D_APIENTRY BindIndexBuffer(
+            const CMD_BIND_INDEX_BUFFER& _args) override;
+
+    void
         B3D_APIENTRY BindVertexBufferViews(
             const CMD_BIND_VERTEX_BUFFER_VIEWS& _args) override;
+
+    void
+        B3D_APIENTRY BindVertexBuffers(
+            const CMD_BIND_VERTEX_BUFFERS& _args) override;
 
     void
         B3D_APIENTRY BindStreamOutputBufferViews(
@@ -430,10 +438,14 @@ private:
             current_pso = nullptr;
             for (auto& i : current_pipeline_layouts) i = nullptr;
             for (auto& i : pipeline_layouts)         i = nullptr;
+
+            is_dynamic_vertex_stride = false;
         }
         IPipelineStateVk*   current_pso; // PIPELINE_STATE_DATA0と共有します。
         PipelineLayoutVk*   current_pipeline_layouts[PIPELINE_BIND_POINT_RAY_TRACING + 1];
         VkPipelineLayout    pipeline_layouts[PIPELINE_BIND_POINT_RAY_TRACING + 1];
+
+        bool is_dynamic_vertex_stride;
     };
 
     struct DESCRIPTOR_STATE_DATA0
@@ -781,6 +793,8 @@ private:
             , stream_output (_allocator)
             , pipeline      {}
             , descriptor    (_allocator)
+            , heap_size     {}
+            , heap          (_allocator)
         {}
 
         ~COMMAND_LIST_STATES_DATA()
@@ -807,6 +821,34 @@ private:
             descriptor0.BeginRecord();
             stream_output.BeginRecord();
             descriptor.BeginRecord();
+            heap.BeginRecord();
+        }
+
+        // 関数スコープ開始時に呼び出す必要があります。
+        void BeginTempAlloc()
+        {
+            heap_size = 0;
+        }
+        // 一時的なメモリを割り当てます。
+        // 関数スコープでのみ使用される事を想定します。
+        template<typename T, bool need_construct = false>
+        T* TempAlloc(size_t _size)
+        {
+            B3D_ASSERT(heap_size == 0);
+            auto size_in_bytes = sizeof(T) * _size;
+            auto aligned_offset = hlp::AlignUp(heap_size, alignof(T));
+            if (aligned_offset + size_in_bytes > heap.size())
+            {
+                heap.resize(aligned_offset + size_in_bytes + 512/*reservation*/);
+            }
+            void* data = heap.data() + aligned_offset;
+            if constexpr (need_construct)
+            {
+                for (size_t i = 0; i < _size; i++)
+                    new(data + sizeof(T)*i) T();
+            }
+            heap_size = aligned_offset + size_in_bytes;
+            return static_cast<T*>(data);
         }
 
         PipelineBarrierBuffer                       barriers;
@@ -817,6 +859,9 @@ private:
         STREAM_OUTPUT_STATE_DATA                    stream_output;
         PIPELINE_STATE_DATA                         pipeline;
         DESCRIPTOR_STATE_DATA                       descriptor;
+
+        size_t                                      heap_size;
+        WeakSimpleArray<uint8_t>                    heap;
     };
     util::UniquePtr<COMMAND_LIST_STATES_DATA> cmd_states;
 

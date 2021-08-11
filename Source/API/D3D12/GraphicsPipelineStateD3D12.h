@@ -76,13 +76,19 @@ public:
         B3D_APIENTRY GetD3D12StateObject() const override;
 
     void
-        B3D_APIENTRY BindPipeline(ID3D12GraphicsCommandList* _list) const;
+        B3D_APIENTRY BindPipeline(ID3D12GraphicsCommandList* _list) const override;
+
+    bool
+        B3D_APIENTRY HasDynamicState(DYNAMIC_STATE _state) const override;
 
     PIPELINE_BIND_POINT
         B3D_APIENTRY GetPipelineBindPoint() const override;
 
     BMRESULT
         B3D_APIENTRY GetCachedBlob(IBlob** _dst) override;
+
+    const GRAPHICS_PIPELINE_STATE_DESC&
+        B3D_APIENTRY GetDesc() const;
 
 private:
     struct SHADER_STAGE_DESC_DATA

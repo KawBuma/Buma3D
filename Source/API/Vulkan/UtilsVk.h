@@ -1245,6 +1245,19 @@ inline VkFragmentShadingRateCombinerOpKHR GetNativeShadingRateCombinerOp(SHADING
     }
 }
 
+inline VkIndexType GetNativeIndexType(INDEX_TYPE _type)
+{
+    switch (_type)
+    {
+    case buma3d::INDEX_TYPE_UINT16 : return VK_INDEX_TYPE_UINT16;
+    case buma3d::INDEX_TYPE_UINT32 : return VK_INDEX_TYPE_UINT32;
+    case buma3d::INDEX_TYPE_UINT8  : return VK_INDEX_TYPE_UINT8_EXT;
+
+    default:
+        return VkIndexType(-1);
+    }
+}
+
 
 }// namespace util
 }// namespace buma3d

@@ -4,28 +4,6 @@
 namespace buma3d
 {
 
-namespace util
-{
-namespace /*anonymous*/
-{
-
-inline VkIndexType GetNativeIndexType(INDEX_TYPE _type)
-{    
-    switch (_type)
-    {
-    case buma3d::INDEX_TYPE_UINT16 : return VK_INDEX_TYPE_UINT16;
-    case buma3d::INDEX_TYPE_UINT32 : return VK_INDEX_TYPE_UINT32;
-    case buma3d::INDEX_TYPE_UINT8  : return VK_INDEX_TYPE_UINT8_EXT;
-
-    default:
-        return VkIndexType(-1);
-    }
-}
-
-}// namespace /*anonymous*/
-}// namespace util
-
-
 static constexpr VIEW_DESC DEFAULT_IBV_DESC = { VIEW_TYPE_INDEX_BUFFER, RESOURCE_FORMAT_UNKNOWN, VIEW_DIMENSION_INDEX_BUFFER };
 
 B3D_APIENTRY IndexBufferViewVk::IndexBufferViewVk()

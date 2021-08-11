@@ -18,6 +18,9 @@ public:
     virtual void
         B3D_APIENTRY BindPipeline(ID3D12GraphicsCommandList* _list) const = 0;
 
+    virtual bool
+        B3D_APIENTRY HasDynamicState(DYNAMIC_STATE _state) const { B3D_UNREFERENCED(_state); return false; }
+
 };
 
 

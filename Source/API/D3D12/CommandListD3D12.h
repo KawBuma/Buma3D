@@ -97,8 +97,16 @@ public:
             IIndexBufferView* _view) override;
 
     void
+        B3D_APIENTRY BindIndexBuffer(
+            const CMD_BIND_INDEX_BUFFER& _args) override;
+
+    void
         B3D_APIENTRY BindVertexBufferViews(
             const CMD_BIND_VERTEX_BUFFER_VIEWS& _args) override;
+
+    void
+        B3D_APIENTRY BindVertexBuffers(
+            const CMD_BIND_VERTEX_BUFFERS& _args) override;
 
     void
         B3D_APIENTRY BindStreamOutputBufferViews(
@@ -464,10 +472,14 @@ private:
             current_pso                 = nullptr;
             current_primitive_topology  = {};
             for (auto& i : current_pipeline_layouts) i = nullptr;
+
+            is_dynamic_vertex_stride = false;
         }
         IPipelineStateD3D12*        current_pso; // PIPELINE_STATE_DATA0と共有します。
         D3D12_PRIMITIVE_TOPOLOGY    current_primitive_topology;
         PipelineLayoutD3D12*        current_pipeline_layouts[PIPELINE_BIND_POINT_RAY_TRACING + 1];
+
+        bool is_dynamic_vertex_stride;
     };
 
     struct DESCRIPTOR_STATE_DATA0
@@ -489,6 +501,46 @@ private:
         }
         DescriptorHeapD3D12*                    current_heap;
         //WeakSimpleArray<DescriptorSetD3D12*>    current_sets;
+    };
+
+    struct INPUT_ASSEMBLY_STATE_DATA
+    {
+        INPUT_ASSEMBLY_STATE_DATA(CommandAllocatorD3D12* _allocator)
+            : index_buffer_view     {}
+            , max_views_size        {}
+            , vertex_buffer_views   (_allocator)
+        {
+        }
+
+        void Reset()
+        {
+            max_views_size = 0;
+        }
+
+        void BeginRecord()
+        {
+            index_buffer_view = {};
+            vertex_buffer_views.BeginRecord();
+            max_views_size = (uint32_t)vertex_buffer_views.size();
+            if (max_views_size > 0)
+            {
+                // 記録開始時に以前のキャッシュをリセットします。
+                std::fill(vertex_buffer_views.begin(), vertex_buffer_views.end(), D3D12_VERTEX_BUFFER_VIEW{});
+            }
+        }
+
+        void Resize(uint32_t _num_buffers)
+        {
+            if (_num_buffers > max_views_size)
+            {
+                vertex_buffer_views.resize(_num_buffers);
+                max_views_size = _num_buffers;
+            }
+        }
+
+        D3D12_INDEX_BUFFER_VIEW                     index_buffer_view;
+        uint32_t                                    max_views_size;
+        WeakSimpleArray<D3D12_VERTEX_BUFFER_VIEW>   vertex_buffer_views;
     };
 
     struct STREAM_OUTPUT_STATE_DATA
@@ -763,14 +815,15 @@ private:
     struct COMMAND_LIST_STATES_DATA
     {
         COMMAND_LIST_STATES_DATA(CommandAllocatorD3D12* _allocator, COMMAND_TYPE _command_type)
-            : barriers      (_allocator, _command_type)
-            , render_pass   (_allocator)
-            , predication   {}
-            , pipeline0     {}
-            , descriptor0   {}
-            , stream_output (_allocator)
-            , pipeline      {}
-            , descriptor    {}
+            : barriers       (_allocator, _command_type)
+            , render_pass    (_allocator)
+            , predication    {}
+            , pipeline0      {}
+            , descriptor0    {}
+            , input_assembly (_allocator)
+            , stream_output  (_allocator)
+            , pipeline       {}
+            , descriptor     {}
         {}
 
         ~COMMAND_LIST_STATES_DATA()
@@ -784,6 +837,7 @@ private:
             predication     .Reset();
             pipeline0       .Reset();
             descriptor0     .Reset();
+            input_assembly  .Reset();
             stream_output   .Reset();
 
             pipeline        .Reset();
@@ -797,6 +851,7 @@ private:
             Reset();
             barriers.BeginRecord();
             render_pass.BeginRecord();
+            input_assembly.BeginRecord();
             stream_output.BeginRecord();
         }
         PipelineBarrierBuffer       barriers;
@@ -804,6 +859,7 @@ private:
         PREDICATION_STATE_DATA      predication;
         PIPELINE_STATE_DATA0        pipeline0;
         DESCRIPTOR_STATE_DATA0      descriptor0;
+        INPUT_ASSEMBLY_STATE_DATA   input_assembly;
         STREAM_OUTPUT_STATE_DATA    stream_output;
         PIPELINE_STATE_DATA         pipeline;
         DESCRIPTOR_STATE_DATA       descriptor;

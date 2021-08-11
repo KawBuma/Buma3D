@@ -1399,6 +1399,13 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::BindPipeline(ID3D12GraphicsCommandList*
         i->SetState(_list);
 }
 
+bool
+B3D_APIENTRY GraphicsPipelineStateD3D12::HasDynamicState(DYNAMIC_STATE _state) const
+{
+    auto&& end = desc_data->dynamic_state->states.end();
+    return std::find(desc_data->dynamic_state->states.begin(), end, _state) != end;
+}
+
 PIPELINE_BIND_POINT
 B3D_APIENTRY GraphicsPipelineStateD3D12::GetPipelineBindPoint() const
 {
@@ -1410,6 +1417,12 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::GetCachedBlob(IBlob** _dst)
 {
     // TODO: GraphicsPipelineStateD3D12::GetCachedBlob
     return BMRESULT_FAILED_NOT_IMPLEMENTED;
+}
+
+const GRAPHICS_PIPELINE_STATE_DESC&
+B3D_APIENTRY GraphicsPipelineStateD3D12::GetDesc() const
+{
+    return desc;
 }
 
 

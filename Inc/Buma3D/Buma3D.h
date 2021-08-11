@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 13, 0);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 14, 0);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -3871,11 +3871,29 @@ struct CMD_RESOLVE_QUERY_DATA
     uint64_t            dst_buffer_offset;
 };
 
+struct CMD_BIND_INDEX_BUFFER
+{
+    IBuffer*        buffer;
+    uint64_t        buffer_offset;
+    uint64_t        size_in_bytes;
+    INDEX_TYPE      index_type;
+};
+
 struct CMD_BIND_VERTEX_BUFFER_VIEWS
 {
     uint32_t                    start_slot;
     uint32_t                    num_views;
     IVertexBufferView*const *   views;
+};
+
+struct CMD_BIND_VERTEX_BUFFERS
+{
+    uint32_t            start_slot;
+    uint32_t            num_buffers;
+    IBuffer*const *     buffers;
+    const uint64_t*     buffer_offsets;     // リソースのオフセットを指定する、要素数がnum_buffersの配列です。
+    const uint64_t*     sizes_in_bytes;     // 頂点バッファのサイズを指定する、要素数がnum_buffersの配列です。
+    const uint64_t*     strides_in_bytes;   // 頂点間のストライドを指定する、要素数がnum_buffersの配列です。 DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE が指定されないパイプラインの場合、この値は無視されます。 
 };
 
 struct CMD_BIND_STREAM_OUTPUT_BUFFER_VIEWS
@@ -5641,9 +5659,27 @@ public:
         B3D_APIENTRY BindIndexBufferView(
             IIndexBufferView* _view) = 0;
 
+    /**
+     * @brief インデックスバッファをIIndexBufferViewを介さずにバインドします。
+     *        インデックスバッファはインラインで構築されるため、IIndexBufferViewバインドと比較して追加のコストが発生します。
+     * @param _args インデックスバッファを構築するパラメータを指定します。
+    */
+    virtual void
+        B3D_APIENTRY BindIndexBuffer(
+            const CMD_BIND_INDEX_BUFFER& _args) = 0;
+
     virtual void
         B3D_APIENTRY BindVertexBufferViews(
             const CMD_BIND_VERTEX_BUFFER_VIEWS& _args) = 0;
+
+    /**
+     * @brief 頂点バッファをIVertexBufferViewを介さずにバインドします。 
+     *        頂点バッファはインラインで構築されるため、IVertexBufferViewバインドと比較して追加のコストが発生します。
+     * @param _args 頂点バッファを構築するパラメータを指定します。
+    */
+    virtual void
+        B3D_APIENTRY BindVertexBuffers(
+            const CMD_BIND_VERTEX_BUFFERS& _args) = 0;
 
     virtual void
         B3D_APIENTRY BindStreamOutputBufferViews(
