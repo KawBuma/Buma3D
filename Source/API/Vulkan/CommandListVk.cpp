@@ -83,6 +83,8 @@ B3D_APIENTRY CommandListVk::CommandListVk()
     , inheritance_info_data {}
     , begin_info_data       {}
     , debug_name_setter     {}
+    , cmd_states            {}
+    , inline_allocator      {}
 {
 
 }
@@ -122,6 +124,7 @@ B3D_APIENTRY CommandListVk::Init(DeviceVk* _device, const COMMAND_LIST_DESC& _de
     begin_info_data.Init(this);
     B3D_RET_IF_FAILED(CreateVkCommandList());
     cmd_states = B3DMakeUniqueArgs(COMMAND_LIST_STATES_DATA, allocator, desc.type);
+    inline_allocator = B3DMakeUniqueArgs(CommandAllocatorVk::InlineAllocator, allocator);
 
     reset_id = allocator->GetResetId();
     state = COMMAND_LIST_STATE_INITIAL;
@@ -301,6 +304,7 @@ B3D_APIENTRY CommandListVk::BeginRecord(const COMMAND_LIST_BEGIN_DESC& _begin_de
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
 
     cmd_states->BeginRecord();
+    inline_allocator->BeginRecord();
     reset_id = allocator->GetResetId();
     state = COMMAND_LIST_STATE_RECORDING;
     return BMRESULT_SUCCEED;
@@ -523,21 +527,22 @@ B3D_APIENTRY CommandListVk::BindVertexBufferViews(const CMD_BIND_VERTEX_BUFFER_V
 void
 B3D_APIENTRY CommandListVk::BindVertexBuffers(const CMD_BIND_VERTEX_BUFFERS& _args)
 {
-    cmd_states->BeginTempAlloc();
-    auto vkbuffers = cmd_states->TempAlloc<VkBuffer>(_args.num_buffers);
-    for (uint32_t i = 0; i < _args.num_buffers; i++)
-        vkbuffers[i] = _args.buffers[i]->As<BufferVk>()->GetVkBuffer();
+    inline_allocator->BeginTempAlloc();
+    auto vkbuffers = inline_allocator->TempAllocWithRange<VkBuffer>(_args.num_buffers);
+    uint32_t cnt = 0;
+    for (auto& i : vkbuffers)
+        i = _args.buffers[cnt++]->As<BufferVk>()->GetVkBuffer();
 
     if (cmd_states->pipeline.is_dynamic_vertex_stride)
     {
         if (!devpfn->vkCmdBindVertexBuffers2EXT)
             return;
-        devpfn->vkCmdBindVertexBuffers2EXT(command_buffer, _args.start_slot, _args.num_buffers, vkbuffers
+        devpfn->vkCmdBindVertexBuffers2EXT(command_buffer, _args.start_slot, _args.num_buffers, vkbuffers.data()
                                            , _args.buffer_offsets, _args.sizes_in_bytes, _args.strides_in_bytes);
     }
     else
     {
-        vkCmdBindVertexBuffers(command_buffer, _args.start_slot, _args.num_buffers, vkbuffers, _args.buffer_offsets);
+        vkCmdBindVertexBuffers(command_buffer, _args.start_slot, _args.num_buffers, vkbuffers.data(), _args.buffer_offsets);
     }
 }
 
@@ -721,21 +726,21 @@ B3D_APIENTRY CommandListVk::EndMarker()
 void
 B3D_APIENTRY CommandListVk::CopyBufferRegion(const CMD_COPY_BUFFER_REGION& _args)
 {
-    util::TempDyArray<VkBufferCopy> regionsvk(_args.num_regions, allocator->GetTemporaryHeapAllocator<VkBufferCopy>());
-    auto regionsvk_data = regionsvk.data();
-    for (uint32_t i = 0; i < _args.num_regions; i++)
+    inline_allocator->BeginTempAlloc();
+    auto regionsvk = inline_allocator->TempAllocWithRange<VkBufferCopy>(_args.num_regions);
+    uint32_t cnt = 0;
+    for (auto& i : regionsvk)
     {
-        auto&& region = _args.regions[i];
-        auto&& regionvk = regionsvk_data[i];
-        regionvk.srcOffset = region.src_offset;
-        regionvk.dstOffset = region.dst_offset;
-        regionvk.size      = region.size_in_bytes;
+        auto&& region = _args.regions[cnt++];
+        i.srcOffset = region.src_offset;
+        i.dstOffset = region.dst_offset;
+        i.size      = region.size_in_bytes;
     }
 
     vkCmdCopyBuffer(command_buffer
                     , _args.src_buffer->As<BufferVk>()->GetVkBuffer()
                     , _args.dst_buffer->As<BufferVk>()->GetVkBuffer()
-                    , _args.num_regions, regionsvk_data);
+                    , _args.num_regions, regionsvk.data());
 }
 
 void
@@ -746,13 +751,12 @@ B3D_APIENTRY CommandListVk::CopyTextureRegion(const CMD_COPY_TEXTURE_REGION& _ar
 
     auto&& src_desc = src_tex->GetDesc();
 
-    util::TempDyArray<VkImageCopy> regionsvk(_args.num_regions, allocator->GetTemporaryHeapAllocator<VkImageCopy>());
-    auto regionsvk_data = regionsvk.data();
-    for (uint32_t i = 0; i < _args.num_regions; i++)
+    inline_allocator->BeginTempAlloc();
+    auto regionsvk = inline_allocator->TempAllocWithRange<VkImageCopy>(_args.num_regions);
+    uint32_t cnt = 0;
+    for (auto& regionvk : regionsvk)
     {
-        auto&& region = _args.regions[i];
-        auto&& regionvk = regionsvk_data[i];
-
+        auto&& region = _args.regions[cnt++];
         util::ConvertNativeSubresourceOffsetWithArraySize(region.src_subresource.array_count, region.src_subresource.offset, &regionvk.srcSubresource);
         util::ConvertNativeSubresourceOffsetWithArraySize(region.dst_subresource.array_count, region.dst_subresource.offset, &regionvk.dstSubresource);
 
@@ -775,7 +779,7 @@ B3D_APIENTRY CommandListVk::CopyTextureRegion(const CMD_COPY_TEXTURE_REGION& _ar
     vkCmdCopyImage(command_buffer
                    , src_tex->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
                    , dst_tex->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-                   , _args.num_regions, regionsvk_data);
+                   , _args.num_regions, regionsvk.data());
 }
 
 void
@@ -788,12 +792,12 @@ B3D_APIENTRY CommandListVk::CopyBufferToTexture(const CMD_COPY_BUFFER_TO_TEXTURE
     auto block_size = util::GetFormatBlockSize(tex_desc.texture.format_desc.format);
     auto format_size = util::GetFormatSize(tex_desc.texture.format_desc.format);
 
-    util::TempDyArray<VkBufferImageCopy> regionsvk(_args.num_regions, allocator->GetTemporaryHeapAllocator<VkBufferImageCopy>());
-    auto regionsvk_data = regionsvk.data();
-    for (uint32_t i = 0; i < _args.num_regions; i++)
+    inline_allocator->BeginTempAlloc();
+    auto regionsvk = inline_allocator->TempAllocWithRange<VkBufferImageCopy>(_args.num_regions);
+    uint32_t cnt = 0;
+    for (auto& regionvk : regionsvk)
     {
-        auto&& region = _args.regions[i];
-        auto&& regionvk = regionsvk_data[i];
+        auto&& region = _args.regions[cnt];
 
         regionvk.bufferOffset       = region.buffer_layout.offset;
         regionvk.bufferRowLength    = block_size.x * SCAST<uint32_t>(region.buffer_layout.row_pitch / format_size);
@@ -814,7 +818,7 @@ B3D_APIENTRY CommandListVk::CopyBufferToTexture(const CMD_COPY_BUFFER_TO_TEXTURE
     vkCmdCopyBufferToImage(command_buffer
                            , src_buf->GetVkBuffer()
                            , dst_tex->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-                           , _args.num_regions, regionsvk_data);
+                           , _args.num_regions, regionsvk.data());
 }
 
 void
@@ -827,12 +831,12 @@ B3D_APIENTRY CommandListVk::CopyTextureToBuffer(const CMD_COPY_TEXTURE_TO_BUFFER
     auto block_size = util::GetFormatBlockSize(tex_desc.texture.format_desc.format);
     auto format_size = util::GetFormatSize(tex_desc.texture.format_desc.format);
 
-    util::TempDyArray<VkBufferImageCopy> regionsvk(_args.num_regions, allocator->GetTemporaryHeapAllocator<VkBufferImageCopy>());
-    auto regionsvk_data = regionsvk.data();
-    for (uint32_t i = 0; i < _args.num_regions; i++)
+    inline_allocator->BeginTempAlloc();
+    auto regionsvk = inline_allocator->TempAllocWithRange<VkBufferImageCopy>(_args.num_regions);
+    uint32_t cnt = 0;
+    for (auto& regionvk : regionsvk)
     {
-        auto&& region = _args.regions[i];
-        auto&& regionvk = regionsvk_data[i];
+        auto&& region = _args.regions[cnt];
 
         regionvk.bufferOffset       = region.buffer_layout.offset;
         regionvk.bufferRowLength    = block_size.x * SCAST<uint32_t>(region.buffer_layout.row_pitch / format_size);
@@ -853,7 +857,7 @@ B3D_APIENTRY CommandListVk::CopyTextureToBuffer(const CMD_COPY_TEXTURE_TO_BUFFER
     vkCmdCopyImageToBuffer(command_buffer
                            , src_tex->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
                            , dst_buf->GetVkBuffer()
-                           , _args.num_regions, regionsvk_data);
+                           , _args.num_regions, regionsvk.data());
 }
 
 void
@@ -864,12 +868,12 @@ B3D_APIENTRY CommandListVk::ResolveTextureRegion(const CMD_RESOLVE_TEXTURE_REGIO
 
     auto&& src_desc = src_tex->GetDesc();
 
-    util::TempDyArray<VkImageResolve> resolve_region(_args.num_regions, allocator->GetTemporaryHeapAllocator<VkImageResolve>());
-    auto resolve_region_data = resolve_region.data();
-    for (uint32_t i = 0; i < _args.num_regions; i++)
+    inline_allocator->BeginTempAlloc();
+    auto resolve_region = inline_allocator->TempAllocWithRange<VkImageResolve>(_args.num_regions);
+    uint32_t cnt = 0;
+    for (auto& regionvk : resolve_region)
     {
-        auto&& region    = _args.regions[i];
-        auto&& regionvk  = resolve_region_data[i];
+        auto&& region = _args.regions[cnt++];
 
         util::ConvertNativeSubresourceOffsetWithArraySize(region.array_count, region.src_subresource, &regionvk.srcSubresource);
         util::ConvertNativeSubresourceOffsetWithArraySize(region.array_count, region.dst_subresource, &regionvk.dstSubresource);
@@ -886,7 +890,7 @@ B3D_APIENTRY CommandListVk::ResolveTextureRegion(const CMD_RESOLVE_TEXTURE_REGIO
     vkCmdResolveImage(command_buffer
                       , src_tex->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
                       , dst_tex->GetVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-                      , _args.num_regions, resolve_region_data);
+                      , _args.num_regions, resolve_region.data());
 }
 
 void
@@ -960,7 +964,8 @@ B3D_APIENTRY CommandListVk::ClearRenderTargetView(IRenderTargetView* _view, cons
 void
 B3D_APIENTRY CommandListVk::SetViewports(uint32_t _num_viewports, const VIEWPORT* _viewports)
 {
-    util::TempDyArray<VkViewport> viewportsvk(_num_viewports, allocator->GetTemporaryHeapAllocator<VkViewport>());
+    inline_allocator->BeginTempAlloc();
+    auto viewportsvk = inline_allocator->TempAllocWithRange<VkViewport>(_num_viewports);
     uint32_t count = 0;
     for (auto& viewportvk : viewportsvk)
         util::ConvertNativeViewport(_viewports[count++], &viewportvk);
@@ -970,7 +975,8 @@ B3D_APIENTRY CommandListVk::SetViewports(uint32_t _num_viewports, const VIEWPORT
 void
 B3D_APIENTRY CommandListVk::SetScissorRects(uint32_t _num_scissor_rects, const SCISSOR_RECT* _scissor_rects)
 {
-    util::TempDyArray<VkRect2D> rectsvk(_num_scissor_rects, allocator->GetTemporaryHeapAllocator<VkRect2D>());
+    inline_allocator->BeginTempAlloc();
+    auto rectsvk = inline_allocator->TempAllocWithRange<VkRect2D>(_num_scissor_rects);
     uint32_t count = 0;
     for (auto& rectvk : rectsvk)
         util::GetVkRect2DFromScissorRect(_scissor_rects[count++], &rectvk);
@@ -990,18 +996,20 @@ B3D_APIENTRY CommandListVk::BeginRenderPass(const RENDER_PASS_BEGIN_DESC& _rende
     rp.end_subpass_index    = rp.render_pass->GetDesc().num_subpasses;
     rp.subpass_contents     = _subpass_begin.contents;
 
+    static_assert(sizeof(VkClearValue) == sizeof(CLEAR_VALUE));
 
-    util::TempDyArray<VkClearValue> clear_cols(_render_pass_begin.num_clear_values, allocator->GetTemporaryHeapAllocator<VkClearValue>());
-    auto clear_cols_data = clear_cols.data();
-    for (uint32_t i = 0; i < _render_pass_begin.num_clear_values; i++)
-        memcpy(&clear_cols_data[i], &_render_pass_begin.clear_values[i], sizeof(CLEAR_VALUE));
+    inline_allocator->BeginTempAlloc();
+    auto clear_cols = inline_allocator->TempAllocWithRange<VkClearValue>(_render_pass_begin.num_clear_values);
+    uint32_t cnt = 0;
+    for (auto& i : clear_cols)
+        memcpy(&i, &_render_pass_begin.clear_values[cnt++], sizeof(CLEAR_VALUE));
 
     VkRenderPassBeginInfo render_pass_begin_info{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
     render_pass_begin_info.renderPass      = rp.render_pass->GetVkRenderPass();
     render_pass_begin_info.framebuffer     = rp.framebuffer->GetVkFramebuffer();
     render_pass_begin_info.renderArea      = rp.framebuffer->GetRenderArea();
     render_pass_begin_info.clearValueCount = _render_pass_begin.num_clear_values;
-    render_pass_begin_info.pClearValues    = clear_cols_data;
+    render_pass_begin_info.pClearValues    = clear_cols.data();
 
     VkSubpassBeginInfo subpass_begin_info{ VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, nullptr, util::GetNativeSubpassContents(_subpass_begin.contents) };
     vkCmdBeginRenderPass2(command_buffer, &render_pass_begin_info, &subpass_begin_info);
@@ -1071,8 +1079,9 @@ B3D_APIENTRY CommandListVk::EndStreamOutput(const CMD_END_STREAM_OUTPUT& _args)
 void
 B3D_APIENTRY CommandListVk::ClearAttachments(const CMD_CLEAR_ATTACHMENTS& _args)
 {
-    util::TempDyArray<VkClearAttachment> clear_attachments(_args.num_attachments, allocator->GetTemporaryHeapAllocator<VkClearAttachment>());
-    util::TempDyArray<VkClearRect>       clear_rects      (_args.num_rects      , allocator->GetTemporaryHeapAllocator<VkClearRect>());
+    inline_allocator->BeginTempAlloc();
+    auto clear_attachments = inline_allocator->TempAllocWithRange<VkClearAttachment>(_args.num_attachments);
+    auto clear_rects       = inline_allocator->TempAllocWithRange<VkClearRect>      (_args.num_rects);
     auto clear_attachments_data = clear_attachments.data();
     auto clear_rects_data       = clear_rects.data();
 
@@ -1162,7 +1171,8 @@ B3D_APIENTRY CommandListVk::DispatchIndirect(const INDIRECT_COMMAND_DESC& _comma
 void
 B3D_APIENTRY CommandListVk::ExecuteBundles(uint32_t _num_secondary_command_lists, ICommandList* const* _secondary_command_lists)
 {
-    util::TempDyArray<VkCommandBuffer> secondary_cmd_buffers(_num_secondary_command_lists, allocator->GetTemporaryHeapAllocator<VkCommandBuffer>());
+    inline_allocator->BeginTempAlloc();
+    auto secondary_cmd_buffers = inline_allocator->TempAllocWithRange<VkCommandBuffer>(_num_secondary_command_lists);
     uint32_t count = 0;
     for (auto& i : secondary_cmd_buffers)
         i = _secondary_command_lists[count++]->As<CommandListVk>()->GetVkCommandBuffer();

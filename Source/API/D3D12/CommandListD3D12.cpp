@@ -218,6 +218,7 @@ B3D_APIENTRY CommandListD3D12::CommandListD3D12()
     , command_list          {}
     , command_signatures    {}
     , cmd_states            {}
+    , inline_allocator      {}
     , cmd                   {}
 {
 
@@ -255,6 +256,7 @@ B3D_APIENTRY CommandListD3D12::Init(DeviceD3D12* _device, const COMMAND_LIST_DES
     B3D_RET_IF_FAILED(CreateD3D12CommandList());
     cmd.Init(command_list);
     cmd_states = B3DMakeUniqueArgs(COMMAND_LIST_STATES_DATA, allocator, desc.type);
+    inline_allocator = B3DMakeUniqueArgs(CommandAllocatorD3D12::InlineAllocator, allocator);
 
     command_signatures = device->GetIndirectCommandSignatures(desc.node_mask);
     reset_id           = allocator->GetResetId();
@@ -315,6 +317,7 @@ B3D_APIENTRY CommandListD3D12::Uninit()
         B3D_ASSERT(has_released == true);
     }
 
+    inline_allocator.reset();
     cmd_states.reset();
     command_signatures = nullptr;
     cmd.~GRAPHICS_COMMAND_LISTS();
@@ -437,6 +440,7 @@ B3D_APIENTRY CommandListD3D12::BeginRecord(const COMMAND_LIST_BEGIN_DESC& _begin
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
 
     cmd_states->BeginRecord();
+    inline_allocator->BeginRecord();
     reset_id = allocator->GetResetId();
     state = COMMAND_LIST_STATE_RECORDING;
     return BMRESULT_SUCCEED;
@@ -759,14 +763,16 @@ B3D_APIENTRY CommandListD3D12::SetDepthBounds(float _min_depth_bounds, float _ma
 void
 B3D_APIENTRY CommandListD3D12::SetSamplePositions(const SAMPLE_POSITION_DESC& _sample_position)
 {
-    util::TempDyArray<D3D12_SAMPLE_POSITION> sample_positions(_sample_position.num_sample_positions, allocator->GetTemporaryHeapAllocator<D3D12_SAMPLE_POSITION>());
-    auto sample_positions_data = sample_positions.data();
-    for (uint32_t i = 0; i < _sample_position.num_sample_positions; i++)
-        util::ConvertNativeSamplePosition(_sample_position.sample_positions[i], &sample_positions_data[i]);
+    inline_allocator->BeginTempAlloc();
+    auto sample_positions = inline_allocator->TempAllocWithRange<D3D12_SAMPLE_POSITION>(_sample_position.num_sample_positions);
+
+    uint32_t cnt = 0;
+    for (auto& i : sample_positions)
+        util::ConvertNativeSamplePosition(_sample_position.sample_positions[cnt++], &i);
 
     cmd.l1->SetSamplePositions(  _sample_position.sample_positions_per_pixel
                                , _sample_position.sample_position_grid_size.width * _sample_position.sample_position_grid_size.height
-                               , sample_positions_data);
+                               , sample_positions.data());
 }
 
 void
@@ -837,8 +843,8 @@ B3D_APIENTRY CommandListD3D12::WriteAccelerationStructuresProperties(const CMD_W
     auto&& qd = *_args.query_desc;
     auto qh = qd.query_heap->As<AccelerationStructureInfoQueryHeapD3D12>();
 
-    util::TempDyArray<D3D12_GPU_VIRTUAL_ADDRESS> va(allocator->GetTemporaryHeapAllocator<D3D12_GPU_VIRTUAL_ADDRESS>());
-    va.resize(_args.num_acceleration_structures);
+    inline_allocator->BeginTempAlloc();
+    auto va = inline_allocator->TempAllocWithRange<D3D12_GPU_VIRTUAL_ADDRESS>(_args.num_acceleration_structures);
     size_t count = 0;
     // todo
     //for (auto& i : va)
@@ -1498,7 +1504,9 @@ B3D_APIENTRY CommandListD3D12::ClearAttachments(const CMD_CLEAR_ATTACHMENTS& _ar
 void
 B3D_APIENTRY CommandListD3D12::SetViewports(uint32_t _num_viewports, const VIEWPORT* _viewports)
 {
-    util::TempDyArray<D3D12_VIEWPORT> viewports12(_num_viewports, allocator->GetTemporaryHeapAllocator<D3D12_VIEWPORT>());
+    inline_allocator->BeginTempAlloc();
+    auto viewports12 = inline_allocator->TempAllocWithRange<D3D12_VIEWPORT>(_num_viewports);
+
     uint32_t count = 0;
     for (auto& viewport12 : viewports12)
         util::ConvertNativeViewport(_viewports[count++], &viewport12);
@@ -1508,7 +1516,9 @@ B3D_APIENTRY CommandListD3D12::SetViewports(uint32_t _num_viewports, const VIEWP
 void
 B3D_APIENTRY CommandListD3D12::SetScissorRects(uint32_t _num_scissor_rects, const SCISSOR_RECT* _scissor_rects)
 {
-    util::TempDyArray<D3D12_RECT> rects12(_num_scissor_rects, allocator->GetTemporaryHeapAllocator<D3D12_RECT>());
+    inline_allocator->BeginTempAlloc();
+    auto rects12 = inline_allocator->TempAllocWithRange<D3D12_RECT>(_num_scissor_rects);
+
     uint32_t count = 0;
     for (auto& rect12 : rects12)
         util::ConvertNativeScissorRect(_scissor_rects[count++], &rect12);

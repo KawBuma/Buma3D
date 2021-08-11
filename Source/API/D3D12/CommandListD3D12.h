@@ -220,8 +220,8 @@ public:
             const CMD_COPY_TEXTURE_TO_BUFFER& _args) override;
 private:
     // CopyBufferToTextureとCopyTextureToBufferで使用します。
-    void B3D_APIENTRY
-        PrepareCopyBufferTextureRegionData(/*COPY_TEXTURE_BUFFER_DATA**/void* _data, const BUFFER_TEXTURE_COPY_REGION& _r);
+    void
+        B3D_APIENTRY PrepareCopyBufferTextureRegionData(/*COPY_TEXTURE_BUFFER_DATA**/void* _data, const BUFFER_TEXTURE_COPY_REGION& _r);
 public:
 
     void
@@ -827,9 +827,7 @@ private:
         {}
 
         ~COMMAND_LIST_STATES_DATA()
-        {
-            
-        }
+        {}
 
         BMRESULT Reset()
         {
@@ -865,6 +863,7 @@ private:
         DESCRIPTOR_STATE_DATA       descriptor;
     };
     util::UniquePtr<COMMAND_LIST_STATES_DATA> cmd_states;
+    util::UniquePtr<CommandAllocatorD3D12::InlineAllocator> inline_allocator;
 
 public:
     struct GRAPHICS_COMMAND_LISTS

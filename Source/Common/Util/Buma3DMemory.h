@@ -479,6 +479,44 @@ private:
 
 };
 
+/**
+ * @brief 範囲forを実行するための最低限の関数を提供します。 要素の構築、破棄を行いません。
+ * @tparam T 
+*/
+template<typename T>
+class TRange
+{
+public:
+    TRange(T* _data, size_t _size) : ptr{ _data }, end_{ ptr + _size }, array_size{ _size }
+    {}
+    ~TRange()
+    {}
+
+    using value_type = T;
+
+public:
+    inline          T*      begin       ()                          { return ptr; }
+    inline          T*      end         ()                          { return end_; }
+    inline          T*      data        ()                          { return ptr; }
+    inline          T&      at          (const size_t _pos)         { B3D_ASSERT(_pos < array_size); return ptr[_pos]; }
+    inline          T&      operator[]  (const size_t _pos)         { B3D_ASSERT(_pos < array_size); return ptr[_pos]; }
+
+    inline const    T*      begin       ()                  const   { return ptr; }
+    inline const    T*      end         ()                  const   { return ptr + array_size; }
+    inline const    T*      data        ()                  const   { return ptr; }
+    inline const    T&      at          (const size_t _pos) const   { B3D_ASSERT(_pos < array_size); return ptr[_pos]; }
+    inline const    T&      operator[]  (const size_t _pos) const   { B3D_ASSERT(_pos < array_size); return ptr[_pos]; }
+
+    inline       size_t     size        ()                  const   { return size; }
+    inline       bool       empty       ()                  const   { return size == 0; }
+
+private:
+    T* ptr;
+    T* end_;
+    size_t array_size;
+
+};
+
 
 }// namespace util
 }// namespace buma3d

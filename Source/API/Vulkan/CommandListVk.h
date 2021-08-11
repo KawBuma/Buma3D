@@ -793,13 +793,10 @@ private:
             , stream_output (_allocator)
             , pipeline      {}
             , descriptor    (_allocator)
-            , heap_size     {}
-            , heap          (_allocator)
         {}
 
         ~COMMAND_LIST_STATES_DATA()
-        {
-        }
+        {}
 
         BMRESULT Reset()
         {
@@ -821,34 +818,6 @@ private:
             descriptor0.BeginRecord();
             stream_output.BeginRecord();
             descriptor.BeginRecord();
-            heap.BeginRecord();
-        }
-
-        // 関数スコープ開始時に呼び出す必要があります。
-        void BeginTempAlloc()
-        {
-            heap_size = 0;
-        }
-        // 一時的なメモリを割り当てます。
-        // 関数スコープでのみ使用される事を想定します。
-        template<typename T, bool need_construct = false>
-        T* TempAlloc(size_t _size)
-        {
-            B3D_ASSERT(heap_size == 0);
-            auto size_in_bytes = sizeof(T) * _size;
-            auto aligned_offset = hlp::AlignUp(heap_size, alignof(T));
-            if (aligned_offset + size_in_bytes > heap.size())
-            {
-                heap.resize(aligned_offset + size_in_bytes + 512/*reservation*/);
-            }
-            void* data = heap.data() + aligned_offset;
-            if constexpr (need_construct)
-            {
-                for (size_t i = 0; i < _size; i++)
-                    new(data + sizeof(T)*i) T();
-            }
-            heap_size = aligned_offset + size_in_bytes;
-            return static_cast<T*>(data);
         }
 
         PipelineBarrierBuffer                       barriers;
@@ -859,11 +828,9 @@ private:
         STREAM_OUTPUT_STATE_DATA                    stream_output;
         PIPELINE_STATE_DATA                         pipeline;
         DESCRIPTOR_STATE_DATA                       descriptor;
-
-        size_t                                      heap_size;
-        WeakSimpleArray<uint8_t>                    heap;
     };
     util::UniquePtr<COMMAND_LIST_STATES_DATA> cmd_states;
+    util::UniquePtr<CommandAllocatorVk::InlineAllocator> inline_allocator;
 
 };
 

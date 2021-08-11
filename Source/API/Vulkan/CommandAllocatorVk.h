@@ -75,9 +75,7 @@ public:
             , allocator             (_allocator)
             , reset_id              { _allocator->GetResetId() }
             , alloc_id              { _allocator->GetTemporaryHeapAllocatorResetId() }
-        {
-
-        }
+        {}
 
         ~WeakSimpleArray()
         {
@@ -101,6 +99,67 @@ public:
         CommandAllocatorVk* allocator;
         uint64_t            reset_id;
         uint64_t            alloc_id;
+
+    };
+
+    class InlineAllocator
+    {
+    public:
+        InlineAllocator(CommandAllocatorVk* _allocator)
+            : heap_size {}
+            , heap      (_allocator)
+        {}
+
+        ~InlineAllocator()
+        {}
+
+        void BeginRecord()
+        {
+            heap_size = 0;
+            heap.BeginRecord();
+        }
+
+        // 関数スコープ開始時に呼び出す必要があります。
+        void BeginTempAlloc()
+        {
+            heap_size = 0;
+        }
+        // 一時的なメモリを割り当てます。
+        // 関数スコープでのみ使用される事を想定します。
+        template<typename T, bool need_construct = false>
+        T* TempAlloc(size_t _size)
+        {
+            auto size_in_bytes = sizeof(T) * _size;
+            auto aligned_offset = hlp::AlignUp(heap_size, alignof(T));
+            if (aligned_offset + size_in_bytes > heap.size())
+            {
+                heap.resize(aligned_offset + size_in_bytes + 1024/*reservation*/);
+            }
+            auto data = heap.data() + aligned_offset;
+            if constexpr (need_construct)
+            {
+                if constexpr (std::is_fundamental_v<T>)
+                {
+                    std::fill(data, data + size_in_bytes, 0);
+                }
+                else
+                {
+                    for (size_t i = 0; i < _size; i++)
+                        new(data + sizeof(T) * i) T();
+                }
+            }
+            heap_size = aligned_offset + size_in_bytes;
+            return reinterpret_cast<T*>(data);
+        }
+        template<typename T>
+        util::TRange<T> TempAllocWithRange(size_t _size)
+        {
+            return util::TRange(this->TempAlloc<T>(_size), _size);
+        }
+
+    private:
+        size_t                      heap_size;
+        WeakSimpleArray<uint8_t>    heap;
 
     };
 
