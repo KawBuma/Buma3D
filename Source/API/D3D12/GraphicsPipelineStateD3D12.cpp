@@ -586,7 +586,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyInputLayout(DESC_DATA* _dd, const G
             input_layout.input_element_semantic_names[i.slot_number].resize(i.num_elements);
         }
 
-        input_layout.slot_strides.resize(max_slot_number);
+        input_layout.slot_strides.resize(max_slot_number + 1);
         for (auto& i : input_layout.input_slots)
         {
             i.elements = input_layout.input_elements[i.slot_number].data();
@@ -934,10 +934,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
         auto&& ild = *desc_data->input_layout;
 
         auto&& InputLayout = GetRef(stream.InputLayout);
-        input_elements12.resize(ild.input_elements.size());
-        auto elems12 = input_elements12.data();
 
-        uint32_t element_offset = 0;
         for (uint32_t i_slot = 0; i_slot < il.num_input_slots; i_slot++)
         {
             auto&& slot = il.input_slots[i_slot];
@@ -945,7 +942,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
             {
                 auto&& elem = slot.elements[i_elem];
 
-                auto&& elem12 = elems12[i_elem + element_offset];
+                auto&& elem12 = input_elements12.emplace_back();
                 elem12.SemanticName         = elem.semantic_name;
                 elem12.SemanticIndex        = elem.semantic_index;
                 elem12.Format               = util::GetNativeFormat(elem.format);
@@ -954,11 +951,10 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
                 elem12.InputSlotClass       = util::GetNativeInputClassification(slot.classification);
                 elem12.InstanceDataStepRate = slot.instance_data_step_rate;
             }
-            element_offset += slot.num_elements;
         }
 
-        InputLayout.NumElements = (UINT)ild.input_elements.size();
-        InputLayout.pInputElementDescs = elems12;
+        InputLayout.NumElements = (UINT)input_elements12.size();
+        InputLayout.pInputElementDescs = input_elements12.data();
     }
 
     // CD3DX12_PIPELINE_STATE_STREAM_STREAM_OUTPUT;
