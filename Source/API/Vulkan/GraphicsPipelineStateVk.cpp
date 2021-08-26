@@ -1,7 +1,7 @@
 #include "Buma3DPCH.h"
 #include "GraphicsPipelineStateVk.h"
 
-// TODO: パイプラインキャッシュ 
+// TODO: パイプラインキャッシュ
 
 namespace buma3d
 {
@@ -15,7 +15,7 @@ inline VkPipelineShaderStageCreateFlags GetNativePipelineShaderStageFlags(PIPELI
 {
     VkPipelineShaderStageCreateFlags result = 0;
     // TODO: GetNativePipelineShaderStageFlags
-    B3D_UNREFERENCED(_flags); 
+    B3D_UNREFERENCED(_flags);
     return result;
 }
 
@@ -372,10 +372,10 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyInputLayout(DESC_DATA* _dd, const GRAP
 
     // 一旦全スロットの合計エレメント数を取得しリサイズ、セット。
     {
-        uint32_t num_total_elements = 0;
+        input_layout.total_input_elements = 0;
         for (auto& i : input_layout.input_slots)
         {
-            num_total_elements += i.num_elements;
+            input_layout.total_input_elements += i.num_elements;
             input_layout.input_elements[i.slot_number].resize(i.num_elements);
             input_layout.input_element_semantic_names[i.slot_number].resize(i.num_elements);
         }
@@ -748,7 +748,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareVertexInputState(VkGraphicsPipeline
     auto&& input_layoutvk = *(_dd->vertex_input_state = B3DMakeUnique(VERTEX_INPUT_STATE_DATA_VK)).get();
     input_layoutvk.bindings  .resize(desc.input_layout->num_input_slots);
     input_layoutvk.divisors  .resize(desc.input_layout->num_input_slots);
-    input_layoutvk.attributes.resize(desc_data->input_layout->input_elements.size());
+    input_layoutvk.attributes.resize(desc_data->input_layout->total_input_elements);
 
     util::UnordMap<uint32_t/*slot_number*/, uint32_t> location_offset_map;
     // locationのオフセットを予め計算
@@ -795,9 +795,8 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareVertexInputState(VkGraphicsPipeline
         const auto location_offset = location_offset_map.at(slot.slot_number);
         for (uint32_t i_element = 0; i_element < slot.num_elements; i_element++)
         {
-            auto index = element_count + i_element;
-            auto&& element = slot.elements[index];
-            auto&& attrib = attributes[index];
+            auto&& element = slot.elements[i_element];
+            auto&& attrib = attributes[element_count + i_element];
 
             attrib.location = location_offset + i_element;
             attrib.binding  = slot.slot_number;
@@ -893,7 +892,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareViewportState(VkGraphicsPipelineCre
     viewport_statevk.ci.pViewports      = viewport_statevk.viewports.data();
     viewport_statevk.ci.scissorCount    = viewport_state.num_scissor_rects;
     viewport_statevk.ci.pScissors       = viewport_statevk.scissors.data();
-    
+
     _ci->pViewportState = &viewport_statevk.ci;
 }
 
@@ -925,7 +924,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareRasterizationState(VkGraphicsPipeli
     rasterization_statevk.depth_clip_ci_ext.flags           = 0;// reserved
     rasterization_statevk.depth_clip_ci_ext.depthClipEnable = rasterization_state.is_enabled_depth_clip;
     last_pnext = util::ConnectPNextChains(last_pnext, rasterization_statevk.depth_clip_ci_ext);
-    
+
     rasterization_statevk.line_ci_ext.lineRasterizationMode = util::GetNativeLineRasterizationMode(rasterization_state.line_rasterization_mode);
     rasterization_statevk.line_ci_ext.stippledLineEnable    = VK_FALSE;
     rasterization_statevk.line_ci_ext.lineStippleFactor     = 0;
@@ -941,7 +940,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::PrepareRasterizationState(VkGraphicsPipeli
 
     rasterization_statevk.conservative_ci_ext.flags                            = 0;// reserved
     rasterization_statevk.conservative_ci_ext.conservativeRasterizationMode    = rasterization_state.is_enabled_conservative_raster ? VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT : VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
-    rasterization_statevk.conservative_ci_ext.extraPrimitiveOverestimationSize = 0.f;// FIXME: GraphicsPipelineStateVk::PrepareRasterizationState(): extraPrimitiveOverestimationSize 
+    rasterization_statevk.conservative_ci_ext.extraPrimitiveOverestimationSize = 0.f;// FIXME: GraphicsPipelineStateVk::PrepareRasterizationState(): extraPrimitiveOverestimationSize
     last_pnext = util::ConnectPNextChains(last_pnext, rasterization_statevk.conservative_ci_ext);
 
     _ci->pRasterizationState = &rasterization_statevk.ci;
@@ -1145,7 +1144,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::AddRef()
 }
 
 uint32_t
-B3D_APIENTRY GraphicsPipelineStateVk::Release() 
+B3D_APIENTRY GraphicsPipelineStateVk::Release()
 {
     B3D_REFCOUNT_DEBUG(ref_count - 1);
     auto count = --ref_count;
@@ -1156,19 +1155,19 @@ B3D_APIENTRY GraphicsPipelineStateVk::Release()
 }
 
 uint32_t
-B3D_APIENTRY GraphicsPipelineStateVk::GetRefCount() const 
+B3D_APIENTRY GraphicsPipelineStateVk::GetRefCount() const
 {
     return ref_count;
 }
 
 const char*
-B3D_APIENTRY GraphicsPipelineStateVk::GetName() const 
+B3D_APIENTRY GraphicsPipelineStateVk::GetName() const
 {
     return name ? name->c_str() : nullptr;
 }
 
 BMRESULT
-B3D_APIENTRY GraphicsPipelineStateVk::SetName(const char* _name) 
+B3D_APIENTRY GraphicsPipelineStateVk::SetName(const char* _name)
 {
     if (!util::IsEnabledDebug(this))
         return BMRESULT_FAILED;
@@ -1185,7 +1184,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::SetName(const char* _name)
 }
 
 IDevice*
-B3D_APIENTRY GraphicsPipelineStateVk::GetDevice() const 
+B3D_APIENTRY GraphicsPipelineStateVk::GetDevice() const
 {
     return device;
 }

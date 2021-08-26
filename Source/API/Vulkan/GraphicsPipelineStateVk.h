@@ -120,6 +120,7 @@ private:
         util::DyArray<INPUT_SLOT_DESC>                                              input_slots;
         util::Map<uint32_t/*slot*/, util::DyArray<INPUT_ELEMENT_DESC>>              input_elements;
         util::Map<uint32_t/*slot*/, util::DyArray<util::SharedPtr<util::String>>>   input_element_semantic_names;
+        uint32_t                                                                    total_input_elements; // 各スロット内に存在する入力エレメントの合計数です。
     };
 
     struct VIEWPORT_STATE_DESC_DATA
