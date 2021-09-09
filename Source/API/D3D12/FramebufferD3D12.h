@@ -31,8 +31,16 @@ public:
     {
         struct OPERATOR_PARAMS
         {
+            enum TYPE
+            {
+                  RTV
+                , DSV
+                , SRV
+            };
+
             template<typename T>
-            OPERATOR_PARAMS(T* _view)
+            OPERATOR_PARAMS(T* _view, TYPE _type)
+                : type{ _type }
             {
                 resource   = _view->GetResource()->As<TextureD3D12>();
                 resource12 = resource->GetD3D12Resource();
@@ -47,15 +55,22 @@ public:
                 format       = util::GetNativeFormat(view_desc.view.format);
                 first_subres = util::ConvertNativeSubresourceOffset(tex_desc->mip_levels, tex_desc->array_size, offset);
                 plane_index  = (int32_t)util::GetNativeAspectFlags(offset.aspect);
-                if (is_depth_stnecil = (offset.aspect & (TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL)))
+                if (offset.aspect & (TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL))
                 {
+                    is_depth_stnecil = true;
                     // ステンシルのみのアタッチメントの場合、plane_indexは1です。
                     plane_offset[0] = plane_index == 1 ? -1 : 0;
                     plane_offset[1] = plane_index == 1 ?  0 : 1;
                 }
+                if (type != DSV && is_depth_stnecil)
+                {
+                    format = util::ConvertDepthStencilFormat(view_desc.view.format, range->offset.aspect);
+                }
 
+                // 配列スライスをまたぐためのサブリソース数subres_array_step_rateを計算するために、0と1を代入します。
                 offset.mip_slice        = 0;
                 offset.array_slice      = 1;
+
                 subres_array_step_rate  = util::ConvertNativeSubresourceOffset(tex_desc->mip_levels, tex_desc->array_size, offset);
                 barriers_count          = (range->array_size * range->mip_levels) * (is_depth_stnecil ? 2 : 1);
             }
@@ -68,13 +83,7 @@ public:
                      (tex_desc->mip_levels * tex_desc->array_size * uint32_t(plane_index + plane_offset[_is_stencil_plane?0:1])));
             }
 
-            enum TYPE
-            {
-                  RTV
-                , DSV
-                , SRV
-            } type{};
-
+            TYPE                        type;
             TextureD3D12*               resource{};
             ID3D12Resource*             resource12{};
             DXGI_FORMAT                 format{};

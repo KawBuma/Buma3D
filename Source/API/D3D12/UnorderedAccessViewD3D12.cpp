@@ -284,7 +284,11 @@ B3D_APIENTRY UnorderedAccessViewD3D12::InitAsTextureUAV()
     auto&& range = tdesc.subresource_range;
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavdesc{};
-    uavdesc.Format = util::GetNativeFormat(desc.view.format);
+
+    if (util::IsDepthStencilFormat(desc.view.format))
+        uavdesc.Format = util::ConvertDepthStencilFormat(desc.view.format, tdesc.subresource_range.offset.aspect);
+    else
+        uavdesc.Format = util::GetNativeFormat(desc.view.format);
 
     auto SetMipParams = [&](auto* _src_dimension) {
         _src_dimension->MipSlice = range.offset.mip_slice;
@@ -354,9 +358,6 @@ B3D_APIENTRY UnorderedAccessViewD3D12::CopyDesc(const UNORDERED_ACCESS_VIEW_DESC
 void
 B3D_APIENTRY UnorderedAccessViewD3D12::Uninit()
 {
-    name.reset();
-    desc = {};
-
     if (descriptor.handle)
         device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, B3D_DEFAULT_NODE_MASK).Free(descriptor);
     descriptor = {};
@@ -365,6 +366,9 @@ B3D_APIENTRY UnorderedAccessViewD3D12::Uninit()
     hlp::SafeRelease(resource);
     hlp::SafeRelease(counter_buffer);
     hlp::SafeRelease(device);
+
+    name.reset();
+    desc = {};
 }
 
 

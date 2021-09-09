@@ -11,7 +11,6 @@ COLOR_SPACE GetB3DColorSpace(DXGI_COLOR_SPACE_TYPE _cs);
 DXGI_FORMAT GetNativeFormat(RESOURCE_FORMAT _format);
 RESOURCE_FORMAT GetB3DFormat(DXGI_FORMAT _format);
 
-
 inline DXGI_FORMAT ConvertDepthStencilFormat(RESOURCE_FORMAT _format, TEXTURE_ASPECT_FLAGS _aspect)
 {
     bool is_stencil_plane = _aspect & TEXTURE_ASPECT_FLAG_STENCIL;
@@ -21,6 +20,20 @@ inline DXGI_FORMAT ConvertDepthStencilFormat(RESOURCE_FORMAT _format, TEXTURE_AS
     case RESOURCE_FORMAT_D32_FLOAT            : return is_stencil_plane ? DXGI_FORMAT_UNKNOWN                 : DXGI_FORMAT_R32_FLOAT;
     case RESOURCE_FORMAT_D24_UNORM_S8_UINT    : return is_stencil_plane ? DXGI_FORMAT_X24_TYPELESS_G8_UINT    : DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
     case RESOURCE_FORMAT_D32_FLOAT_S8X24_UINT : return is_stencil_plane ? DXGI_FORMAT_X32_TYPELESS_G8X24_UINT : DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+
+    default:
+        return DXGI_FORMAT_UNKNOWN;
+    }
+}
+
+inline DXGI_FORMAT GetNativeDepthStencilTypelessFormat(RESOURCE_FORMAT _format)
+{
+    switch (_format)
+    {
+    case RESOURCE_FORMAT_D16_UNORM            : return DXGI_FORMAT_R16_TYPELESS;
+    case RESOURCE_FORMAT_D32_FLOAT            : return DXGI_FORMAT_R32_TYPELESS;
+    case RESOURCE_FORMAT_D24_UNORM_S8_UINT    : return DXGI_FORMAT_R24G8_TYPELESS;
+    case RESOURCE_FORMAT_D32_FLOAT_S8X24_UINT : return DXGI_FORMAT_R32G8X24_TYPELESS;
 
     default:
         return DXGI_FORMAT_UNKNOWN;

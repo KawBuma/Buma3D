@@ -301,7 +301,12 @@ B3D_APIENTRY ShaderResourceViewD3D12::InitAsTextureSRV()
     auto&& range = tdesc.subresource_range;
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvdesc{};
-    srvdesc.Format = util::GetNativeFormat(desc.view.format);
+
+    if (util::IsDepthStencilFormat(desc.view.format))
+        srvdesc.Format = util::ConvertDepthStencilFormat(desc.view.format, tdesc.subresource_range.offset.aspect);
+    else
+        srvdesc.Format = util::GetNativeFormat(desc.view.format);
+
     util::ConvertNativeComponentMapping(tdesc.components, &srvdesc.Shader4ComponentMapping);
 
     auto SetMipParams = [&](auto* _src_dimension) {

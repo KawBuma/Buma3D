@@ -261,15 +261,15 @@ B3D_APIENTRY DepthStencilViewD3D12::CopyDesc(const DEPTH_STENCIL_VIEW_DESC& _des
 void
 B3D_APIENTRY DepthStencilViewD3D12::Uninit()
 {
-    name.reset();
-    desc = {};
-
     if (descriptor.handle)
         device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, B3D_DEFAULT_NODE_MASK).Free(descriptor);
     descriptor = {};
 
     hlp::SafeRelease(resource);
     hlp::SafeRelease(device);
+
+    name.reset();
+    desc = {};
 }
 
 

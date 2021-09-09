@@ -1088,6 +1088,11 @@ B3D_APIENTRY CommandListD3D12::ResolveTextureRegion(const CMD_RESOLVE_TEXTURE_RE
         data.dst_offset     = r.dst_offset     ? *r.dst_offset     : OFFSET2D{};
         data.resolve_extent = r.resolve_extent ? *r.resolve_extent : util::CalcMipExtents2D<EXTENT2D>(r.src_subresource.mip_slice, data.src_desc->texture.extent);
         util::ConvertNativeScissorRect(data.src_offset, data.resolve_extent, &data.src_rect);
+
+        /* FIXME: D3D12では、条件に一致する場合フォーマットファミリー間でのリゾルブが可能ですが、Vulkanでは同一のフォーマットである必要があります。
+                  https://docs.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resolvesubresource
+                  https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/chap20.html#VUID-vkCmdResolveImage-srcImage-01386
+        */
         data.format = util::GetNativeFormat(data.src_desc->texture.format_desc.format);
 
         uint32_t plane_slice = util::GetNativeAspectFlags(r.src_subresource.aspect);

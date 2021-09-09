@@ -208,6 +208,7 @@ B3D_APIENTRY RenderTargetViewD3D12::InitAsTextureRTV()
     auto&& range = tdesc.subresource_range;
 
     D3D12_RENDER_TARGET_VIEW_DESC rtvdesc{};
+
     if (util::IsDepthStencilFormat(desc.view.format))
         rtvdesc.Format = util::ConvertDepthStencilFormat(desc.view.format, tdesc.subresource_range.offset.aspect);
     else
@@ -302,15 +303,15 @@ B3D_APIENTRY RenderTargetViewD3D12::CopyDesc(const RENDER_TARGET_VIEW_DESC& _des
 void
 B3D_APIENTRY RenderTargetViewD3D12::Uninit()
 {
-    name.reset();
-    desc = {};
-
     if (descriptor.handle)
         device->GetCPUDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, B3D_DEFAULT_NODE_MASK).Free(descriptor);
     descriptor = {};
 
     hlp::SafeRelease(resource);
     hlp::SafeRelease(device);
+
+    name.reset();
+    desc = {};
 }
 
 

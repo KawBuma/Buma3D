@@ -232,7 +232,7 @@ B3D_APIENTRY FramebufferD3D12::GetAttachmentOperators() const
 
 FramebufferD3D12::AttachmentOperatorRTV::AttachmentOperatorRTV(RenderTargetViewD3D12* _rtv)
     : rtv       { _rtv }
-    , params    { _rtv }
+    , params    (_rtv, OPERATOR_PARAMS::RTV)
     , dr        {}
 {
 }
@@ -271,12 +271,10 @@ void FramebufferD3D12::AttachmentOperatorRTV::Resolve(ID3D12GraphicsCommandList1
 
 FramebufferD3D12::AttachmentOperatorDSV::AttachmentOperatorDSV(DepthStencilViewD3D12* _dsv)
     : dsv           { _dsv }
-    , params        (_dsv)
+    , params        (_dsv, OPERATOR_PARAMS::DSV)
     , dr            {}
     , clear_flags   {}
 {
-    params.type = OPERATOR_PARAMS::DSV;
-
     auto aspect = dsv->GetDesc().texture.subresource_range.offset.aspect;
     if (aspect & TEXTURE_ASPECT_FLAG_DEPTH)
         clear_flags |= D3D12_CLEAR_FLAG_DEPTH;
@@ -332,10 +330,9 @@ void FramebufferD3D12::AttachmentOperatorDSV::Resolve(ID3D12GraphicsCommandList1
 #pragma region AttachmentOperatorSRV
 
 FramebufferD3D12::AttachmentOperatorSRV::AttachmentOperatorSRV(ShaderResourceViewD3D12* _srv)
-    : srv{ _srv }
-    , params(_srv)
+    : srv   { _srv }
+    , params(_srv, OPERATOR_PARAMS::SRV)
 {
-    params.type = OPERATOR_PARAMS::SRV;
 }
 
 void FramebufferD3D12::AttachmentOperatorSRV::Clear(ID3D12GraphicsCommandList* _list, const CLEAR_VALUE& _cv, D3D12_CLEAR_FLAGS _dsv_clear, const D3D12_RECT* _render_area)

@@ -357,11 +357,22 @@ inline void GetNativeResourceDesc(const RESOURCE_DESC& _desc, D3D12_RESOURCE_DES
         _result->Height             = _desc.texture.extent.height;
         _result->DepthOrArraySize   = SCAST<UINT16>(_desc.dimension == RESOURCE_DIMENSION_TEX3D ? _desc.texture.extent.depth : _desc.texture.array_size);
         _result->MipLevels          = SCAST<UINT16>(util::CalcMipLevels(_desc.texture));
-        _result->Format             = GetNativeFormat(_desc.texture.format_desc.format);
         _result->SampleDesc.Count   = _desc.texture.sample_count;
         _result->SampleDesc.Quality = 0;
         _result->Layout             = GetNativeTextureLayout(_desc.texture.layout);
         _result->Flags              = GetNativeResourceTexFlags(_desc.flags, _desc.texture.usage);
+
+        if (_desc.texture.usage & TEXTURE_USAGE_FLAG_DEPTH_STENCIL_ATTACHMENT &&
+            _desc.texture.usage & (TEXTURE_USAGE_FLAG_SHADER_RESOURCE | TEXTURE_USAGE_FLAG_INPUT_ATTACHMENT))
+        {
+            // usageに深度ステンシルが指定されており、深度ステンシル以外のusageも含んで作成された場合、フォーマットをTYPELESSとして使用します。
+            // DSVとSRVの両方を作成するために必要です: https://docs.microsoft.com/en-us/windows/win32/direct3d11/d3d10-graphics-programming-guide-depth-stencil
+            _result->Format = GetNativeDepthStencilTypelessFormat(_desc.texture.format_desc.format);
+        }
+        else
+        {
+            _result->Format = GetNativeFormat(_desc.texture.format_desc.format);
+        }
     }
 }
 
