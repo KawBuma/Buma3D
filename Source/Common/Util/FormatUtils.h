@@ -30,6 +30,9 @@ RESOURCE_FORMAT GetTypelessFormat(RESOURCE_FORMAT _format);
 bool IsDepthStencilFormat(RESOURCE_FORMAT _format);
 bool IsDepthOnlyFormat(RESOURCE_FORMAT _format);
 
+bool IsMultiplanarFormat(RESOURCE_FORMAT _format);
+size_t GetPlaneCount(RESOURCE_FORMAT _format);
+
 bool IsIntegerFormat(RESOURCE_FORMAT _format);
 bool IsSintFormat(RESOURCE_FORMAT _format);
 bool IsUintFormat(RESOURCE_FORMAT _format);

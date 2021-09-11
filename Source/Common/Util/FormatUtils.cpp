@@ -805,6 +805,40 @@ bool IsDepthOnlyFormat(RESOURCE_FORMAT _format)
     }
 }
 
+bool IsMultiplanarFormat(RESOURCE_FORMAT _format)
+{
+    // NOTE: 深度ステンシルフォーマットはmulti-planarとして扱いません。 代わりにDEPTHまたはSTENCILアスペクトを使用します
+    switch (_format)
+    {
+    case RESOURCE_FORMAT_Y8U8Y8V8_422_UNORM:
+    case RESOURCE_FORMAT_X6Y10X6U10X6Y10X6V10_422_UNORM:
+    case RESOURCE_FORMAT_Y16U16Y16V16_422_UNORM:
+    case RESOURCE_FORMAT_Y8_U8V8_2PLANE_420_UNORM:
+    case RESOURCE_FORMAT_X6Y10_X6U10X6V10_2PLANE_420_UNORM:
+    case RESOURCE_FORMAT_Y16_U16V16_2PLANE_420_UNORM:
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+size_t GetPlaneCount(RESOURCE_FORMAT _format)
+{
+    switch (_format)
+    {
+    case RESOURCE_FORMAT_Y8U8Y8V8_422_UNORM                : return 1;
+    case RESOURCE_FORMAT_X6Y10X6U10X6Y10X6V10_422_UNORM    : return 1;
+    case RESOURCE_FORMAT_Y16U16Y16V16_422_UNORM            : return 1;
+    case RESOURCE_FORMAT_Y8_U8V8_2PLANE_420_UNORM          : return 2;
+    case RESOURCE_FORMAT_X6Y10_X6U10X6V10_2PLANE_420_UNORM : return 2;
+    case RESOURCE_FORMAT_Y16_U16V16_2PLANE_420_UNORM       : return 2;
+
+    default:
+        return 1;
+    }
+}
+
 bool IsIntegerFormat(RESOURCE_FORMAT _format)
 {
     switch (_format)
