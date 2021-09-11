@@ -200,6 +200,7 @@ B3D_APIENTRY TextureVk::TextureVk()
     , image           {}
     , sparse_data     {}
     , native_usage    {}
+    , properties      { desc }
 {
 
 }
@@ -237,6 +238,8 @@ B3D_APIENTRY TextureVk::Init(RESOURCE_CREATE_TYPE _create_type, DeviceVk* _devic
     default:
         break;
     }
+
+    properties.Setup();
 
     return bmr;
 }
@@ -1181,6 +1184,12 @@ VkImageUsageFlags
 B3D_APIENTRY TextureVk::GetVkImageUsageFlags() const
 {
     return native_usage;
+}
+
+const util::TEXTURE_PROPERTIES&
+B3D_APIENTRY TextureVk::GetTextureProperties() const
+{
+    return properties;
 }
 
 

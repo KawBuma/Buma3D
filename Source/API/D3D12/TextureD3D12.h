@@ -71,6 +71,9 @@ public:
     IResourceHeap*
         B3D_APIENTRY GetHeap() const override;
 
+    const util::TEXTURE_PROPERTIES&
+        B3D_APIENTRY GetTextureProperties() const;
+
 private:
     struct DESC_DATA
     {
@@ -91,7 +94,6 @@ private:
         util::DyArray<D3D12_SUBRESOURCE_TILING> subresource_tilings; // for_non_packed_mips
     };
 
-
 private:
     std::atomic_int32_t                      ref_count;
     util::UniquePtr<util::NameableObjStr>    name;
@@ -106,6 +108,7 @@ private:
     ID3D12Resource*                          texture;
     //ID3D12Resource1*                       texture1;
     util::UniquePtr<TELED_RESOURCE_DATA>     tiled_resource_data;// RESOURCE_CREATE_TYPE_RESERVEDの際に使用します。
+    util::TEXTURE_PROPERTIES                 properties;
 
 };
 

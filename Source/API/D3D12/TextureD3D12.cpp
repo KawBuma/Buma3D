@@ -60,6 +60,7 @@ B3D_APIENTRY TextureD3D12::TextureD3D12()
     , heap                {}
     , texture             {}
     , tiled_resource_data {}
+    , properties          { desc }
 {
 
 }
@@ -94,6 +95,8 @@ B3D_APIENTRY TextureD3D12::Init(RESOURCE_CREATE_TYPE _create_type, DeviceD3D12* 
     default:
         break;
     }
+
+    properties.Setup();
 
     return bmr;
 }
@@ -598,6 +601,12 @@ IResourceHeap*
 B3D_APIENTRY TextureD3D12::GetHeap() const
 {
     return heap;
+}
+
+const util::TEXTURE_PROPERTIES&
+B3D_APIENTRY TextureD3D12::GetTextureProperties() const
+{
+    return properties;
 }
 
 void TextureD3D12::TELED_RESOURCE_DATA::Get(ID3D12Device* _device, ID3D12Resource* _resource)

@@ -99,6 +99,9 @@ public:
     VkImageUsageFlags
         B3D_APIENTRY GetVkImageUsageFlags() const;
 
+    const util::TEXTURE_PROPERTIES&
+        B3D_APIENTRY GetTextureProperties() const;
+
 private:
     struct DESC_DATA
     {
@@ -135,6 +138,7 @@ private:
     VkImage                                  image;
     util::UniquePtr<SPARSE_RESOURCE_DATA>    sparse_data;// RESOURCE_CREATE_TYPE_RESERVEDの際に使用します。
     VkImageUsageFlags                        native_usage;
+    util::TEXTURE_PROPERTIES                 properties;
 
 };
 

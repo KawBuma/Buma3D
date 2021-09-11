@@ -39,5 +39,58 @@ bool IsUintFormat(RESOURCE_FORMAT _format);
 bool IsSrgbFormat(RESOURCE_FORMAT _format);
 
 
+#pragma region implementation
+
+struct TEXTURE_PROPERTIES
+{
+    const RESOURCE_DESC&    desc; // from ITexture
+    bool                    is_depth_stencil_format;
+    bool                    is_depth_only_format;
+    bool                    is_multiplanar_format;
+    TEXTURE_ASPECT_FLAGS    aspect; // このテクスチャ全体でのアスペクトです
+
+    void Setup()
+    {
+        is_depth_stencil_format = util::IsDepthStencilFormat(desc.texture.format_desc.format);
+        is_depth_only_format    = util::IsDepthOnlyFormat(desc.texture.format_desc.format);
+        is_multiplanar_format   = util::IsMultiplanarFormat(desc.texture.format_desc.format);
+
+        if (is_depth_stencil_format)
+        {
+            aspect = is_depth_only_format
+                ? TEXTURE_ASPECT_FLAG_DEPTH
+                : TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL;
+        }
+        else if (is_multiplanar_format)
+        {
+            auto plane_count = util::GetPlaneCount(desc.texture.format_desc.format);
+            switch (plane_count)
+            {
+            case 1: aspect = TEXTURE_ASPECT_FLAG_PLANE_0;
+            case 2: aspect = TEXTURE_ASPECT_FLAG_PLANE_0 | TEXTURE_ASPECT_FLAG_PLANE_1;
+            case 3: aspect = TEXTURE_ASPECT_FLAG_PLANE_0 | TEXTURE_ASPECT_FLAG_PLANE_1 | TEXTURE_ASPECT_FLAG_PLANE_2;
+            default:
+                break;
+            }
+        }
+        else
+        {
+            aspect = TEXTURE_ASPECT_FLAG_COLOR;
+        }
+    }
+
+    bool IsAllSubresources(const SUBRESOURCE_RANGE& _range) const
+    {
+        return
+            aspect == _range.offset.aspect &&
+            _range.offset.mip_slice == 0 && _range.offset.array_slice == 0 && 
+            (_range.mip_levels == B3D_USE_REMAINING_MIP_LEVELS  || desc.texture.mip_levels == _range.mip_levels) &&
+            (_range.array_size == B3D_USE_REMAINING_ARRAY_SIZES || desc.texture.array_size == _range.array_size);
+    }
+};
+
+#pragma endregion implementation
+
+
 }// namespace util
 }// namespace buma3d
