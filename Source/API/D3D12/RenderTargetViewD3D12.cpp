@@ -5,13 +5,14 @@ namespace buma3d
 {
 
 B3D_APIENTRY RenderTargetViewD3D12::RenderTargetViewD3D12()
-    : ref_count     { 1 }
-    , name          {}
-    , device        {}
-    , desc          {}
-    , resource      {}
-    , device12      {}
-    , descriptor    {}
+    : ref_count             { 1 }
+    , name                  {}
+    , device                {}
+    , desc                  {}
+    , resource              {}
+    , device12              {}
+    , descriptor            {}
+    , has_all_subresources  {}
 {
 
 }
@@ -39,24 +40,23 @@ B3D_APIENTRY RenderTargetViewD3D12::Init(DeviceD3D12* _device, IResource* _resou
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
 
-    BMRESULT result = BMRESULT_SUCCEED;
     switch (desc.view.dimension)
     {
     case VIEW_DIMENSION_TEXTURE_1D:
     case VIEW_DIMENSION_TEXTURE_1D_ARRAY:
     case VIEW_DIMENSION_TEXTURE_2D:
     case VIEW_DIMENSION_TEXTURE_2D_ARRAY:
-        result = InitAsTextureRTV();
+        B3D_RET_IF_FAILED(InitAsTextureRTV());
+        has_all_subresources = resource->As<TextureD3D12>()->GetTextureProperties().IsAllSubresources(desc.texture.subresource_range);
         break;
 
     case VIEW_DIMENSION_TEXTURE_3D:
     case VIEW_DIMENSION_TEXTURE_CUBE:
     default:
-        result = BMRESULT_FAILED_INVALID_PARAMETER;
-        break;
+        return BMRESULT_FAILED_INVALID_PARAMETER;
     }
 
-    return result;
+    return BMRESULT_SUCCEED;
 }
 
 BMRESULT
@@ -382,6 +382,18 @@ B3D_APIENTRY RenderTargetViewD3D12::GetCpuDescriptorAllocation() const
     return &descriptor;
 }
 
+const D3D12_GPU_VIRTUAL_ADDRESS*
+B3D_APIENTRY RenderTargetViewD3D12::GetGpuVirtualAddress() const
+{
+    return nullptr;
+}
+
+bool
+B3D_APIENTRY RenderTargetViewD3D12::HasAllSubresources() const
+{
+    return has_all_subresources;
+}
+
 const BUFFER_VIEW*
 B3D_APIENTRY RenderTargetViewD3D12::GetBufferView() const
 {
@@ -392,12 +404,6 @@ const TEXTURE_VIEW*
 B3D_APIENTRY RenderTargetViewD3D12::GetTextureView() const
 {
     return &desc.texture;
-}
-
-const D3D12_GPU_VIRTUAL_ADDRESS*
-B3D_APIENTRY RenderTargetViewD3D12::GetGpuVirtualAddress() const
-{
-    return nullptr;
 }
 
 const VIEW_DESC&

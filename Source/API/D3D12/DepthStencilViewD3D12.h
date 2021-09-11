@@ -42,14 +42,17 @@ public:
     const CPU_DESCRIPTOR_ALLOCATION*
         B3D_APIENTRY GetCpuDescriptorAllocation() const override;
 
+    const D3D12_GPU_VIRTUAL_ADDRESS*
+        B3D_APIENTRY GetGpuVirtualAddress() const override;
+
+    bool
+        B3D_APIENTRY HasAllSubresources() const override;
+
     const BUFFER_VIEW*
         B3D_APIENTRY GetBufferView() const override;
 
     const TEXTURE_VIEW*
         B3D_APIENTRY GetTextureView() const override;
-
-    const D3D12_GPU_VIRTUAL_ADDRESS*
-        B3D_APIENTRY GetGpuVirtualAddress() const;
 
     const VIEW_DESC&
         B3D_APIENTRY GetViewDesc() const override;
@@ -68,6 +71,7 @@ private:
     IResource*                            resource;
     ID3D12Device*                         device12;
     CPU_DESCRIPTOR_ALLOCATION             descriptor;
+    bool                                  has_all_subresources;
 
 };
 

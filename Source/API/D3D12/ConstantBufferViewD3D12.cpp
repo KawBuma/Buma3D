@@ -145,6 +145,18 @@ B3D_APIENTRY ConstantBufferViewD3D12::GetCpuDescriptorAllocation() const
     return &descriptor;
 }
 
+const D3D12_GPU_VIRTUAL_ADDRESS*
+B3D_APIENTRY ConstantBufferViewD3D12::GetGpuVirtualAddress() const
+{
+    return &virtual_address;
+}
+
+bool
+B3D_APIENTRY ConstantBufferViewD3D12::HasAllSubresources() const
+{
+    return false;
+}
+
 const BUFFER_VIEW*
 B3D_APIENTRY ConstantBufferViewD3D12::GetBufferView() const
 {
@@ -155,12 +167,6 @@ const TEXTURE_VIEW*
 B3D_APIENTRY ConstantBufferViewD3D12::GetTextureView() const
 {
     return nullptr;
-}
-
-const D3D12_GPU_VIRTUAL_ADDRESS*
-B3D_APIENTRY ConstantBufferViewD3D12::GetGpuVirtualAddress() const
-{
-    return &virtual_address;
 }
 
 const VIEW_DESC&

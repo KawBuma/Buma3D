@@ -15,6 +15,13 @@ public:
     virtual const D3D12_GPU_VIRTUAL_ADDRESS*
         B3D_APIENTRY GetGpuVirtualAddress() const = 0;
 
+    /**
+     * @brief 親テクスチャリソースの全てのサブリソース範囲がこのビューにバインドされているかどうかを返します。
+     * @return バッファビューの場合は常にfalseを返します。(バッファリソースにサブリソースは存在しません)
+    */
+    virtual bool
+        B3D_APIENTRY HasAllSubresources() const = 0;
+
 };
 
 

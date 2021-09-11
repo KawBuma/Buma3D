@@ -5,17 +5,18 @@ namespace buma3d
 {
 
 B3D_APIENTRY UnorderedAccessViewD3D12::UnorderedAccessViewD3D12()
-    : ref_count         { 1 }
-    , name              {}
-    , device            {}
-    , desc              {}
-    , resource          {}
-    , counter_buffer    {}
-    , device12          {}
-    , descriptor        {}
-    , virtual_address   {}
-    , buffer_view       {}
-    , texture_view      {}
+    : ref_count             { 1 }
+    , name                  {}
+    , device                {}
+    , desc                  {}
+    , resource              {}
+    , counter_buffer        {}
+    , device12              {}
+    , descriptor            {}
+    , virtual_address       {}
+    , buffer_view           {}
+    , texture_view          {}
+    , has_all_subresources  {}
 {
 
 }
@@ -57,13 +58,12 @@ B3D_APIENTRY UnorderedAccessViewD3D12::Init(DeviceD3D12* _device, IResource* _re
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
 
-    BMRESULT result = BMRESULT_SUCCEED;
     switch (desc.view.dimension)
     {
     case VIEW_DIMENSION_BUFFER_TYPED:
     case VIEW_DIMENSION_BUFFER_STRUCTURED:
     case VIEW_DIMENSION_BUFFER_BYTEADDRESS:
-        result = InitAsBufferUAV();
+        B3D_RET_IF_FAILED(InitAsBufferUAV());
         buffer_view = &desc.buffer;
         break;
 
@@ -72,18 +72,18 @@ B3D_APIENTRY UnorderedAccessViewD3D12::Init(DeviceD3D12* _device, IResource* _re
     case VIEW_DIMENSION_TEXTURE_2D:
     case VIEW_DIMENSION_TEXTURE_2D_ARRAY:
     case VIEW_DIMENSION_TEXTURE_3D:
-        result = InitAsTextureUAV();
+        B3D_RET_IF_FAILED(InitAsTextureUAV());
         texture_view = &desc.texture;
+        has_all_subresources = resource->As<TextureD3D12>()->GetTextureProperties().IsAllSubresources(desc.texture.subresource_range);
         break;
 
     default:
         B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
                           , "UAVでは、view.dimensionはBUFFER_TYPED, BUFFER_STRUCTURED, BUFFER_BYTEADDRESS, TEXTURE_1D, TEXTURE_1D_ARRAY, TEXTURE_2D, TEXTURE_2D_ARRAY, またはTEXTURE_3Dである必要があります。");
-        result = BMRESULT_FAILED_INVALID_PARAMETER;
-        break;
+        return BMRESULT_FAILED_INVALID_PARAMETER;
     }
 
-    return result;
+    return BMRESULT_SUCCEED;
 }
 
 BMRESULT
@@ -439,6 +439,18 @@ B3D_APIENTRY UnorderedAccessViewD3D12::GetCpuDescriptorAllocation() const
     return &descriptor;
 }
 
+const D3D12_GPU_VIRTUAL_ADDRESS*
+B3D_APIENTRY UnorderedAccessViewD3D12::GetGpuVirtualAddress() const
+{
+    return buffer_view ? &virtual_address : nullptr;
+}
+
+bool
+B3D_APIENTRY UnorderedAccessViewD3D12::HasAllSubresources() const
+{
+    return has_all_subresources;
+}
+
 const BUFFER_VIEW*
 B3D_APIENTRY UnorderedAccessViewD3D12::GetBufferView() const
 {
@@ -449,12 +461,6 @@ const TEXTURE_VIEW*
 B3D_APIENTRY UnorderedAccessViewD3D12::GetTextureView() const
 {
     return texture_view;
-}
-
-const D3D12_GPU_VIRTUAL_ADDRESS*
-B3D_APIENTRY UnorderedAccessViewD3D12::GetGpuVirtualAddress() const
-{
-    return buffer_view ? &virtual_address : nullptr;
 }
 
 const VIEW_DESC&
