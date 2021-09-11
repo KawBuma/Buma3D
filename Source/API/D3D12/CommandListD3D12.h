@@ -792,7 +792,7 @@ private:
 
         bool HasAllSubresources(IView* _view)
         {
-            switch (_view->GetViewDesc().dimension)
+            switch (_view->GetViewDesc().type)
             {
             case VIEW_TYPE_SHADER_RESOURCE  : return _view->As<ShaderResourceViewD3D12>()->HasAllSubresources();
             case VIEW_TYPE_UNORDERED_ACCESS : return _view->As<UnorderedAccessViewD3D12>()->HasAllSubresources();
