@@ -66,9 +66,9 @@ struct TEXTURE_PROPERTIES
             auto plane_count = util::GetPlaneCount(desc.texture.format_desc.format);
             switch (plane_count)
             {
-            case 1: aspect = TEXTURE_ASPECT_FLAG_PLANE_0;
-            case 2: aspect = TEXTURE_ASPECT_FLAG_PLANE_0 | TEXTURE_ASPECT_FLAG_PLANE_1;
-            case 3: aspect = TEXTURE_ASPECT_FLAG_PLANE_0 | TEXTURE_ASPECT_FLAG_PLANE_1 | TEXTURE_ASPECT_FLAG_PLANE_2;
+            case 1: aspect = TEXTURE_ASPECT_FLAG_PLANE_0;                                                               break;
+            case 2: aspect = TEXTURE_ASPECT_FLAG_PLANE_0 | TEXTURE_ASPECT_FLAG_PLANE_1;                                 break;
+            case 3: aspect = TEXTURE_ASPECT_FLAG_PLANE_0 | TEXTURE_ASPECT_FLAG_PLANE_1 | TEXTURE_ASPECT_FLAG_PLANE_2;   break;
             default:
                 break;
             }
