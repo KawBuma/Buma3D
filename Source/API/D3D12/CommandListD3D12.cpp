@@ -1202,7 +1202,7 @@ B3D_APIENTRY CommandListD3D12::PopulateRenderPassEndOperations(const SUBPASS_END
     B3D_UNREFERENCED(_subpass_end);
     auto&& rp = cmd_states->render_pass;
 
-    SubpassBarriers(rp.workloads->resolve_barriers);
+    SubpassBarriers(rp.workloads->resolve_src_barriers);
     SubpassResolve();
 
     StoreOperations();
@@ -1215,7 +1215,7 @@ void
 B3D_APIENTRY CommandListD3D12::LoadOperations()
 {
     auto&& rp = cmd_states->render_pass;
-    static constexpr CLEAR_VALUE DEFAULT_CLEAR = {};
+    static const CLEAR_VALUE DEFAULT_CLEAR = {};
     
     auto attachment_operators_data = rp.framebuffer->GetAttachmentOperators().data();
     for (auto& load_op : rp.workloads->load_ops)
@@ -1433,7 +1433,7 @@ B3D_APIENTRY CommandListD3D12::NextSubpass(const SUBPASS_BEGIN_DESC& _subpass_be
     if (rp.current_subpass > rp.end_subpass_index)
         return;
 
-    SubpassBarriers(rp.workloads->resolve_barriers);
+    SubpassBarriers(rp.workloads->resolve_src_barriers);
     SubpassResolve();
 
     StoreOperations();
@@ -1646,24 +1646,34 @@ void CommandListD3D12::NativeSubpassBarrierBuffer::Set(const util::DyArray<util:
     // バリアデータを設定
     resource_barriers_count = 0;
     auto native_resource_barriers = resource_barriers.data();
+    auto AddBarrier = [&](auto&& _params, auto&& _barrier, UINT _subres)
+    {
+        auto&& b = native_resource_barriers[resource_barriers_count];
+        b.Transition.pResource   = _params.resource12;
+        b.Transition.Subresource = _subres;
+        b.Transition.StateBefore = _barrier.state_before;
+        b.Transition.StateAfter  = _barrier.state_after;
+        resource_barriers_count++;
+    };
     for (auto& barrier : _barriers)
     {
-        auto&& params       = attachments_data[barrier.attachment_index]->GetParams();
-        auto&& subres_range = *params.range;
-
-        for (uint32_t i_ary = 0; i_ary < subres_range.array_size; i_ary++)
+        auto&& params = attachments_data[barrier.attachment_index]->GetParams();
+        if (params.is_all_subresources && !barrier.is_separate_depth_stnecil && !barrier.is_stnecil)
         {
-            for (uint32_t i_mip = 0; i_mip < subres_range.mip_levels; i_mip++)
+            AddBarrier(params, barrier, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+        }
+        else
+        {
+            auto&& subres_range = *params.range;
+            for (uint32_t i_ary = 0; i_ary < subres_range.array_size; i_ary++)
             {
-                // 深度ステンシルフォーマットの場合、各プレーン毎のバリアが必要です。
-                // CHECK: barrier.is_depth_stnecil && params.is_depth_stnecil
-                bool is_stencil_plane = barrier.is_stnecil&& params.is_depth_stnecil;
-                auto&& b = native_resource_barriers[resource_barriers_count];
-                b.Transition.pResource   = params.resource12;
-                b.Transition.Subresource = params.CalcSubresourceIndex(i_ary, i_mip, is_stencil_plane);
-                b.Transition.StateBefore = barrier.state_before;
-                b.Transition.StateAfter  = barrier.state_after;
-                resource_barriers_count++;
+                for (uint32_t i_mip = 0; i_mip < subres_range.mip_levels; i_mip++)
+                {
+                    // 深度ステンシルフォーマットの場合、各プレーン毎のバリアが必要です。
+                    // CHECK: barrier.is_depth_stnecil && params.is_depth_stnecil
+                    bool is_stencil_plane = barrier.is_stnecil && params.is_depth_stnecil;
+                    AddBarrier(params, barrier, params.CalcSubresourceIndex(i_ary, i_mip, is_stencil_plane));
+                }
             }
         }
     }

@@ -34,10 +34,15 @@ B3D_APIENTRY RenderPassD3D12::Init(DeviceD3D12* _device, const RENDER_PASS_DESC&
     CopyDesc(_desc);
     B3D_RET_IF_FAILED(CheckValid());
 
-    subpass_workloads.resize(desc.num_subpasses);
-    uint32_t idx = 0;
-    for (auto& i : subpass_workloads)
-        PrepareSubpassWorkloads(idx++, i);
+    if (desc.num_subpasses != 0)
+    {
+        subpass_workloads.resize(desc.num_subpasses);
+        uint32_t idx = 0;
+        for (auto& i : subpass_workloads)
+            PrepareSubpassWorkloads(idx++, i);
+
+        PrepareUnusedAttachmentBarriers();
+    }
 
     return BMRESULT_SUCCEED;
 }
@@ -219,47 +224,80 @@ B3D_APIENTRY RenderPassD3D12::GetSubpassWorkloads(uint32_t _subpass) const
     return subpass_workloads.data()[_subpass];
 }
 
+const ATTACHMENT_REFERENCE*
+RenderPassD3D12::FindAttachment(uint32_t _attachment_index, uint32_t _num_attachments, const ATTACHMENT_REFERENCE* _attachments)
+{
+    if (_attachment_index == B3D_UNUSED_ATTACHMENT)
+        return nullptr;
+    if (_num_attachments == 0 || _attachments == nullptr)
+        return nullptr;
+
+    return std::find_if(_attachments, _attachments + _num_attachments, [_attachment_index](const ATTACHMENT_REFERENCE& _at) {
+        return _at.attachment_index == _attachment_index;
+    });
+}
+
+const ATTACHMENT_REFERENCE*
+RenderPassD3D12::GetAttachmentRef(uint32_t _attachment_index, uint32_t _current_subpass_index)
+{
+    if (_attachment_index == B3D_UNUSED_ATTACHMENT)
+        return false;
+
+    // TODO: アタッチメント エイリアスの考慮
+    auto&& subpasses = desc.subpasses[_current_subpass_index];
+    const ATTACHMENT_REFERENCE* ref = nullptr;
+    ref = FindAttachment(_attachment_index, subpasses.num_input_attachments, subpasses.input_attachments);
+    if (ref) return ref;
+
+    ref = FindAttachment(_attachment_index, subpasses.num_color_attachments, subpasses.color_attachments);
+    if (ref) return ref;
+
+    ref = FindAttachment(_attachment_index, subpasses.num_color_attachments, subpasses.resolve_attachments);
+    if (ref) return ref;
+
+    ref = FindAttachment(_attachment_index, 1, subpasses.depth_stencil_attachment);
+    if (ref) return ref;
+
+    if (subpasses.shading_rate_attachment)
+        ref = FindAttachment(_attachment_index, 1, subpasses.shading_rate_attachment->shading_rate_attachment);
+    if (ref) return ref;
+
+    return ref;
+}
+
+bool
+RenderPassD3D12::HasAttachmentRef(uint32_t _attachment_index, uint32_t _current_subpass_index)
+{
+    return GetAttachmentRef(_attachment_index, _current_subpass_index) != nullptr;
+}
+
+bool
+RenderPassD3D12::IsAttachmentUsedInAnyPass(uint32_t _attachment_index)
+{
+    for (uint32_t i_pass = 0; i_pass < desc.num_subpasses; i_pass++)
+    {
+        if (HasAttachmentRef(_attachment_index, i_pass))
+            return true;
+    }
+    return false;
+}
+
 void
 B3D_APIENTRY RenderPassD3D12::PrepareSubpassWorkloads(uint32_t _subpass_index, SubpassWorkloads& _workloads)
 {
-    auto FindAttachment = [&](uint32_t _attachment_index, uint32_t _current_subpass_index, uint32_t _num_attachments, const auto _attachments) {
-        if (_num_attachments == 0 || _attachments == nullptr) return (const ATTACHMENT_REFERENCE*)nullptr;
-        auto&& subpasses = desc.subpasses[_current_subpass_index];
-        auto Find = [_attachment_index](const ATTACHMENT_REFERENCE& _at) { return _at.attachment_index == _attachment_index; };
-        return std::find_if(_attachments, _attachments + _num_attachments, Find);
-    };
-    auto GetAttachmentRef = [&](uint32_t _attachment_index, uint32_t _current_subpass_index) {
-        auto&& subpasses = desc.subpasses[_current_subpass_index];
-        const ATTACHMENT_REFERENCE* ref = nullptr;
-        ref = FindAttachment(_attachment_index, _current_subpass_index, subpasses.num_input_attachments, subpasses.input_attachments);
-        if (ref) return ref;
 
-        ref = FindAttachment(_attachment_index, _current_subpass_index, subpasses.num_color_attachments, subpasses.color_attachments);
-        if (ref) return ref;
+#pragma region functions
 
-        ref = FindAttachment(_attachment_index, _current_subpass_index, subpasses.num_color_attachments, subpasses.resolve_attachments);
-        if (ref) return ref;
-
-        ref = FindAttachment(_attachment_index, _current_subpass_index, 1, subpasses.depth_stencil_attachment);
-        if (ref) return ref;
-
-        if (subpasses.shading_rate_attachment)
-            ref = FindAttachment(_attachment_index, _current_subpass_index, 1, subpasses.shading_rate_attachment->shading_rate_attachment);
-        if (ref) return ref;
-
-        return ref;
-    };
-    auto HasAttachmentRef = [&](uint32_t _attachment_index, uint32_t _current_subpass_index) {
-        return GetAttachmentRef(_attachment_index, _current_subpass_index) != nullptr;
-    };
-    auto IsPerservedRef = [&](uint32_t _attachment_index, uint32_t _current_subpass_index) {
+    auto IsPerservedRef = [this](uint32_t _attachment_index, uint32_t _current_subpass_index) {
+        if (_attachment_index == B3D_UNUSED_ATTACHMENT) return false;
         auto&& subpasses = desc.subpasses[_current_subpass_index];
         const uint32_t* ref = nullptr;
-        if (subpasses.num_input_attachments) ref = std::find(subpasses.preserve_attachments, subpasses.preserve_attachments + subpasses.num_preserve_attachment, _attachment_index);
+        if (subpasses.num_input_attachments)
+            ref = std::find(subpasses.preserve_attachments, subpasses.preserve_attachments + subpasses.num_preserve_attachment, _attachment_index);
         return ref != nullptr;
     };
 
-    auto GetPrevRefPassIndex = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+    auto GetPrevRefPassIndex = [this](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
         while (_current_subpass_index != 0)
         {
             if (HasAttachmentRef(_ref.attachment_index, _current_subpass_index--))
@@ -267,16 +305,16 @@ B3D_APIENTRY RenderPassD3D12::PrepareSubpassWorkloads(uint32_t _subpass_index, S
         }
         return ~0u;
     };
-    auto GetPrevRef = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+    auto GetPrevRef = [this, &GetPrevRefPassIndex](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
         const ATTACHMENT_REFERENCE* ref = nullptr;
         if (auto prev_pass_index = GetPrevRefPassIndex(_ref, _current_subpass_index); prev_pass_index != ~0u)
             ref = GetAttachmentRef(_ref.attachment_index, prev_pass_index);
         return ref;
     };
-    auto HasPrevRef = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+    auto HasPrevRef = [&GetPrevRef](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
         return GetPrevRef(_ref, _current_subpass_index) != nullptr;
     };
-    auto IsFinalRef = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+    auto IsFinalRef = [this](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
         while (_current_subpass_index != desc.num_subpasses - 1)
         {
             if (HasAttachmentRef(_ref.attachment_index, _current_subpass_index++))
@@ -285,32 +323,23 @@ B3D_APIENTRY RenderPassD3D12::PrepareSubpassWorkloads(uint32_t _subpass_index, S
         return true;
     };
 
-    auto IsPrevResolveSrc = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+    auto IsPrevResolveSrc = [this, &HasPrevRef, &GetPrevRefPassIndex](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
         if (!HasPrevRef(_ref, _current_subpass_index))
             return false;
-        auto&& r = subpass_workloads[GetPrevRefPassIndex(_ref, _current_subpass_index)].resolve_barriers;
+        auto&& r = subpass_workloads[GetPrevRefPassIndex(_ref, _current_subpass_index)].resolve_src_barriers;
         auto find = std::find_if(r.begin(), r.end(), [&_ref](const Barrier& _b) { return _b.attachment_index == _ref.attachment_index; });
         return find != r.end() && find->state_after == D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
     };
-    auto IsPrevResolveDst = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
-        if (!HasPrevRef(_ref, _current_subpass_index))
-            return false;
-        auto&& r = subpass_workloads[GetPrevRefPassIndex(_ref, _current_subpass_index)].resolve_barriers;
-        auto find = std::find_if(r.begin(), r.end(), [&_ref](const Barrier& _b) { return _b.attachment_index == _ref.attachment_index; });
-        return find != r.end() && find->state_after == D3D12_RESOURCE_STATE_RESOLVE_DEST;
-    };
-    auto IsResolveSrc = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
-        auto&& current_subpass = desc.subpasses[_subpass_index];
+    auto IsResolveSrc = [this](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
+        auto&& current_subpass = desc.subpasses[_current_subpass_index];
         if (!current_subpass.resolve_attachments)
             return false;
-        return nullptr != FindAttachment(_ref.attachment_index, _current_subpass_index, current_subpass.num_color_attachments, current_subpass.color_attachments);
-    };
-    auto IsResolveDst = [&](const ATTACHMENT_REFERENCE& _ref, uint32_t _current_subpass_index) {
-        auto&& current_subpass = desc.subpasses[_subpass_index];
-        if (!current_subpass.resolve_attachments)
+        if (current_subpass.resolve_attachments[_current_subpass_index].attachment_index == B3D_UNUSED_ATTACHMENT)
             return false;
-        return nullptr != FindAttachment(_ref.attachment_index, _current_subpass_index, current_subpass.num_color_attachments, current_subpass.resolve_attachments);
+        return nullptr != FindAttachment(_ref.attachment_index, current_subpass.num_color_attachments, current_subpass.color_attachments);
     };
+
+#pragma endregion functions
 
     auto&& current_subpass = desc.subpasses[_subpass_index];
 
@@ -341,96 +370,113 @@ B3D_APIENTRY RenderPassD3D12::PrepareSubpassWorkloads(uint32_t _subpass_index, S
         }
 
         bool is_prev_resolve_src = IsPrevResolveSrc(attachment_ref, _subpass_index);
-        bool is_prev_resolve_dst = IsPrevResolveDst(attachment_ref, _subpass_index);
         bool is_resolve_src      = IsResolveSrc    (attachment_ref, _subpass_index);
-        bool is_resolve_dst      = IsResolveDst    (attachment_ref, _subpass_index);
-        bool is_resolve          = is_prev_resolve_src || is_prev_resolve_dst || is_resolve_src || is_resolve_dst;
 
         // バリアを追加します。
         // フラグに応じて、ロード時、サブパス移行時、またはストア時のバリアなのかを切り替えます。
         // TODO: Split barrier による最適化を検証します。
-        Barrier barrier{ false, i_at };
+        Barrier barrier{ false, false, i_at };
 
-        // バリアを追加
+        auto BeginState      = [&]() { return barrier.is_stnecil ? attachment.stencil_begin_state       : attachment.begin_state; };
+        auto EndState        = [&]() { return barrier.is_stnecil ? attachment.stencil_end_state         : attachment.end_state; };
+        auto StateAtPass     = [&]() { return barrier.is_stnecil ? attachment_ref.stencil_state_at_pass : attachment_ref.state_at_pass; };
+        auto PrevStateAtPass = [&]() { return barrier.is_stnecil ? GetPrevRef(attachment_ref, _subpass_index)->stencil_state_at_pass : GetPrevRef(attachment_ref, _subpass_index)->state_at_pass; };
+        auto AddBarriers = [&]()
         {
-            barrier.is_stnecil   = false;
-            barrier.state_before = is_first_ref
-                ? util::GetNativeResourceState(attachment.begin_state)
-                : util::GetNativeResourceState(GetPrevRef(attachment_ref, _subpass_index)->state_at_pass);
-            barrier.state_after = util::GetNativeResourceState(attachment_ref.state_at_pass);
+            // color, resolve, depth/stencil, shading_rate 等の明示的なアタッチメントのバリアです。
+            barrier.state_before = util::GetNativeResourceState(is_first_ref ? BeginState() : PrevStateAtPass());
+            barrier.state_after = util::GetNativeResourceState(StateAtPass());
 
-            if (is_prev_resolve_src) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-            if (is_prev_resolve_dst) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_DEST;
+            // このサブパスで使用されている現在処理中のアタッチメントが、以前のサブパスでリゾルブされた場合、state_beforeをRESOLVE_SOURCEとして上書きします
+            if (is_prev_resolve_src)
+                barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
 
             if (barrier.state_before != barrier.state_after)
                 _workloads.barriers.emplace_back(barrier);
 
+            if (is_resolve_src)
+            {
+                /*
+                このようなコンポーネントがloadOpを介してロードされると、レンダーパスで使用される実装に依存する形式に変換されます。
+                このようなコンポーネントは、storeOpを介してレンダーパスインスタンスの最後に解決または保存される前に、
+                レンダーパス形式から添付ファイルの形式に変換する必要があります。
+                */
+
+                // このサブパスで使用されている現在処理中のカラーアタッチメントが、このサブパスでリゾルブされる場合、state_afterをRESOLVE_SOURCEとして上書きします
+                // 現在の_workloads.barriers内バリアで遷移された状態からリゾルブ状態への遷移バリアです。この遷移はリゾルブ操作と、次のサブパスに移行するより前に行われます。
+                barrier.state_before = barrier.state_after;
+                barrier.state_after = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+
+                if (barrier.state_before != barrier.state_after)
+                    _workloads.resolve_src_barriers.emplace_back(barrier);
+            }
             if (is_final_ref)
             {
                 barrier.state_before = barrier.state_after; // 「最後の参照が行われるサブパスでの状態」がstate_beforeとなります。
-                barrier.state_after = util::GetNativeResourceState(attachment.end_state);
-                if (is_resolve_src) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-                if (is_resolve_dst) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_DEST;
+                barrier.state_after = util::GetNativeResourceState(EndState());
 
                 if (barrier.state_before != barrier.state_after)
                     _workloads.final_barriers.emplace_back(barrier);
             }
-        }
+        };
 
-        // ステンシルが分離されたバリアを追加
+        // バリアを追加
         {
-            barrier.is_stnecil = true;
-            barrier.state_before = is_first_ref
-                ? util::GetNativeResourceState(attachment.stencil_begin_state)
-                : util::GetNativeResourceState(GetPrevRef(attachment_ref, _subpass_index)->stencil_state_at_pass);
-            barrier.state_after = util::GetNativeResourceState(attachment_ref.stencil_state_at_pass);
-
-            if (is_prev_resolve_src) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-            if (is_prev_resolve_dst) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_DEST;
-
-            if (barrier.state_before == RESOURCE_STATE_UNDEFINED && barrier.state_after == RESOURCE_STATE_UNDEFINED)
-                continue;
-            if (barrier.state_before != barrier.state_after)
-                _workloads.barriers.emplace_back(barrier);
-
-            if (is_final_ref)
-            {
-                barrier.state_before = barrier.state_after;
-                barrier.state_after  = util::GetNativeResourceState(attachment.stencil_end_state);
-                if (is_resolve_src) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-                if (is_resolve_dst) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_DEST;
-
-                if (barrier.state_before == RESOURCE_STATE_UNDEFINED && barrier.state_after == RESOURCE_STATE_UNDEFINED)
-                    continue;
-                if (barrier.state_before != barrier.state_after)
-                    _workloads.final_barriers.emplace_back(barrier);
-            }
-        }
-
-        if (is_resolve)
-        {
-            /*
-            このようなコンポーネントがloadOpを介してロードされると、レンダーパスで使用される実装に依存する形式に変換されます。
-            このようなコンポーネントは、storeOpを介してレンダーパスインスタンスの最後に解決または保存される前に、
-            レンダーパス形式から添付ファイルの形式に変換する必要があります。
-            */
-
             barrier.is_stnecil = false;
-            barrier.state_before = is_first_ref
-                ? util::GetNativeResourceState(attachment.begin_state)
-                : util::GetNativeResourceState(GetPrevRef(attachment_ref, _subpass_index)->state_at_pass);
-            barrier.state_after = util::GetNativeResourceState(attachment_ref.state_at_pass);
+            AddBarriers();
+        }
 
-            if (is_resolve_src)      barrier.state_after = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-            if (is_resolve_dst)      barrier.state_after = D3D12_RESOURCE_STATE_RESOLVE_DEST;
-            if (is_prev_resolve_src) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-            if (is_prev_resolve_dst) barrier.state_before = D3D12_RESOURCE_STATE_RESOLVE_DEST;
+        // TODO: separate depth stencil の再設計、リゾルブを考慮、RESOURCE_STATE追加検討。追加の構造体が必須
+        // 現状: HasAllSubresources() でない場合は深度ステンシルバリアが重複する可能性がある
 
-            if (barrier.state_before != barrier.state_after)
-                _workloads.resolve_barriers.emplace_back(barrier);
+        if (util::IsDepthStencilFormat(attachment.format) &&
+            !util::IsDepthOnlyFormat(attachment.format))
+        {
+            // ステンシルが分離されたバリアを追加
+            barrier.is_stnecil = true;
+            AddBarriers();
         }
     }
+}
 
+void
+B3D_APIENTRY RenderPassD3D12::PrepareUnusedAttachmentBarriers()
+{
+    for (uint32_t i_at = 0; i_at < desc.num_attachments; i_at++)
+    {
+        if (IsAttachmentUsedInAnyPass(i_at))
+            continue;
+
+        /* NOTE: LOAD_OP、STORE_OPはそれぞれ、初回の参照がいずれかのサブパスで行われた際、LOAD_OP以降に参照されなくなった際に実行されます。
+                 どのサブパスでも一度も参照されていないアタッチメントはこの操作の対象外です。
+                 ただし、どのサブパスでも使用されない場合でも、begin_stateとend_state間のバリアは実行する必要があります。 */
+        auto&& attachment = desc.attachments[i_at];
+
+        Barrier barrier{ false, false, i_at };
+
+        // バリアを追加
+        {
+            barrier.is_stnecil = false;
+            barrier.state_before = util::GetNativeResourceState(attachment.begin_state);
+            barrier.state_after  = util::GetNativeResourceState(attachment.end_state);
+
+            if (barrier.state_before != barrier.state_after)
+                subpass_workloads.back().final_barriers.emplace_back(barrier);
+        }
+
+        // TODO: separate depth stencil の再設計、リゾルブを考慮
+        // ステンシルが分離されたバリアを追加
+        if (util::IsDepthStencilFormat(attachment.format) &&
+            !util::IsDepthOnlyFormat(attachment.format))
+        {
+            barrier.is_stnecil = true;
+            barrier.state_before = util::GetNativeResourceState(attachment.stencil_begin_state);
+            barrier.state_after  = util::GetNativeResourceState(attachment.stencil_end_state);
+        
+            if (barrier.state_before != barrier.state_after)
+                subpass_workloads.back().final_barriers.emplace_back(barrier);
+        }
+    }
 }
 
 

@@ -20,7 +20,8 @@ public:
     class Barrier
     {
     public:
-        bool                  is_stnecil;
+        bool                  is_stnecil; // ステンシルプレーンバリアの場合true
+        bool                  is_separate_depth_stnecil; // 深度バリアの状態がステンシルと分割されている場合true
         uint32_t              attachment_index;
         D3D12_RESOURCE_STATES state_before;
         D3D12_RESOURCE_STATES state_after;
@@ -58,9 +59,9 @@ public:
 
     public:
         util::DyArray<LoadOp>               load_ops;  // NextSubpass、またはBeginRenderPassで最初に実行されるロード操作です。
-        util::DyArray<Barrier>              barriers;  // Subpassの開始時に実行されるバリアです。初回参照されるアタッチメントのバリアを含みます。
+        util::DyArray<Barrier>              barriers;  // Subpassの開始時に実行される、そのサブパスで使用されている各アタッチメントのバリアです。初回参照されるアタッチメントのバリアを含みます。
         util::DyArray<StoreOp>              store_ops; // NextSubpass、またはEndRenderPassで最後に実行されるストア操作です。
-        util::DyArray<Barrier>              resolve_barriers; // カラーアタッチメントをリゾルブアタッチメントにリゾルブする必要がある際のバリアです。
+        util::DyArray<Barrier>              resolve_src_barriers; // カラーアタッチメントをリゾルブアタッチメントにリゾルブする必要がある際のバリアです。リゾルブアタッチメントのRESOLVE_DESTバリアは含まれません。
         util::DyArray<Barrier>              final_barriers; // 各アタッチメントが最後に参照される際のバリアです。
 
         const ATTACHMENT_REFERENCE* shading_rate_attachment{};
@@ -112,6 +113,13 @@ public:
 private:
     void
         B3D_APIENTRY PrepareSubpassWorkloads(uint32_t _subpass_index, SubpassWorkloads& _workloads);
+    void
+        B3D_APIENTRY PrepareUnusedAttachmentBarriers();
+
+    const ATTACHMENT_REFERENCE* FindAttachment(uint32_t _attachment_index, uint32_t _num_attachments, const ATTACHMENT_REFERENCE* _attachments);
+    const ATTACHMENT_REFERENCE* GetAttachmentRef(uint32_t _attachment_index, uint32_t _current_subpass_index);
+    bool HasAttachmentRef(uint32_t _attachment_index, uint32_t _current_subpass_index);
+    bool IsAttachmentUsedInAnyPass(uint32_t _attachment_index);
 
 private:
     struct DESC_DATA

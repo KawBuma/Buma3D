@@ -671,12 +671,14 @@ private:
             result += _args.num_buffer_barriers;
 
             // テクスチャバリア数
-            auto AddBarrierCount = [&result](const SUBRESOURCE_RANGE& _range)
+            auto AddBarrierCount = [&result](const SUBRESOURCE_RANGE& _range, const util::TEXTURE_PROPERTIES& _props)
             {
+                uint32_t mip_levels = _range.mip_levels == B3D_USE_REMAINING_MIP_LEVELS  ? _props.desc.texture.mip_levels - _range.offset.mip_slice   : _range.mip_levels;
+                uint32_t array_size = _range.array_size == B3D_USE_REMAINING_ARRAY_SIZES ? _props.desc.texture.array_size - _range.offset.array_slice : _range.array_size;
                 if (_range.offset.aspect == (TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL))
-                    result += (_range.mip_levels * _range.array_size) * 2;
+                    result += (mip_levels * array_size) * 2;
                 else
-                    result += _range.mip_levels * _range.array_size;
+                    result += mip_levels * array_size;
             };
             for (uint32_t i_barrier = 0; i_barrier < _args.num_texture_barriers; i_barrier++)
             {
@@ -684,15 +686,27 @@ private:
                 switch (tb.type)
                 {
                 case buma3d::TEXTURE_BARRIER_TYPE_BARRIER_RANGE:
+                {
+                    auto&& tex_props = tb.barrier_range->texture->As<TextureD3D12>()->GetTextureProperties();
                     for (uint32_t i_range = 0; i_range < tb.barrier_range->num_subresource_ranges; i_range++)
-                        AddBarrierCount(tb.barrier_range->subresource_ranges[i_range]);
+                    {
+                        auto&& range = tb.barrier_range->subresource_ranges[i_range];
+                        if (tex_props.IsAllSubresources(range))
+                            result += 1;
+                        else
+                            AddBarrierCount(range, tex_props);
+                    }
                     break;
+                }
 
                 case buma3d::TEXTURE_BARRIER_TYPE_VIEW:
                 {
                     if (!tb.view->GetTextureView())
                         continue;
-                    AddBarrierCount(tb.view->GetTextureView()->subresource_range);
+                    if (HasAllSubresources(tb.view))
+                        result += 1;
+                    else
+                        AddBarrierCount(tb.view->GetTextureView()->subresource_range, tb.view->GetResource()->As<TextureD3D12>()->GetTextureProperties());
                     break;
                 }
 
@@ -719,6 +733,14 @@ private:
                 else
                     _native_barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
             }
+        }
+
+        void AddTexBarrierAll(ID3D12Resource* _resource, const TEXTURE_BARRIER_DESC& _tb)
+        {
+            auto&& native_barrier = barriers_data[barriers_count++];
+            native_barrier.Transition.pResource   = _resource;
+            native_barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            SetCommonParameters(native_barrier, _tb);
         }
 
         void AddTexBarrier(ID3D12Resource* _resource, const TEXTURE_BARRIER_DESC& _tb, const RESOURCE_DESC& _tex_desc, const SUBRESOURCE_RANGE& _range
@@ -750,12 +772,34 @@ private:
         void TextureBarrierAsRange(const TEXTURE_BARRIER_DESC& _tb)
         {
             auto   tex          = _tb.barrier_range->texture->As<TextureD3D12>();
+            auto&& tex_props    = tex->GetTextureProperties();
             auto&& tex_desc     = tex->GetDesc();
             auto&& tex_resource = tex->GetD3D12Resource();
+            SUBRESOURCE_RANGE range{};
             for (uint32_t i_range = 0; i_range < _tb.barrier_range->num_subresource_ranges; i_range++)
             {
-                auto&& range = _tb.barrier_range->subresource_ranges[i_range];
-                AddTexBarrierRange(tex_resource, _tb, tex_desc, range);
+                if (tex_props.IsAllSubresources(_tb.barrier_range->subresource_ranges[i_range]))
+                    AddTexBarrierAll(tex_resource, _tb);
+                else
+                {
+                    range = _tb.barrier_range->subresource_ranges[i_range];
+                    range.mip_levels = range.mip_levels == B3D_USE_REMAINING_MIP_LEVELS  ? tex_desc.texture.mip_levels - range.offset.mip_slice   : range.mip_levels;
+                    range.array_size = range.array_size == B3D_USE_REMAINING_ARRAY_SIZES ? tex_desc.texture.array_size - range.offset.array_slice : range.array_size;
+                    AddTexBarrierRange(tex_resource, _tb, tex_desc, range);
+                }
+            }
+        }
+
+        bool HasAllSubresources(IView* _view)
+        {
+            switch (_view->GetViewDesc().dimension)
+            {
+            case VIEW_TYPE_SHADER_RESOURCE  : return _view->As<ShaderResourceViewD3D12>()->HasAllSubresources();
+            case VIEW_TYPE_UNORDERED_ACCESS : return _view->As<UnorderedAccessViewD3D12>()->HasAllSubresources();
+            case VIEW_TYPE_RENDER_TARGET    : return _view->As<RenderTargetViewD3D12>()->HasAllSubresources();
+            case VIEW_TYPE_DEPTH_STENCIL    : return _view->As<DepthStencilViewD3D12>()->HasAllSubresources();
+            default:
+                return false;
             }
         }
 
@@ -765,7 +809,11 @@ private:
                 return;
 
             auto tex = _tb.view->GetResource()->As<TextureD3D12>();
-            AddTexBarrierRange(tex->GetD3D12Resource(), _tb, tex->GetDesc(), _tb.view->GetTextureView()->subresource_range);
+            auto&& range = _tb.view->GetTextureView()->subresource_range;
+            if (HasAllSubresources(_tb.view))
+                AddTexBarrierAll(tex->GetD3D12Resource(), _tb);
+            else
+                AddTexBarrierRange(tex->GetD3D12Resource(), _tb, tex->GetDesc(), range);
         }
 
         void SetBufferBarriers(const CMD_PIPELINE_BARRIER& _args)

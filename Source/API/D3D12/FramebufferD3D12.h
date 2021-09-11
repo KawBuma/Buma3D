@@ -67,12 +67,14 @@ public:
                     format = util::ConvertDepthStencilFormat(view_desc.view.format, range->offset.aspect);
                 }
 
+                is_all_subresources = resource->GetTextureProperties().IsAllSubresources(*range);
+
                 // 配列スライスをまたぐためのサブリソース数subres_array_step_rateを計算するために、0と1を代入します。
                 offset.mip_slice        = 0;
                 offset.array_slice      = 1;
-
                 subres_array_step_rate  = util::ConvertNativeSubresourceOffset(tex_desc->mip_levels, tex_desc->array_size, offset);
-                barriers_count          = (range->array_size * range->mip_levels) * (is_depth_stnecil ? 2 : 1);
+
+                barriers_count = (range->array_size * range->mip_levels) * (is_depth_stnecil ? 2 : 1);
             }
 
             uint32_t CalcSubresourceIndex(uint32_t _view_mip_index, uint32_t _view_array_index, bool _is_stencil_plane = false /*for separate depth/stencil state*/) const
@@ -96,6 +98,7 @@ public:
             uint32_t                    first_subres{};
             uint32_t                    subres_array_step_rate{};
             uint32_t                    barriers_count{};
+            bool                        is_all_subresources{};
         };
 
         virtual ~IAttachmentOperator() {}
