@@ -92,8 +92,8 @@ B3D_APIENTRY DescriptorSetLayoutVk::DescriptorSetLayoutVk()
     , devpfn        {}
     , layout        {}
     , bindings_info {}
-{     
-      
+{
+
 }
 
 B3D_APIENTRY DescriptorSetLayoutVk::~DescriptorSetLayoutVk()
@@ -193,7 +193,7 @@ B3D_APIENTRY DescriptorSetLayoutVk::VerifyDesc(const DESCRIPTOR_SET_LAYOUT_DESC&
         B3D_RET_IF_FAILED(BindingsFunc<BMRESULT>(b, NonDynamic, Sampler, Dynamic, Default));
     }
 
-    if (has_update_after_bind && !(desc.flags & DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL))
+    if (has_update_after_bind && !(_desc.flags & DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL))
     {
         B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
                             , "いずれかのバインディングにDESCRIPTOR_FLAG_UPDATE_AFTER_BINDが設定されている場合、DESCRIPTOR_SET_DESC::flagsにはDESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOLを含める必要があります。");
@@ -445,7 +445,7 @@ B3D_APIENTRY DescriptorSetLayoutVk::Uninit()
     name.reset();
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY DescriptorSetLayoutVk::Create(DeviceVk* _device, const DESCRIPTOR_SET_LAYOUT_DESC& _desc, DescriptorSetLayoutVk** _dst)
 {
     util::Ptr<DescriptorSetLayoutVk> ptr;

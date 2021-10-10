@@ -41,8 +41,8 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::DescriptorSetLayoutD3D12()
     , desc_data         {}
     , device12          {}
     , parameters12_info {}
-{     
-      
+{
+
 }
 
 B3D_APIENTRY DescriptorSetLayoutD3D12::~DescriptorSetLayoutD3D12()
@@ -134,7 +134,7 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::VerifyDesc(const DESCRIPTOR_SET_LAYOUT_DE
         B3D_RET_IF_FAILED(BindingsFunc<BMRESULT>(b, NonDynamic, Sampler, Dynamic, Default));
     }
 
-    if (has_update_after_bind && !(desc.flags & DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL))
+    if (has_update_after_bind && !(_desc.flags & DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL))
     {
         B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
                             , "いずれかのバインディングにDESCRIPTOR_FLAG_UPDATE_AFTER_BINDが設定されている場合、DESCRIPTOR_SET_DESC::flagsにはDESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOLを含める必要があります。");
@@ -371,7 +371,7 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::Uninit()
     name.reset();
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY DescriptorSetLayoutD3D12::Create(DeviceD3D12* _device, const DESCRIPTOR_SET_LAYOUT_DESC& _desc, DescriptorSetLayoutD3D12** _dst)
 {
     util::Ptr<DescriptorSetLayoutD3D12> ptr;
