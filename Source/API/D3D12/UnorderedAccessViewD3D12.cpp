@@ -42,7 +42,6 @@ B3D_APIENTRY UnorderedAccessViewD3D12::Init(DeviceD3D12* _device, IResource* _re
 
     (device = _device)->AddRef();
     device12 = device->GetD3D12Device();
-    device12 = device->GetD3D12Device();
 
     (resource = _resource)->AddRef();
     if (_resource_for_counter_buffer)
@@ -225,7 +224,7 @@ B3D_APIENTRY UnorderedAccessViewD3D12::ValidateTextureUAV()
                           , "UAVでは、mip_levelsは1である必要があります。");
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
-    if (range.offset.mip_slice   + range.mip_levels > t.mip_levels || 
+    if (range.offset.mip_slice   + range.mip_levels > t.mip_levels ||
         range.offset.array_slice + range.array_size > t.array_size)
     {
         B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
