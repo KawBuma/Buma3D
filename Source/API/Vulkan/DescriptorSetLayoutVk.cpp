@@ -368,7 +368,7 @@ B3D_APIENTRY DescriptorSetLayoutVk::CreateDescriptorUpdateTemplate()
     {
         auto&& b = desc.bindings[i];
         if (b.static_sampler)
-        { entry_cnt++; continue; }
+            continue;
 
         auto&& bvk = *binding_infos[b.base_shader_register].vk_binding;
         auto&& e = entries_data[entry_cnt++];
@@ -420,19 +420,18 @@ B3D_APIENTRY DescriptorSetLayoutVk::PrepareDescriptorPoolSizes()
 void
 B3D_APIENTRY DescriptorSetLayoutVk::Uninit()
 {
+    if (update_template_layout)
+    {
+        if (update_template_layout->update_template)
+            vkDestroyDescriptorUpdateTemplate(vkdevice, update_template_layout->update_template, B3D_VK_ALLOC_CALLBACKS);
+        update_template_layout.reset();
+    }
+
     if (layout)
         vkDestroyDescriptorSetLayout(vkdevice, layout, B3D_VK_ALLOC_CALLBACKS);
     layout = VK_NULL_HANDLE;
 
     bindings_info.reset();
-
-    if (update_template_layout)
-    {
-        if (update_template_layout->update_template)
-            vkDestroyDescriptorUpdateTemplate(vkdevice, update_template_layout->update_template, B3D_VK_ALLOC_CALLBACKS);
-        update_template_layout->update_template = VK_NULL_HANDLE;
-    }
-    update_template_layout.reset();
 
     desc = {};
     desc_data.reset();
