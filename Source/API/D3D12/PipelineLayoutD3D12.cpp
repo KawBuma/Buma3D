@@ -13,8 +13,8 @@ B3D_APIENTRY PipelineLayoutD3D12::PipelineLayoutD3D12()
     , device12                  {}
     , root_signature            {}
     , root_parameter_offsets    {}
-{     
-      
+{
+
 }
 
 B3D_APIENTRY PipelineLayoutD3D12::~PipelineLayoutD3D12()
@@ -112,7 +112,7 @@ B3D_APIENTRY PipelineLayoutD3D12::PopulateRootDescriptorAndTables(DESC_DATA12* _
             // PUSH_CONSATNTを優先的にパラメータの先頭に配置します。
             D3D12_ROOT_PARAMETER{ D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS },
             ...
-    
+
             // DescriptorSetLayoutのインデックスをRegisterSpaceにマップします。
             // DescriptorSetLayout[0]
             // ディスクリプタテーブルはルートディスクリプタ要素の終了後に配置します。
@@ -121,10 +121,10 @@ B3D_APIENTRY PipelineLayoutD3D12::PopulateRootDescriptorAndTables(DESC_DATA12* _
             D3D12_ROOT_PARAMETER{ D3D12_ROOT_PARAMETER_TYPE_UAV },
             ...
             D3D12_ROOT_PARAMETER{ D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE },
-    
+
             // DescriptorSetLayout[1]
             // ***現在のDescriptorSetLayoutにbindingが存在しない場合、現在のRegisterSpace(1)にパラメータは追加されません。***
-    
+
             // DescriptorSetLayout[2]
             // サンプラーはCBV,SRV,UAVタイプのテーブルから独立したテーブルに配置する必要があります。
             // CBV_SRV_UAVとSAMPLERタイプが両方存在する場合、CBV_SRV_UAVを優先的に配置します。
@@ -209,7 +209,9 @@ B3D_APIENTRY PipelineLayoutD3D12::ConvertStaticSamplers(DESC_DATA12* _dd12, D3D1
     }
 
     _dd12->static_samplers = B3DMakeUniqueArgs(util::DyArray<D3D12_STATIC_SAMPLER_DESC>, num_static_samplers);
+    auto static_samplers = _dd12->static_samplers->data();
 
+    uint32_t cnt = 0;
     for (uint32_t i = 0; i < desc.num_set_layouts; i++)
     {
         auto&& parameters_info = desc.set_layouts[i]->As<DescriptorSetLayoutD3D12>()->GetRootParameters12Info();
@@ -219,7 +221,7 @@ B3D_APIENTRY PipelineLayoutD3D12::ConvertStaticSamplers(DESC_DATA12* _dd12, D3D1
         for (auto& it_samp : *parameters_info.static_samplers)
         {
             auto&& sampler_binding = desc.set_layouts[i]->GetDesc().bindings[it_samp.binding_index];
-            auto&& static_sampler = _dd12->static_samplers->emplace_back(it_samp.static_sampler->GetD3D12StaticSamplerDesc());
+            auto&& static_sampler = static_samplers[cnt++] = it_samp.static_sampler->GetD3D12StaticSamplerDesc();
             static_sampler.ShaderRegister   = sampler_binding.base_shader_register;
             static_sampler.RegisterSpace    = i;
             static_sampler.ShaderVisibility = util::GetNativeShaderVisibility(sampler_binding.shader_visibility);
@@ -272,7 +274,7 @@ B3D_APIENTRY PipelineLayoutD3D12::Uninit()
     name.reset();
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY PipelineLayoutD3D12::Create(DeviceD3D12* _device, const PIPELINE_LAYOUT_DESC& _desc, PipelineLayoutD3D12** _dst)
 {
     util::Ptr<PipelineLayoutD3D12> ptr;
