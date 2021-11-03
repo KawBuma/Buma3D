@@ -41,6 +41,7 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::DescriptorSetLayoutD3D12()
     , desc_data         {}
     , device12          {}
     , parameters12_info {}
+    , descriptor_batch  {}
 {
 
 }
@@ -218,6 +219,41 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareDescriptorPoolSizes()
     info.num_sampler_descrptors -= info.num_static_samplers;
 }
 
+void
+B3D_APIENTRY DescriptorSetLayoutD3D12::CreateDescriptorBatch()
+{
+    auto&& info = *parameters12_info;
+    auto&& batches = *(descriptor_batch = B3DMakeUnique(DESCRIPTOR_BATCH));
+    batches.descriptor_batch      .reserve(info.root_parameters.size());
+    batches.root_descriptor_batch .reserve(info.num_dynamic_parameters);
+    batches.descriptor_table_batch.reserve((info.descriptor_table ? 1 : 0) + (info.sampler_table ? 1 : 0));
+    auto root_parameters = info.root_parameters.data();
+    for (uint32_t i = 0, size = (uint32_t)info.root_parameters.size(); i < size; i++)
+    {
+        auto&& rp = root_parameters[i];
+        switch (rp.ParameterType)
+        {
+        case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
+            batches.descriptor_batch.emplace_back(
+                batches.descriptor_table_batch.emplace_back(
+                    B3DNewArgs(SetDescriptorTableBatch, i)));
+            break;
+
+        case D3D12_ROOT_PARAMETER_TYPE_CBV:
+        case D3D12_ROOT_PARAMETER_TYPE_SRV:
+        case D3D12_ROOT_PARAMETER_TYPE_UAV:
+            batches.descriptor_batch.emplace_back(
+                batches.root_descriptor_batch.emplace_back(
+                    B3DNewArgs(SetRootDescriptorBatch, i, rp.ParameterType)));
+            break;
+
+        default:
+            B3D_ASSERT(false && "unexpected root parameter type");
+            break;
+        }
+    }
+}
+
 BMRESULT
 B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareRootParametersInfo()
 {
@@ -255,6 +291,11 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareRootParametersInfo()
         range.Flags                             = util::GetNativeDescriptorRangeFlags(_binding.descriptor_type, _binding.flags);
         range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
     };
+    auto AddDescriptor = [&](const DESCRIPTOR_SET_LAYOUT_BINDING& _binding)
+    {
+        AddRange(descriptor_ranges_data, _binding, info.num_cbv_srv_uav_ranges++);
+        info.descriptor_table_visibilities |= _binding.shader_visibility;
+    };
     auto AddSamplerDescriptor = [&](const DESCRIPTOR_SET_LAYOUT_BINDING& _binding, uint32_t _binding_index)
     {
         if (_binding.static_sampler != nullptr)
@@ -264,6 +305,7 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareRootParametersInfo()
         else
         {
             AddRange(sampler_ranges_data, _binding, info.num_sampler_ranges++);
+            info.sampler_table_visibilities |= _binding.shader_visibility;
         }
     };
     auto AddDynamicDescriptor = [&](const DESCRIPTOR_SET_LAYOUT_BINDING& _binding)
@@ -271,6 +313,7 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareRootParametersInfo()
         num_root_parameters++;
         auto&& root = root_parameters_data[info.num_dynamic_parameters++];
         root.ParameterType             = util::GetNativeRootParameterTypeForDynamicDescriptor(_binding.descriptor_type);
+        root.ShaderVisibility          = util::GetNativeShaderVisibility(_binding.shader_visibility);
         root.Descriptor.ShaderRegister = _binding.base_shader_register;
         root.Descriptor.RegisterSpace  = ~0u; // IPipelineLayout作成時に決定します
         root.Descriptor.Flags          = util::GetNativeDescriptorFlags(_binding.descriptor_type, _binding.flags);
@@ -279,25 +322,34 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareRootParametersInfo()
     {
         auto&& b = desc.bindings[i];
         BindingsFunc<void>(b
-                           , [&]() { AddRange(descriptor_ranges_data, b, info.num_cbv_srv_uav_ranges++); }
+                           , [&]() { AddDescriptor(b); }
                            , [&]() { AddSamplerDescriptor(b, i); }
                            , [&]() { AddDynamicDescriptor(b); }
                            , []() {});
+
+        info.accumulated_visibility_flags |= b.shader_visibility;
     }
 
     if (info.num_cbv_srv_uav_ranges != 0)
     {
         info.descriptor_table_index = num_root_parameters++;
         auto&& root = root_parameters_data[info.descriptor_table_index];
-        root.DescriptorTable = { info.num_cbv_srv_uav_ranges, info.descriptor_ranges->data() };
+        root.ParameterType    = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        root.ShaderVisibility = util::GetNativeShaderVisibility(info.descriptor_table_visibilities);
+        root.DescriptorTable  = { info.num_cbv_srv_uav_ranges, info.descriptor_ranges->data() };
         info.descriptor_table = &root;
     }
     if (info.num_sampler_ranges != 0)
     {
         info.sampler_table_index = num_root_parameters++;
         auto&& root = root_parameters_data[info.sampler_table_index];
-        root.DescriptorTable = { info.num_sampler_ranges, info.sampler_ranges->data() };
+        root.ParameterType    = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        root.ShaderVisibility = util::GetNativeShaderVisibility(info.sampler_table_visibilities);
+        root.DescriptorTable  = { info.num_sampler_ranges, info.sampler_ranges->data() };
         info.sampler_table = &root;
+
+        if (info.num_cbv_srv_uav_ranges == 0)
+            info.descriptor_table_index = info.sampler_table_index;
     }
 
     PrepareBindingParameters();
@@ -332,6 +384,7 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareBindingParameters()
             pb.range_index       = info.num_cbv_srv_uav_ranges++;
             pb.descriptor_offset = descriptor_offset;
             pb.heap_type         = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+            pb.parameter_index   = info.descriptor_table_index;
             pb.parameter         = info.descriptor_table;
             descriptor_offset += b.num_descriptors;
         };
@@ -345,13 +398,15 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::PrepareBindingParameters()
                 pb.range_index       = info.num_sampler_ranges++;
                 pb.descriptor_offset = sampler_descriptor_offset;
                 pb.heap_type         = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+                pb.parameter_index   = info.sampler_table_index;
                 pb.parameter         = info.sampler_table;
                 sampler_descriptor_offset += b.num_descriptors;
             }
         };
         auto Dynamic = [&]() {
             root_parameter_offset++;
-            pb.parameter = &root_parameters_data[info.num_dynamic_parameters++];
+            pb.parameter_index = info.num_dynamic_parameters++;
+            pb.parameter       = &root_parameters_data[pb.parameter_index];
         };
         BindingsFunc<void>(b, NonDynamic, Sampler, Dynamic, []() {});
     }
@@ -361,6 +416,7 @@ void
 B3D_APIENTRY DescriptorSetLayoutD3D12::Uninit()
 {
     parameters12_info.reset();
+    descriptor_batch.reset();
 
     desc = {};
     desc_data.reset();
@@ -442,6 +498,12 @@ const DescriptorSetLayoutD3D12::ROOT_PARAMETERS12_INFO&
 B3D_APIENTRY DescriptorSetLayoutD3D12::GetRootParameters12Info() const
 {
     return *parameters12_info;
+}
+
+const DESCRIPTOR_BATCH&
+B3D_APIENTRY DescriptorSetLayoutD3D12::GetDescriptorBatch() const
+{
+    return *descriptor_batch;
 }
 
 

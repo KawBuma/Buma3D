@@ -957,9 +957,12 @@ inline VkShaderStageFlags GetNativeShaderVisibility(SHADER_VISIBILITY _visibilit
 
 inline VkShaderStageFlagBits GetNativeShaderStageFlagBit(SHADER_STAGE_FLAG _a_stage)
 {
+    if (_a_stage == buma3d::SHADER_STAGE_FLAG_ALL)
+        return VK_SHADER_STAGE_ALL;
+
     switch (_a_stage)
     {
-    case buma3d::SHADER_STAGE_FLAG_UNKNOWN     : return VkShaderStageFlagBits(0);
+    case buma3d::SHADER_STAGE_FLAG_NONE        : return VkShaderStageFlagBits(0);
     case buma3d::SHADER_STAGE_FLAG_VERTEX      : return VK_SHADER_STAGE_VERTEX_BIT;
     case buma3d::SHADER_STAGE_FLAG_HULL        : return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     case buma3d::SHADER_STAGE_FLAG_DOMAIN      : return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
@@ -982,49 +985,24 @@ inline VkShaderStageFlagBits GetNativeShaderStageFlagBit(SHADER_STAGE_FLAG _a_st
 
 inline VkShaderStageFlags GetNativeShaderStageFlags(SHADER_STAGE_FLAGS _stages)
 {
+    if (_stages == buma3d::SHADER_STAGE_FLAG_ALL)          return VK_SHADER_STAGE_ALL;
+    if (_stages == buma3d::SHADER_STAGE_FLAG_ALL_GRAPGICS) return VK_SHADER_STAGE_ALL_GRAPHICS;
+
     VkShaderStageFlags result = 0;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_VERTEX)
-        result |= VK_SHADER_STAGE_VERTEX_BIT;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_HULL)
-        result |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_DOMAIN)
-        result |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_GEOMETRY)
-        result |= VK_SHADER_STAGE_GEOMETRY_BIT;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_PIXEL)
-        result |= VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_COMPUTE)
-        result |= VK_SHADER_STAGE_COMPUTE_BIT;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_TASK)
-        result |= VK_SHADER_STAGE_TASK_BIT_NV;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_MESH)
-        result |= VK_SHADER_STAGE_MESH_BIT_NV;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_RAYGEN)
-        result |= VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_ANY_HIT)
-        result |= VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_CLOSEST_HIT)
-        result |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_MISS)
-        result |= VK_SHADER_STAGE_MISS_BIT_KHR;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_INTERSECTION)
-        result |= VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
-
-    if (_stages & buma3d::SHADER_STAGE_FLAG_CALLABLE)
-        result |= VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_VERTEX)       result |= VK_SHADER_STAGE_VERTEX_BIT;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_HULL)         result |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_DOMAIN)       result |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_GEOMETRY)     result |= VK_SHADER_STAGE_GEOMETRY_BIT;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_PIXEL)        result |= VK_SHADER_STAGE_FRAGMENT_BIT;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_COMPUTE)      result |= VK_SHADER_STAGE_COMPUTE_BIT;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_TASK)         result |= VK_SHADER_STAGE_TASK_BIT_NV;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_MESH)         result |= VK_SHADER_STAGE_MESH_BIT_NV;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_RAYGEN)       result |= VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_ANY_HIT)      result |= VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_CLOSEST_HIT)  result |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_MISS)         result |= VK_SHADER_STAGE_MISS_BIT_KHR;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_INTERSECTION) result |= VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+    if (_stages & buma3d::SHADER_STAGE_FLAG_CALLABLE)     result |= VK_SHADER_STAGE_CALLABLE_BIT_KHR;
 
     return result;
 }

@@ -229,11 +229,11 @@ private:
             budget = 0;
             hlp::SafeRelease(descriptor_heap);
         }
-        ID3D12DescriptorHeap*               descriptor_heap;
+        ID3D12DescriptorHeap*               descriptor_heap{};
         util::FwdList<CPU_DESCRIPTOR_RANGE> free_ranges;
-        size_t                              budget;
-        size_t                              usage;
-        uint32_t                            heap_index;
+        size_t                              budget{};
+        size_t                              usage{};
+        uint32_t                            heap_index{};
     };
     util::ComPtr<ID3D12Device> device;
     D3D12_DESCRIPTOR_HEAP_DESC dh_desc;

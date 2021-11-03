@@ -458,7 +458,7 @@ private:
     {
         void Reset()
         {
-            current_primitive_topology  = {};
+            current_primitive_topology = {};
             for (auto& i : current_root_signatures) i = nullptr;
         }
         D3D12_PRIMITIVE_TOPOLOGY    current_primitive_topology;

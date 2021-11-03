@@ -22,7 +22,8 @@ private:
     void     B3D_APIENTRY PopulateRootDescriptorAndTables(DESC_DATA12* _dd12, D3D12_VERSIONED_ROOT_SIGNATURE_DESC* _vdesc12);
     uint32_t B3D_APIENTRY PopulateRootDescriptorAndTablesPerSetLayout(DESC_DATA12* _dd12, const util::DyArray<D3D12_ROOT_PARAMETER1>& _parameters, uint32_t _param_offset, uint32_t _register_space);
     void     B3D_APIENTRY ConvertStaticSamplers(DESC_DATA12* _dd12, D3D12_VERSIONED_ROOT_SIGNATURE_DESC* _vdesc12);
-    BMRESULT B3D_APIENTRY CreateD3D12RootSignature(const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& _vdesc12);
+    void     B3D_APIENTRY AccumulateShaderVisibility(DESC_DATA12* _dd12);
+    BMRESULT B3D_APIENTRY CreateD3D12RootSignature(DESC_DATA12* _dd12, const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& _vdesc12);
     void B3D_APIENTRY Uninit();
 
 public:
@@ -77,6 +78,7 @@ private:
         util::DyArray<D3D12_ROOT_PARAMETER1>                        parameters;
         util::DyArray<ROOT_PARAMETER_DATA12>                        parameters_data;
         util::UniquePtr<util::DyArray<D3D12_STATIC_SAMPLER_DESC>>   static_samplers;
+        SHADER_STAGE_FLAGS                                          accumulated_visibility_flags;   // 各レイアウトバインディング、ルート定数を含むすべてのshader_visibilityのすべてのビットです。
     };
 
 private:

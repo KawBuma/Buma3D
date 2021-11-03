@@ -166,6 +166,7 @@ DECLARE_D3D12_SHARED_PTR(AccelerationStructureD3D12);
 #include "DescriptorPool0D3D12.h"
 #include "DescriptorSet0D3D12.h"
 
+#include "SetDescriptorBatch.h"
 #include "DescriptorHeapD3D12.h"
 #include "DescriptorPoolD3D12.h"
 #include "DescriptorSetUpdateCacheD3D12.h"

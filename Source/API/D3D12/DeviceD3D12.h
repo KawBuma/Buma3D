@@ -320,7 +320,7 @@ public:
         B3D_APIENTRY GetResourceHeapPropertiesForImpl() const;
 
     const util::FormatPropertiesD3D12&
-        B3D_APIENTRY GetVulkanFormatProperties() const;
+        B3D_APIENTRY GetD3D12FormatProperties() const;
 
     const util::FormatCompatibilityChecker&
         B3D_APIENTRY GetFormatCompatibilityChecker() const;
@@ -330,6 +330,9 @@ public:
 
     const INDIRECT_COMMAND_SIGNATURES*
         B3D_APIENTRY GetIndirectCommandSignatures(NodeMask _node_mask);
+
+    const util::FEATURE_DATA&
+        B3D_APIENTRY GetFeatureData() const;
 
 private:
     struct DESC_DATA

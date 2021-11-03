@@ -37,8 +37,8 @@ B3D_APIENTRY DescriptorSetD3D12::DescriptorSetD3D12()
     , pool              {}
     , set_layout        {}
     , allocations       {}
-    , descriptor_batch  {}
     , update_cache      {}
+    , batch_data        {}
 {     
       
 }
@@ -63,7 +63,7 @@ B3D_APIENTRY DescriptorSetD3D12::Init(DescriptorSetLayoutD3D12* _layout, Descrip
     allocation_id = pool->GetCurrentAllocationCount();
     reset_id      = pool->GetResetID();
 
-    CreateSetDescriptorBatch();
+    CreateSetDescriptorBatchData();
 
     // ディスクリプタ書き込みやコピー時に使用するキャッシュオブジェクトを作成。
     update_cache = B3DMakeUniqueArgs(DescriptorSetUpdateCache, _layout, this, allocations);
@@ -88,13 +88,13 @@ B3D_APIENTRY DescriptorSetD3D12::AllocateDescriptors()
 }
 
 void
-B3D_APIENTRY DescriptorSetD3D12::CreateSetDescriptorBatch()
+B3D_APIENTRY DescriptorSetD3D12::CreateSetDescriptorBatchData()
 {
     auto&& info = set_layout->GetRootParameters12Info();
-    auto&& batches = *(descriptor_batch = B3DMakeUnique(DESCRIPTOR_BATCH));
-    batches.descriptor_batch      .reserve(info.root_parameters.size());
-    batches.root_descriptor_batch .reserve(info.num_dynamic_parameters);
-    batches.descriptor_table_batch.reserve((info.descriptor_table ? 1 : 0) + (info.sampler_table ? 1 : 0));
+    batch_data = B3DMakeUnique(DescriptorBatchData);
+    batch_data->batch_data.reserve(info.root_parameters.size());
+    batch_data->descriptor_table_data_offset = info.descriptor_table_index;
+
     auto root_parameters = info.root_parameters.data();
     for (uint32_t i = 0, size = (uint32_t)info.root_parameters.size(); i < size; i++)
     {
@@ -104,18 +104,14 @@ B3D_APIENTRY DescriptorSetD3D12::CreateSetDescriptorBatch()
         case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
         {
             auto heap_type = ToHeapType(rp.DescriptorTable.pDescriptorRanges[0].RangeType);
-            batches.descriptor_batch.emplace_back(
-                batches.descriptor_table_batch.emplace_back(
-                    B3DNewArgs(SetDescriptorTableBatch, i, D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, allocations[heap_type]->allocation.handles.gpu_begin)));
+            batch_data->batch_data.emplace_back(SET_DESCRIPTOR_BATCH_DATA{ allocations[heap_type]->allocation.handles.gpu_begin });
             break;
         }
 
         case D3D12_ROOT_PARAMETER_TYPE_CBV:
         case D3D12_ROOT_PARAMETER_TYPE_SRV:
         case D3D12_ROOT_PARAMETER_TYPE_UAV:
-            batches.descriptor_batch.emplace_back(
-                batches.root_descriptor_batch.emplace_back(
-                    B3DNewArgs(SetRootDescriptorBatch, i, rp.ParameterType)));
+            batch_data->batch_data.emplace_back(SET_DESCRIPTOR_BATCH_DATA{ 0, 0 }); // buffer_location,size_in_bytes はディスクリプタ書き込み/更新時にセットされます
             break;
 
         default:
@@ -127,7 +123,7 @@ B3D_APIENTRY DescriptorSetD3D12::CreateSetDescriptorBatch()
 void
 B3D_APIENTRY DescriptorSetD3D12::Uninit()
 {
-    descriptor_batch.reset();
+    batch_data.reset();
 
     if (IsValid() && (pool->GetDesc().flags & DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SET))
     {
@@ -246,11 +242,12 @@ B3D_APIENTRY DescriptorSetD3D12::CopyDescriptorSet(IDescriptorSet* _src)
     update_cache->CopyDescriptorSet(src);
 
     // 動的ディスクリプタをコピー
-    auto   dst_batch = descriptor_batch->root_descriptor_batch.data();
-    auto&& src_batch = *_src->As<DescriptorSetD3D12>()->descriptor_batch;
+    auto&& info = set_layout->GetRootParameters12Info();
+    auto   dst_batch = batch_data->GetRootDescriptorData();
+    auto   src_batch = _src->As<DescriptorSetD3D12>()->batch_data->GetRootDescriptorData();
     uint32_t cnt = 0;
-    for (auto& i_src : src_batch.root_descriptor_batch)
-        dst_batch[cnt++]->CopyRootDescriptor(i_src);
+    for (uint32_t i = 0; i < info.num_dynamic_parameters; i++)
+        dst_batch[i] = src_batch[i];
 
     return BMRESULT_SUCCEED;
 }
@@ -267,10 +264,22 @@ B3D_APIENTRY DescriptorSetD3D12::GetResetID() const
     return reset_id;
 }
 
-const DescriptorSetD3D12::DESCRIPTOR_BATCH&
+const DESCRIPTOR_BATCH&
 B3D_APIENTRY DescriptorSetD3D12::GetDescriptorBatch() const
 {
-    return *descriptor_batch;
+    return set_layout->GetDescriptorBatch();
+}
+
+const DescriptorBatchData&
+B3D_APIENTRY DescriptorSetD3D12::GetDescriptorBatchData() const
+{
+    return *batch_data;
+}
+
+DescriptorBatchData&
+B3D_APIENTRY DescriptorSetD3D12::GetDescriptorBatchData()
+{
+    return *batch_data;
 }
 
 DescriptorSetUpdateCache&

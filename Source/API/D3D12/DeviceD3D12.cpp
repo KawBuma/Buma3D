@@ -1296,7 +1296,7 @@ B3D_APIENTRY DeviceD3D12::GetResourceHeapPropertiesForImpl() const
 }
 
 const util::FormatPropertiesD3D12&
-B3D_APIENTRY DeviceD3D12::GetVulkanFormatProperties() const
+B3D_APIENTRY DeviceD3D12::GetD3D12FormatProperties() const
 {
     return *format_props;
 }
@@ -1317,6 +1317,12 @@ const DeviceD3D12::INDIRECT_COMMAND_SIGNATURES*
 B3D_APIENTRY DeviceD3D12::GetIndirectCommandSignatures(NodeMask _node_mask)
 {
     return command_signatures[hlp::GetFirstBitIndex(_node_mask)].get();
+}
+
+const util::FEATURE_DATA&
+B3D_APIENTRY DeviceD3D12::GetFeatureData() const
+{
+    return adapter->GetFeatureData();
 }
 
 

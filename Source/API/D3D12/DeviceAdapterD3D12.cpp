@@ -74,7 +74,7 @@ B3D_APIENTRY DeviceAdapterD3D12::GetFeatureData(const util::ComPtr<ID3D12Device>
     feature_data.feature_levels.pFeatureLevelsRequested = &fl;
 
     // 関数を呼び出す前に、HighestShaderModelフィールドをアプリケーションが理解できる最高のシェーダーモデルに初期化します。 https://docs.microsoft.com/ja-jp/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_shader_model
-    feature_data.shader_model.HighestShaderModel = D3D_SHADER_MODEL_6_5;
+    feature_data.shader_model.HighestShaderModel = D3D_SHADER_MODEL_6_7;
 
     _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS                        , &feature_data.d3d12_options                       , sizeof(feature_data.d3d12_options                     ));
     _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS1                       , &feature_data.d3d12_options1                      , sizeof(feature_data.d3d12_options1                    ));
@@ -82,6 +82,12 @@ B3D_APIENTRY DeviceAdapterD3D12::GetFeatureData(const util::ComPtr<ID3D12Device>
     _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS3                       , &feature_data.d3d12_options3                      , sizeof(feature_data.d3d12_options3                    ));
     _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4                       , &feature_data.d3d12_options4                      , sizeof(feature_data.d3d12_options4                    ));
     _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5                       , &feature_data.d3d12_options5                      , sizeof(feature_data.d3d12_options5                    ));
+    _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS6                       , &feature_data.d3d12_options6                      , sizeof(feature_data.d3d12_options6                    ));
+    _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7                       , &feature_data.d3d12_options7                      , sizeof(feature_data.d3d12_options7                    ));
+    _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS8                       , &feature_data.d3d12_options8                      , sizeof(feature_data.d3d12_options8                    ));
+    _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS9                       , &feature_data.d3d12_options9                      , sizeof(feature_data.d3d12_options9                    ));
+    _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS10                      , &feature_data.d3d12_options10                     , sizeof(feature_data.d3d12_options10                   ));
+    _device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS11                      , &feature_data.d3d12_options11                     , sizeof(feature_data.d3d12_options11                   ));
 
     _device->CheckFeatureSupport(D3D12_FEATURE_ARCHITECTURE                         , &feature_data.architecture                        , sizeof(feature_data.architecture                      ));
     _device->CheckFeatureSupport(D3D12_FEATURE_ARCHITECTURE1                        , &feature_data.architecture1                       , sizeof(feature_data.architecture1                     ));

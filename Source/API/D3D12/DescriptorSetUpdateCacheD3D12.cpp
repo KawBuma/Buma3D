@@ -145,7 +145,7 @@ struct DescriptorSetUpdateCache::DATA
         , set                   { _set }
         , is_enabled_copy       { (_set->GetPool()->GetDesc().flags & DESCRIPTOR_POOL_FLAG_COPY_SRC) ? true : false }
         , allocations           { _allocations[0], _allocations[1] }
-        , batch                 { set->GetDescriptorBatch().descriptor_batch.data() }
+        , batch                 { &set->GetDescriptorBatchData() }
         , copy_caches           {}
     {
         auto Create = [&](D3D12_DESCRIPTOR_HEAP_TYPE _type)
@@ -166,7 +166,7 @@ struct DescriptorSetUpdateCache::DATA
     DescriptorSetD3D12*                                             set;
     bool                                                            is_enabled_copy; // setがコピー元として利用可能かどうか。
     DescriptorPoolD3D12::POOL_ALLOCATION*                           allocations[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1];
-    const util::UniquePtr<DescriptorSetD3D12::ISetDescriptorBatch>* batch;
+    DescriptorBatchData*                                            batch;
     util::UniquePtr<COPY_SRC_CACHE>                                 copy_caches[2];
 
 };
@@ -234,9 +234,9 @@ void DescriptorSetUpdateCache::AddCopyDescriptorSets(DescriptorSetUpdater& _upda
         if (data->parameter_bindings[cb.dst_binding_index].parameter->ParameterType != D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
         {
             // 宛先はルート定数です。
-            auto&& dst_batch = SCAST<DescriptorSetD3D12::SetRootDescriptorBatch*>(this    ->data->batch[cb.dst_binding_index].get());
-            auto&& src_batch = SCAST<DescriptorSetD3D12::SetRootDescriptorBatch*>(src_cache.data->batch[cb.src_binding_index].get());
-            dst_batch->CopyRootDescriptor(src_batch);
+            auto dst = this    ->data->parameter_bindings[cb.dst_binding_index].parameter_index;
+            auto src = src_cache.data->parameter_bindings[cb.src_binding_index].parameter_index;
+            this->data->batch->GetBatchData()[dst].root_descriptor = src_cache.data->batch->GetBatchData()[src].root_descriptor;
         }
         else
         {
@@ -284,8 +284,8 @@ void DescriptorSetUpdateCache::PopulateWriteDescriptorBinding(DescriptorSetUpdat
 
 void DescriptorSetUpdateCache::PopulateWriteDynamicDescriptorBinding(DescriptorSetUpdater& _updator, const WRITE_DYNAMIC_DESCRIPTOR_BINDING& _write)
 {
-    auto dst_batch = SCAST<DescriptorSetD3D12::SetRootDescriptorBatch*>(data->batch[_write.dst_binding_index].get());
-    dst_batch->WriteRootDescriptor(SCAST<D3D12_GPU_VIRTUAL_ADDRESS>((_write.src_buffer->GetGPUVirtualAddress()) + _write.src_buffer_offset), _write.size_in_bytes);
+    auto dst = this->data->parameter_bindings[_write.dst_binding_index].parameter_index;
+    data->batch->SetBatchData(dst, SCAST<D3D12_GPU_VIRTUAL_ADDRESS>((_write.src_buffer->GetGPUVirtualAddress()) + _write.src_buffer_offset), _write.size_in_bytes);
 }
 
 void DescriptorSetUpdateCache::PopulateCopyDescriptorBinding(DescriptorSetUpdater& _updator, const COPY_DESCRIPTOR_BINDING& _copy, const DescriptorSetUpdateCache& _src_cache)

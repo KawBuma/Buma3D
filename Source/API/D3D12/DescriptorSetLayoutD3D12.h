@@ -16,6 +16,7 @@ public:
         uint32_t                        range_index;            // parameterがディスクリプタテーブルの場合に使用する、このバインディングがマッピングされているレンジへのオフセットです。
         uint32_t                        descriptor_offset;      // parameterがディスクリプタテーブルの場合に使用する、指定のレンジに割り当てられる、heap_typeディスクリプタハンドルの開始オフセットです(OffsetInDescriptorsFromTableStart)。
         D3D12_DESCRIPTOR_HEAP_TYPE      heap_type;              // parameterがディスクリプタテーブルの場合に使用する、指定のレンジが消費するディスクリプタヒープのタイプです。
+        uint32_t                        parameter_index;        // DESCRIPTOR_SET_LAYOUT_BINDING に対応する D3D12_ROOT_PARAMETER1 のインデックスです。
         const D3D12_ROOT_PARAMETER1*    parameter;              // nullptrの場合、このバインディングは静的サンプラです。
         const STATIC_SAMPLER_BINDING*   static_sampler_binding; // このバインディングが静的サンプラの場合に設定されます。
     };
@@ -36,9 +37,9 @@ public:
         util::UniquePtr<util::DyArray<D3D12_DESCRIPTOR_RANGE1>>         descriptor_ranges;
         util::UniquePtr<util::DyArray<D3D12_DESCRIPTOR_RANGE1>>         sampler_ranges;
         util::DyArray<D3D12_ROOT_PARAMETER1>                            root_parameters;
-        uint32_t                                                        descriptor_table_index;
-        uint32_t                                                        sampler_table_index;
-        const D3D12_ROOT_PARAMETER1*                                    descriptor_table;               // root_parameters配列内のテーブルです。 
+        uint32_t                                                        descriptor_table_index;         // cbv_srv_uav用テーブルが存在しない場合、sampler_table_indexと同一です
+        uint32_t                                                        sampler_table_index;            // sampler用テーブルへのインデックスです
+        const D3D12_ROOT_PARAMETER1*                                    descriptor_table;               // root_parameters配列内のテーブルです。
         const D3D12_ROOT_PARAMETER1*                                    sampler_table;                  // root_parameters配列内のサンプラーテーブルです。 descriptor_tableが存在する場合、 descriptor_table+1 に配置されています。
         //util::DyArray<ROOT_PARAMETER_DETAILS>                           parameter_details;              // root_parameters毎の追加の情報です。
         util::DyArray<PARAMETER_BINDING>                                parameter_bindings;             // bindings毎のルートパラメータまたは静的サンプラの情報です。
@@ -47,9 +48,13 @@ public:
         uint32_t                                                        num_cbv_srv_uav_descrptors;     // 実際に必要なディスクリプタヒープの数です、プール割り当て時に使用します。
         uint32_t                                                        num_sampler_descrptors;         // 実際に必要なサンプラーディスクリプタヒープの数です、プール割り当て時に使用します。
 
+        SHADER_STAGE_FLAGS                                              descriptor_table_visibilities;  // descriptor_tableに追加されたバインディングが持つshader_visibilityのすべてのビットです。
+        SHADER_STAGE_FLAGS                                              sampler_table_visibilities;     // sampler_tableに追加されたバインディングが持つshader_visibilityのすべてのビットです。静的サンプラは含みません。
+        SHADER_STAGE_FLAGS                                              accumulated_visibility_flags;   // テーブル、動的ディスクリプタ、静的サンプラを含むすべてのバインディングが持つshader_visibilityのすべてのビットです。
+
         /*
-            ROOT_PARAMETERS : space X { 
-                // by layout_bindings ordered: 
+            ROOT_PARAMETERS : space X {
+                // by layout_bindings ordered:
                 , ROOT_CBV
                 , ...
                 , ROOT_UAV
@@ -60,12 +65,12 @@ public:
                 , ROOT_SRV
                 , ...
 
-                // by layout_bindings ordered: 
+                // by layout_bindings ordered:
                 , CBV_SRV_UAV_TABLE { layout_bindings[...], ... }
                 , SAMPLER_TABLE     { layout_bindings[...], ... }
             }
 
-            // by layout_bindings ordered: 
+            // by layout_bindings ordered:
             STATIC_SAMPLERS { if(static_sampler) layout_bindings[...].static_sampler , ...  }
         */
     };
@@ -86,6 +91,7 @@ private:
     void B3D_APIENTRY PrepareBindingParameters();
     void B3D_APIENTRY CalcParameterAndRangeCounts(ROOT_PARAMETERS12_INFO& _root_params12_info);
     void B3D_APIENTRY PrepareDescriptorPoolSizes();
+    void B3D_APIENTRY CreateDescriptorBatch();
     void B3D_APIENTRY Uninit();
 
 public:
@@ -116,6 +122,9 @@ public:
     const ROOT_PARAMETERS12_INFO&
         B3D_APIENTRY GetRootParameters12Info() const;
 
+    const DESCRIPTOR_BATCH&
+        B3D_APIENTRY GetDescriptorBatch() const;
+
 private:
     struct DESC_DATA
     {
@@ -129,7 +138,8 @@ private:
     DESCRIPTOR_SET_LAYOUT_DESC                  desc;
     util::UniquePtr<DESC_DATA>                  desc_data;
     ID3D12Device*                               device12;
-    util::UniquePtr<ROOT_PARAMETERS12_INFO>     parameters12_info;    
+    util::UniquePtr<ROOT_PARAMETERS12_INFO>     parameters12_info;
+    util::UniquePtr<DESCRIPTOR_BATCH>           descriptor_batch;
 
 };
 

@@ -96,7 +96,7 @@ B3D_APIENTRY PipelineLayoutVk::PreparePipelineLayoutCI(util::DyArray<VkDescripto
         {
             auto&& pc = desc.push_constants[i];
             auto&& pcvk = push_constants_data[i];
-            pcvk.stageFlags = util::GetNativeShaderVisibility(pc.visibility);
+            pcvk.stageFlags = util::GetNativeShaderStageFlags(pc.visibility);
             pcvk.offset     = total_push_constants_size;
             pcvk.size       = sizeof(uint32_t) * pc.num_32bit_values;
             total_push_constants_size += pcvk.size;

@@ -674,6 +674,79 @@ inline D3D12_SHADER_VISIBILITY GetNativeShaderVisibility(SHADER_VISIBILITY _shad
     }
 }
 
+inline D3D12_SHADER_VISIBILITY GetNativeShaderVisibility(SHADER_STAGE_FLAGS _shader_visibility)
+{
+    if (_shader_visibility == SHADER_STAGE_FLAG_ALL)
+        return D3D12_SHADER_VISIBILITY_ALL;
+
+    switch (_shader_visibility)
+    {
+    case SHADER_STAGE_FLAG_VERTEX       : return D3D12_SHADER_VISIBILITY_VERTEX;
+    case SHADER_STAGE_FLAG_HULL         : return D3D12_SHADER_VISIBILITY_HULL;
+    case SHADER_STAGE_FLAG_DOMAIN       : return D3D12_SHADER_VISIBILITY_DOMAIN;
+    case SHADER_STAGE_FLAG_GEOMETRY     : return D3D12_SHADER_VISIBILITY_GEOMETRY;
+    case SHADER_STAGE_FLAG_PIXEL        : return D3D12_SHADER_VISIBILITY_PIXEL;
+
+    case SHADER_STAGE_FLAG_COMPUTE      : return D3D12_SHADER_VISIBILITY_ALL;
+
+    case SHADER_STAGE_FLAG_TASK         : return D3D12_SHADER_VISIBILITY_AMPLIFICATION;
+    case SHADER_STAGE_FLAG_MESH         : return D3D12_SHADER_VISIBILITY_MESH;
+
+    case SHADER_STAGE_FLAG_RAYGEN       : return D3D12_SHADER_VISIBILITY_ALL;
+    case SHADER_STAGE_FLAG_ANY_HIT      : return D3D12_SHADER_VISIBILITY_ALL;
+    case SHADER_STAGE_FLAG_CLOSEST_HIT  : return D3D12_SHADER_VISIBILITY_ALL;
+    case SHADER_STAGE_FLAG_MISS         : return D3D12_SHADER_VISIBILITY_ALL;
+    case SHADER_STAGE_FLAG_INTERSECTION : return D3D12_SHADER_VISIBILITY_ALL;
+    case SHADER_STAGE_FLAG_CALLABLE     : return D3D12_SHADER_VISIBILITY_ALL;
+
+    default:
+        break;
+    }
+
+    /*
+    NOTE: 複数のシェーダーステージを含む場合、暗黙的にD3D12_SHADER_VISIBILITY_ALLとします。
+          Vulkanベースのレイアウトでは、registerでのt,b,s,uの区別はなく、
+          異なるVISIBILITYを利用しても、同じbase_shader_registerに異なるリソースタイプを指定できないため、このような動作は有効であると考えます:
+          VISIBILITY_VERTEX: register(b0,space0)
+          VISIBILITY_PIXEL : register(t0,space0) // だが、既に0は使用されているため無効
+
+          D3D12_SHADER_VISIBILITY_ALLによってフラグで指定されているステージ以外に対しても可視になりますが、
+          DESCRIPTOR_SET_LAYOUT_DESC::bindingsそれぞれが指定するvisibilityのステージについて、全ての要素で指定されないステージはDENY_*_ROOT_ACCESSによって無効化することが可能です。
+          例えば、bindings[0]がVSとPSステージに対して可視の場合 HS, DS, GS, AS, MS のステージのDENY_*_ROOT_ACCESSフラグを指定可能です。
+          bindings[1]にて DS, GS が可視の場合bindings[0]で可視だったDS, GSはマスクされ、結果として HS, AS, MS のステージのDENY_*_ROOT_ACCESSフラグを指定可能になります。
+
+          パイプラインレイアウトに追加される全てのbindingで上記のDENY_*_ROOT_ACCESSマスクの条件を満たす必要がります。
+          以下の場合、SHADER_STAGE_ALLによってすべてのステージが指定されたため DENY_*_ROOT_ACCESS を設定することは出来ません:
+          レイアウト             : 可能な DENY_*_ROOT_ACCESS フラグ
+          L0 SHADER_STAGE_VERTEX : --, HS, DS, GS, PS, AS, MS
+          L1 SHADER_STAGE_PIXEL  : VS, HS, DS, GS, --, AS, MS
+          L2 SHADER_STAGE_ALL    : --, --, --, --, --, --, --
+    */
+    if (_shader_visibility & ( SHADER_STAGE_FLAG_VERTEX
+                             | SHADER_STAGE_FLAG_HULL
+                             | SHADER_STAGE_FLAG_DOMAIN
+                             | SHADER_STAGE_FLAG_GEOMETRY
+                             | SHADER_STAGE_FLAG_PIXEL
+
+                             | SHADER_STAGE_FLAG_COMPUTE
+
+                             | SHADER_STAGE_FLAG_TASK
+                             | SHADER_STAGE_FLAG_MESH
+
+                             | SHADER_STAGE_FLAG_RAYGEN
+                             | SHADER_STAGE_FLAG_ANY_HIT
+                             | SHADER_STAGE_FLAG_CLOSEST_HIT
+                             | SHADER_STAGE_FLAG_MISS
+                             | SHADER_STAGE_FLAG_INTERSECTION
+                             | SHADER_STAGE_FLAG_CALLABLE
+                              ))
+    {
+        return D3D12_SHADER_VISIBILITY_ALL;
+    }
+
+    return D3D12_SHADER_VISIBILITY(-1);
+}
+
 // TODO: GetNativeDescriptorFlags: Vulkanとの互換を確認。
 inline D3D12_ROOT_DESCRIPTOR_FLAGS GetNativeDescriptorFlags(ROOT_PARAMETER_TYPE _type, DESCRIPTOR_FLAGS _flags)
 {
@@ -714,7 +787,12 @@ inline D3D12_ROOT_DESCRIPTOR_FLAGS GetNativeDescriptorFlags(ROOT_PARAMETER_TYPE 
 inline D3D12_ROOT_DESCRIPTOR_FLAGS GetNativeDescriptorFlags(DESCRIPTOR_TYPE _type, DESCRIPTOR_FLAGS _flags)
 {
     D3D12_ROOT_DESCRIPTOR_FLAGS result = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
-    B3D_UNREFERENCED(_type, _flags);
+    B3D_UNREFERENCED(_type);
+
+    if (_flags & DESCRIPTOR_FLAG_DATA_VOLATILE)                           result |= D3D12_ROOT_DESCRIPTOR_FLAG_DATA_VOLATILE;
+    if (_flags & DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE)        result |= D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+    if (_flags & DESCRIPTOR_FLAG_DATA_STATIC)                             result |= D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
+
     return result;
 }
 
@@ -723,14 +801,14 @@ inline D3D12_DESCRIPTOR_RANGE_FLAGS GetNativeDescriptorRangeFlags(DESCRIPTOR_TYP
 {
     D3D12_DESCRIPTOR_RANGE_FLAGS result = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
 
-    if (_flags & DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND)
+    if (_flags == buma3d::DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND)
     {
         result |= D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
 
         // D3D12_DESCRIPTOR_RANGE_FLAG_NONEのデフォルト値を再現します。
-        if (_type == DESCRIPTOR_TYPE_UAV_TEXTURE ||
-            _type == DESCRIPTOR_TYPE_UAV_BUFFER ||
-            _type == DESCRIPTOR_TYPE_UAV_TYPED_BUFFER)
+        if (_type == buma3d::DESCRIPTOR_TYPE_UAV_TEXTURE ||
+            _type == buma3d::DESCRIPTOR_TYPE_UAV_BUFFER ||
+            _type == buma3d::DESCRIPTOR_TYPE_UAV_TYPED_BUFFER)
         {
             result |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
         }
@@ -738,6 +816,14 @@ inline D3D12_DESCRIPTOR_RANGE_FLAGS GetNativeDescriptorRangeFlags(DESCRIPTOR_TYP
         {
             result |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
         }
+    }
+    else
+    {
+        if (_flags & buma3d::DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND)           result |= D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+        if (_flags & buma3d::DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING) result |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+        if (_flags & buma3d::DESCRIPTOR_FLAG_DATA_VOLATILE)                           result |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+        if (_flags & buma3d::DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE)        result |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+        if (_flags & buma3d::DESCRIPTOR_FLAG_DATA_STATIC)                             result |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
     }
 
     return result;
@@ -761,6 +847,50 @@ inline D3D12_DESCRIPTOR_RANGE_TYPE GetNativeDescriptorRangeType(DESCRIPTOR_TYPE 
     default:
         return D3D12_DESCRIPTOR_RANGE_TYPE(-1);
     }
+}
+
+inline D3D12_ROOT_SIGNATURE_FLAGS CalcDenyRootAccessPossibility(SHADER_STAGE_FLAGS _accumulated_visibility_flags)
+{
+    if (_accumulated_visibility_flags == SHADER_STAGE_FLAG_ALL)
+        return D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+    static constexpr D3D12_ROOT_SIGNATURE_FLAGS DENY_ALL_GRAPHICS =
+          D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS
+        | D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS;
+
+    auto&& f = _accumulated_visibility_flags;
+
+    // レイアウト全体を通して、computeまたはレイトレーシングパイプラインに対してのみ可視である場合、グラフィックスパイプラインステージを除外します。
+    if ((f & SHADER_STAGE_FLAG_ALL_GRAPGICS) == SHADER_STAGE_FLAG_NONE &&
+        (f & (  SHADER_STAGE_FLAG_COMPUTE
+              | SHADER_STAGE_FLAG_RAYGEN
+              | SHADER_STAGE_FLAG_ANY_HIT
+              | SHADER_STAGE_FLAG_CLOSEST_HIT
+              | SHADER_STAGE_FLAG_MISS
+              | SHADER_STAGE_FLAG_INTERSECTION
+              | SHADER_STAGE_FLAG_CALLABLE
+              ))
+        )
+    {
+        return DENY_ALL_GRAPHICS;
+    }
+
+    // それ以外の場合、除外可能なステージを1対1で見つけます。
+    D3D12_ROOT_SIGNATURE_FLAGS result = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+    if (!(f & buma3d::SHADER_STAGE_FLAG_VERTEX)   ) result |= D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS;
+    if (!(f & buma3d::SHADER_STAGE_FLAG_HULL)     ) result |= D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
+    if (!(f & buma3d::SHADER_STAGE_FLAG_DOMAIN)   ) result |= D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+    if (!(f & buma3d::SHADER_STAGE_FLAG_GEOMETRY) ) result |= D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
+    if (!(f & buma3d::SHADER_STAGE_FLAG_PIXEL)    ) result |= D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+    if (!(f & buma3d::SHADER_STAGE_FLAG_TASK)     ) result |= D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS;
+    if (!(f & buma3d::SHADER_STAGE_FLAG_MESH)     ) result |= D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS;
+
+    return result;
 }
 
 inline D3D12_ROOT_SIGNATURE_FLAGS GetNativeRootSignatureFlags(ROOT_SIGNATURE_FLAGS _flags)
@@ -789,24 +919,10 @@ inline D3D12_ROOT_SIGNATURE_FLAGS GetNativeRootSignatureFlags(ROOT_SIGNATURE_FLA
 
 inline D3D12_ROOT_SIGNATURE_FLAGS GetNativePipelineLayoutFlags(PIPELINE_LAYOUT_FLAGS _flags)
 {
-    D3D12_ROOT_SIGNATURE_FLAGS result =
-          D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
-        | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS
-        | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
-        | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
-        | D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS
-        | D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS;
+    D3D12_ROOT_SIGNATURE_FLAGS result = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_DENY_INPUT_ASSEMBLER_INPUT_LAYOUT) result &= ~D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS   ) result |=  D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS;
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_HULL_SHADER_ROOT_ACCESS    ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_DOMAIN_SHADER_ROOT_ACCESS  ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_GEOMETRY_SHADER_ROOT_ACCESS) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS    ) result |=  D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_STREAM_OUTPUT              ) result |=  D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT;
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_MESH_SHADER_ROOT_ACCESS    ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS;
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_ALLOW_TASK_SHADER_ROOT_ACCESS    ) result &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS;
-    if (_flags & buma3d::PIPELINE_LAYOUT_FLAG_RAY_TRACING_SHADER_VISIBILITY    ) result |=  D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+    if (_flags & PIPELINE_LAYOUT_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT)   result |=  D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+    if (_flags & PIPELINE_LAYOUT_FLAG_ALLOW_STREAM_OUTPUT)                  result |=  D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT;
 
     return result;
 }
@@ -1044,11 +1160,19 @@ struct FEATURE_DATA
     D3D12_FEATURE_DATA_D3D12_OPTIONS3                       d3d12_options3;
     D3D12_FEATURE_DATA_D3D12_OPTIONS4                       d3d12_options4;
     D3D12_FEATURE_DATA_D3D12_OPTIONS5                       d3d12_options5;
+    D3D12_FEATURE_DATA_D3D12_OPTIONS6                       d3d12_options6;
+    D3D12_FEATURE_DATA_D3D12_OPTIONS7                       d3d12_options7;
+    D3D12_FEATURE_DATA_D3D12_OPTIONS8                       d3d12_options8;
+    D3D12_FEATURE_DATA_D3D12_OPTIONS9                       d3d12_options9;
+    D3D12_FEATURE_DATA_D3D12_OPTIONS10                      d3d12_options10;
+    D3D12_FEATURE_DATA_D3D12_OPTIONS11                      d3d12_options11;
 
     D3D12_FEATURE_DATA_ARCHITECTURE                         architecture;
     D3D12_FEATURE_DATA_ARCHITECTURE1                        architecture1;
-    D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_SUPPORT   protected_resource_session_support;
     D3D12_FEATURE_DATA_SERIALIZATION                        serialization;
+    D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_SUPPORT   protected_resource_session_support;
+    //D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPE_COUNT  protected_resource_session_type_count;
+    //D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPES       protected_resource_session_types;
 
     D3D12_FEATURE_DATA_FEATURE_LEVELS                       feature_levels;
     D3D12_FEATURE_DATA_GPU_VIRTUAL_ADDRESS_SUPPORT          gpu_virtual_address_support;

@@ -34,7 +34,7 @@ B3D_APIENTRY PipelineLayoutD3D12::Init(DeviceD3D12* _device, const PIPELINE_LAYO
     D3D12_VERSIONED_ROOT_SIGNATURE_DESC vdesc12{ D3D_ROOT_SIGNATURE_VERSION_1_1 };
     DESC_DATA12                         dd12{};
     B3D_RET_IF_FAILED(PrepareD3D12RootSignatureDesc(&dd12, &vdesc12));
-    B3D_RET_IF_FAILED(CreateD3D12RootSignature(vdesc12));
+    B3D_RET_IF_FAILED(CreateD3D12RootSignature(&dd12, vdesc12));
 
     return BMRESULT_SUCCEED;
 }
@@ -232,18 +232,36 @@ B3D_APIENTRY PipelineLayoutD3D12::ConvertStaticSamplers(DESC_DATA12* _dd12, D3D1
     _vdesc12->Desc_1_1.pStaticSamplers   = _dd12->static_samplers->data();
 }
 
-BMRESULT
-B3D_APIENTRY PipelineLayoutD3D12::CreateD3D12RootSignature(const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& _vdesc12)
+void
+B3D_APIENTRY PipelineLayoutD3D12::AccumulateShaderVisibility(DESC_DATA12* _dd12)
 {
+    for (auto& i : desc_data->set_layouts)
+    {
+        auto&& info = i->As<DescriptorSetLayoutD3D12>()->GetRootParameters12Info();
+        _dd12->accumulated_visibility_flags |= info.accumulated_visibility_flags;
+    }
+    for (auto& i : desc_data->push_constants)
+    {
+        _dd12->accumulated_visibility_flags |= i.visibility;
+    }
+}
+
+BMRESULT
+B3D_APIENTRY PipelineLayoutD3D12::CreateD3D12RootSignature(DESC_DATA12* _dd12, const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& _vdesc12)
+{
+    AccumulateShaderVisibility(_dd12);
+
     util::ComPtr<ID3DBlob> blob;
     {
         util::ComPtr<ID3DBlob> error;
         auto vdesc12 = _vdesc12;
 
         vdesc12.Desc_1_1.Flags = util::GetNativePipelineLayoutFlags(desc.flags);
+        vdesc12.Desc_1_1.Flags |= util::CalcDenyRootAccessPossibility(_dd12->accumulated_visibility_flags);
 
         // FIXME: バージョンが古いd3d12だと以下のフラグをサポートしておらず、無効なパラメーターとみなされてしまう。
-        vdesc12.Desc_1_1.Flags &= ~(D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS);
+        if (device->GetFeatureData().d3d12_options7.MeshShaderTier == D3D12_MESH_SHADER_TIER_NOT_SUPPORTED)
+            vdesc12.Desc_1_1.Flags &= ~(D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS);
 
         auto hr = D3D12SerializeVersionedRootSignature(&vdesc12, &blob, &error);
         auto bmr = HR_TRACE_IF_FAILED(hr);

@@ -52,6 +52,7 @@ set(D3D12_HEADERS
     ${D3D12_SRC_DIR}/ResourceHeapD3D12.h
     ${D3D12_SRC_DIR}/RootSignatureD3D12.h
     ${D3D12_SRC_DIR}/SamplerViewD3D12.h
+    ${D3D12_SRC_DIR}/SetDescriptorBatch.h
     ${D3D12_SRC_DIR}/ShaderModuleD3D12.h
     ${D3D12_SRC_DIR}/ShaderResourceViewD3D12.h
     ${D3D12_SRC_DIR}/StreamOutputBufferViewD3D12.h
@@ -104,6 +105,7 @@ set(D3D12_SOURCES
     ${D3D12_SRC_DIR}/ResourceHeapD3D12.cpp
     ${D3D12_SRC_DIR}/RootSignatureD3D12.cpp
     ${D3D12_SRC_DIR}/SamplerViewD3D12.cpp
+    ${D3D12_SRC_DIR}/SetDescriptorBatch.cpp
     ${D3D12_SRC_DIR}/ShaderModuleD3D12.cpp
     ${D3D12_SRC_DIR}/ShaderResourceViewD3D12.cpp
     ${D3D12_SRC_DIR}/StreamOutputBufferViewD3D12.cpp

@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 14, 0);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 0);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -976,14 +976,14 @@ struct DEVICE_ADAPTER_LIMITS
 
 enum SHADER_STAGE_FLAG : EnumT
 {
-      SHADER_STAGE_FLAG_UNKNOWN      = 0x0
+      SHADER_STAGE_FLAG_NONE         = 0x0
     , SHADER_STAGE_FLAG_VERTEX       = 0x1
     , SHADER_STAGE_FLAG_HULL         = 0x2
     , SHADER_STAGE_FLAG_DOMAIN       = 0x4
     , SHADER_STAGE_FLAG_GEOMETRY     = 0x8
     , SHADER_STAGE_FLAG_PIXEL        = 0x10
     , SHADER_STAGE_FLAG_COMPUTE      = 0x20
-    , SHADER_STAGE_FLAG_TASK         = 0x40// AMPLIFICATION
+    , SHADER_STAGE_FLAG_TASK         = 0x40 // AMPLIFICATION
     , SHADER_STAGE_FLAG_MESH         = 0x80
     , SHADER_STAGE_FLAG_RAYGEN       = 0x100
     , SHADER_STAGE_FLAG_ANY_HIT      = 0x200
@@ -991,6 +991,16 @@ enum SHADER_STAGE_FLAG : EnumT
     , SHADER_STAGE_FLAG_MISS         = 0x800
     , SHADER_STAGE_FLAG_INTERSECTION = 0x1000
     , SHADER_STAGE_FLAG_CALLABLE     = 0x2000
+
+    , SHADER_STAGE_FLAG_ALL_GRAPGICS = SHADER_STAGE_FLAG_VERTEX
+                                     | SHADER_STAGE_FLAG_HULL
+                                     | SHADER_STAGE_FLAG_DOMAIN
+                                     | SHADER_STAGE_FLAG_GEOMETRY
+                                     | SHADER_STAGE_FLAG_PIXEL
+                                     | SHADER_STAGE_FLAG_TASK
+                                     | SHADER_STAGE_FLAG_MESH
+
+    , SHADER_STAGE_FLAG_ALL          = 0xffffffff
 };
 using SHADER_STAGE_FLAGS = EnumFlagsT;
 
@@ -2762,15 +2772,57 @@ struct DESCRIPTOR_SET_ALLOCATE_DESC
 
 enum DESCRIPTOR_FLAG : EnumT
 {
-      DESCRIPTOR_FLAG_NONE                                              = 0x0   // コマンドリストにセットされた後、ディスクリプタ自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。 これは、コマンドリストにセットされた後、ディスクリプタが指すリソースの参照を、CopyDescriptors等によって変更できない事を示します。
-    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND                     = 0x1   // コマンドリストにセットされた後、ディスクリプタ自体が揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CopyDescriptors等によって変更することが出来ます。 DESCRIPTORS_VOLATILE
-    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING           = 0x2   // コマンドリストにセットされていないディスクリプタを更新出来ることを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
-    , DESCRIPTOR_FLAG_PARTIALLY_BOUND                                   = 0x4   // リソースがシェーダー側で参照されない場合、ディスクリプタへリソースを設定する必要が無いことを指定します。 このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
-    , DESCRIPTOR_FLAG_VARIABLE_DESCRIPTOR_COUNT                         = 0x8   // このフラグが指定されるDESCRIPTOR_SET_LAYOUT_BINDING::base_shader_register番号がDESCRIPTOR_SET_LAYOUT_DESC::bindingsの各要素において最も大きい場合、シェーダー側で可変長のリソース配列が使用可能であることを示します。 
+    /**
+     * @brief コマンドリストにセットされた後、ディスクリプタ自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。 
+     *        これは、コマンドリストにセットされた後、ディスクリプタが指すリソースの参照を、UpdateDescriptorSet等によって変更できない事を示します。
+    */
+    DESCRIPTOR_FLAG_NONE                                                = 0x0
 
-//  , DESCRIPTOR_FLAG_DATA_VOLATILE                                     = 0x10  // コマンドリストにセットされた後、ディスクリプタが指すリソースが揮発性である事を指定します。 コマンドリストを送信し、実行が完了するまでの間を除き、CPUによってリソースのデータを操作可能です。
-//  , DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE                  = 0x20  // コマンドリストにセットされた後、ディスクリプタが指すリソースを参照するドローコールが実行されている間、そのデータが静的である事を指定します。(もう一度セットし直すことでリソースが変更された事をドライバに通知することが出来ます。)
-//  , DESCRIPTOR_FLAG_DATA_STATIC                                       = 0x40  // コマンドリストにセットされた後、ディスクリプタが指すリソースは静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。
+    /**
+     * @brief コマンドリストにセットされた後、ディスクリプタ自体が揮発性である事を指定します。 
+     *        コマンドリストを送信し、実行が完了するまでの間を除き、UpdateDescriptorSet等によって変更することが出来ます。 (DESCRIPTORS_VOLATILE)
+    */
+    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND                     = 0x1
+
+    /**
+     * @brief コマンドリストにセットされていないディスクリプタを更新出来ることを指定します。 
+     *        コマンドリストに参照される範囲のディスクリプタの更新は引き続き無効です。
+    */
+    , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING           = 0x2
+
+    /**
+     * @brief リソースがシェーダー側で参照されない場合、ディスクリプタへリソースを設定する必要が無いことを指定します。 
+    */
+    , DESCRIPTOR_FLAG_PARTIALLY_BOUND                                   = 0x4
+
+    /**
+     * @brief このフラグが指定されるDESCRIPTOR_SET_LAYOUT_BINDING::base_shader_register番号がDESCRIPTOR_SET_LAYOUT_DESC::bindingsの各要素において最も大きい場合、
+     *        シェーダー側で可変長のリソース配列が使用可能であることを示します。 
+    */
+    , DESCRIPTOR_FLAG_VARIABLE_DESCRIPTOR_COUNT                         = 0x8
+
+
+    /**
+     * @brief コマンドリストにセットされた後、ディスクリプタが指すリソースが揮発性である事を指定します。 
+     *        コマンドリストを送信し、実行が完了するまでの間を除き、CPUによってリソースのデータを操作可能です。
+     *        UAV等の値ランダムアクセスを必要とするリソースに対して効果的です。
+    */
+    , DESCRIPTOR_FLAG_DATA_VOLATILE                                     = 0x10
+
+    /**
+     * @brief コマンドリストにセットされた後、ディスクリプタが指すリソースを参照するドローコールが実行されている間、その内容自体が静的である事を指定します。 
+     *        もう一度セットし直すことでリソースが変更された事をドライバに通知することが出来ます。
+     *        このフラグが指定されている場合、バインド時にディスクリプタにリソースが書き込まれている必要があります。
+     *        render-to-textureなどの読み取りと書き込みのタイミングを制御するリソースに効果的です。
+    */
+    , DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE                  = 0x20
+
+    /**
+     * @brief コマンドリストにセットされた後、ディスクリプタが指すリソースの内容自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。
+     *        このフラグは変更予定の無いリソース(マテリアルのテクスチャなど)と、そのリソースが書き込まれた変更予定の無いディスクリプタに効果的です。
+     *        DESCRIPTORS_UPDATE_AFTER_BIND , DATA_STATIC_WHILE_SET_AT_EXECUTE , DATA_VOLATILE との互換性はありません。
+    */
+    , DESCRIPTOR_FLAG_DATA_STATIC                                       = 0x40
 
 //  , DESCRIPTOR_FLAG_DESCRIPTORS_STATIC_KEEPING_BUFFER_BOUNDS_CHECKS   = 0x10000
 };
@@ -2918,9 +2970,9 @@ enum SHADER_VISIBILITY : EnumT
     , SHADER_VISIBILITY_DOMAIN
     , SHADER_VISIBILITY_GEOMETRY
     , SHADER_VISIBILITY_PIXEL
+    , SHADER_VISIBILITY_TASK                 // AMPLIFICATION
     , SHADER_VISIBILITY_MESH
-    , SHADER_VISIBILITY_TASK                     // AMPLIFICATION
-    , SHADER_VISIBILITY_ALL_GRAPHICS_COMPUTE     // 計算シェーダーを含む、すべてのグラフィックスパイプラインのシェーダーに対して可視であることを示します。レイトレーシングパイプラインの場合、この値である必要があります。
+    , SHADER_VISIBILITY_ALL_GRAPHICS_COMPUTE // 計算シェーダーを含む、すべてのグラフィックスパイプラインのシェーダーに対して可視であることを示します。
 };
 
 enum RAY_TRACING_SHADER_VISIBILITY_FLAG : EnumT
@@ -2974,7 +3026,7 @@ enum ROOT_PARAMETER_TYPE : EnumT
 
 struct ROOT_PARAMETER
 {
-    SHADER_VISIBILITY shader_visibility;
+    SHADER_VISIBILITY   shader_visibility;
     ROOT_PARAMETER_TYPE type;
     union
     {
@@ -2992,10 +3044,10 @@ struct ROOT_PARAMETER
 
 struct STATIC_SAMPLER
 {
-    uint32_t             shader_register;
-    uint32_t             register_space;
-    SHADER_VISIBILITY    shader_visibility;
-    ISamplerView*        sampler;
+    uint32_t            shader_register;
+    uint32_t            register_space;
+    SHADER_VISIBILITY   shader_visibility;
+    ISamplerView*       sampler;
 };
 
 /**
@@ -3096,12 +3148,40 @@ struct ROOT_SIGNATURE_DESC
 
 struct DESCRIPTOR_SET_LAYOUT_BINDING
 {
-    DESCRIPTOR_TYPE     descriptor_type;
-    uint32_t            base_shader_register;
-    uint32_t            num_descriptors;
-    SHADER_VISIBILITY   shader_visibility;
-    DESCRIPTOR_FLAGS    flags;
-    ISamplerView*       static_sampler;
+    /**
+     * @brief このバインディングのディスクリプタに関連づけるリソースのタイプを指定します。
+    */
+    DESCRIPTOR_TYPE         descriptor_type;
+    
+    /**
+     * @brief hlslでの "register(*n)" のnの値です。 
+     *        t,b,u,sで一意に使用されます;例えば、t0とb0は同時に定義できません。
+    */
+    uint32_t                base_shader_register;
+
+    /**
+     * @brief ディスクリプタの要素数です。
+     *        この値は暗黙的に [base_shader_register,base_shader_register+num_descriptors) の範囲のレジスタを占有します。
+     *        base_shader_registerが0でnum_descriptorsが3の場合、次に利用可能な一番小さなbase_shader_registerの値は4になります。
+    */
+    uint32_t                num_descriptors;
+
+    /**
+     * @brief このバインディングのリソースにアクセスできるパイプラインシェーダーステージを指定します。 
+     *        SHADER_STAGE_FLAG_ALLは、定義されたすべてのシェーダーステージがリソースにアクセスできることを指定します。
+    */
+    SHADER_STAGE_FLAGS      shader_visibility;
+
+    /**
+     * @brief このディスクリプタの追加情報を指定します。
+    */
+    DESCRIPTOR_FLAGS        flags;
+
+    /**
+     * @brief 静的サンプラーとして使用するISamplerViewオブジェクトへのポインタです。
+     *        static_samplerがnullptrでない場合、descriptor_typeは DESCRIPTOR_TYPE_SAMPLER である必要があります。
+    */
+    ISamplerView*           static_sampler;
 };
 
 enum DESCRIPTOR_SET_LAYOUT_FLAG : EnumT
@@ -3116,12 +3196,12 @@ struct DESCRIPTOR_SET_LAYOUT_DESC
 {
     DESCRIPTOR_SET_LAYOUT_FLAGS             flags;
     uint32_t                                num_bindings;
-    const DESCRIPTOR_SET_LAYOUT_BINDING*    bindings;
+    const DESCRIPTOR_SET_LAYOUT_BINDING*    bindings; // bindings配列の要素のDESCRIPTOR_SET_LAYOUT_BINDING::base_shader_registerメンバーは、それぞれ異なる値を持っている必要があります。
 };
 
 struct PUSH_CONSTANT_PARAMETER
 {
-    SHADER_VISIBILITY   visibility;
+    SHADER_STAGE_FLAGS  visibility;
     uint32_t            shader_register;
     uint32_t            register_space;
     uint32_t            num_32bit_values;
@@ -3130,17 +3210,8 @@ struct PUSH_CONSTANT_PARAMETER
 enum PIPELINE_LAYOUT_FLAG : EnumT
 {
       PIPELINE_LAYOUT_FLAG_NONE                                 = 0x0
-    , PIPELINE_LAYOUT_FLAG_DENY_INPUT_ASSEMBLER_INPUT_LAYOUT    = 0x1
-    , PIPELINE_LAYOUT_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS       = 0x2
-    , PIPELINE_LAYOUT_FLAG_ALLOW_HULL_SHADER_ROOT_ACCESS        = 0x4
-    , PIPELINE_LAYOUT_FLAG_ALLOW_DOMAIN_SHADER_ROOT_ACCESS      = 0x8
-    , PIPELINE_LAYOUT_FLAG_ALLOW_GEOMETRY_SHADER_ROOT_ACCESS    = 0x10
-    , PIPELINE_LAYOUT_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS        = 0x20
-    , PIPELINE_LAYOUT_FLAG_ALLOW_STREAM_OUTPUT                  = 0x40
-    , PIPELINE_LAYOUT_FLAG_ALLOW_MESH_SHADER_ROOT_ACCESS        = 0x80
-    , PIPELINE_LAYOUT_FLAG_ALLOW_TASK_SHADER_ROOT_ACCESS        = 0x100
-
-    , PIPELINE_LAYOUT_FLAG_RAY_TRACING_SHADER_VISIBILITY        = 0x200
+    , PIPELINE_LAYOUT_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT   = 0x1
+    , PIPELINE_LAYOUT_FLAG_ALLOW_STREAM_OUTPUT                  = 0x2
 };
 using PIPELINE_LAYOUT_FLAGS = EnumFlagsT;
 
@@ -3150,7 +3221,7 @@ struct PIPELINE_LAYOUT_DESC
     uint32_t                        num_set_layouts;
     IDescriptorSetLayout*const *    set_layouts;
     uint32_t                        num_push_constants;
-    const PUSH_CONSTANT_PARAMETER*  push_constants;
+    const PUSH_CONSTANT_PARAMETER*  push_constants;     // 32ビット定数のセットを指定するPUSH_CONSTANT_PARAMETERの配列です。 同じvisibilityビットは複数の要素間で含まれてはなりません。
 };
 
 #pragma endregion pipeline layout

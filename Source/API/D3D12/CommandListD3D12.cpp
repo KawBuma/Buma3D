@@ -635,16 +635,24 @@ B3D_APIENTRY CommandListD3D12::BindDescriptorSets(PIPELINE_BIND_POINT _bind_poin
     auto root_parameter_offsets = cmd_states->pipeline.current_pipeline_layouts[_bind_point]->GetRootParameterOffsets();
     for (uint32_t i = 0; i < _args.num_descriptor_sets; i++)
     {
-        auto&& batch = _args.descriptor_sets[i]->As<DescriptorSetD3D12>()->GetDescriptorBatch();
+        auto&& batch_data = _args.descriptor_sets[i]->As<DescriptorSetD3D12>()->GetDescriptorBatchData();
+        auto&& batch      = _args.descriptor_sets[i]->As<DescriptorSetD3D12>()->GetDescriptorBatch();
         auto&& root_parameter_offset = root_parameter_offsets[_args.first_set + i];
 
+        uint32_t cnt = 0;
         // ディスクリプタテーブル
+        auto dt = batch_data.GetDescriptorTableData();
         for (auto& i_batch : batch.descriptor_table_batch)
-            i_batch->Set(root_parameter_offset, _bind_point, cmd.l);
+            i_batch->Set(root_parameter_offset, _bind_point, cmd.l, dt[cnt++]);
 
+        cnt = 0;
         // 動的ディスクリプタ
+        auto rd = batch_data.GetRootDescriptorData();
         for (auto& i_batch : batch.root_descriptor_batch)
-            i_batch->Set(root_parameter_offset, _bind_point, cmd.l, &(_args.dynamic_descriptor_offsets[ddc++]));
+        {
+            auto&& offset = _args.dynamic_descriptor_offsets[ddc++];
+            i_batch->Set(root_parameter_offset, _bind_point, cmd.l, SET_DESCRIPTOR_BATCH_DATA{ rd[cnt++].root_descriptor, offset });
+        }
     }
 }
 

@@ -285,7 +285,7 @@ B3D_APIENTRY DescriptorSetLayoutVk::PrepareBindingsInfo(util::DyArray<VkDescript
         _bvk.binding             = _b.base_shader_register;
         _bvk.descriptorType      = util::GetNativeDescriptorType(_b.descriptor_type);
         _bvk.descriptorCount     = _b.num_descriptors;
-        _bvk.stageFlags          = util::GetNativeShaderVisibility(_b.shader_visibility);
+        _bvk.stageFlags          = util::GetNativeShaderStageFlags(_b.shader_visibility);
         _bvk.pImmutableSamplers  = _immutable_sampler;
     };
     auto AddSamplerBinding = [&](VkDescriptorSetLayoutBinding& _bvk, const DESCRIPTOR_SET_LAYOUT_BINDING& _b, BINDING_INFO* _binding_info)
