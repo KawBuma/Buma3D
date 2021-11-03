@@ -12,7 +12,7 @@ namespace /*anonymous*/
 VkPipelineShaderStageCreateFlags GetNativePipelineShaderStageFlags(PIPELINE_SHADER_STAGE_FLAGS _flags)
 {
     VkPipelineShaderStageCreateFlags result = 0;
-    B3D_UNREFERENCED(_flags); 
+    B3D_UNREFERENCED(_flags);
     return result;
 }
 
@@ -88,6 +88,7 @@ B3D_APIENTRY ComputePipelineStateVk::CreateComputeVkPipeline()
 
     ci.basePipelineHandle   = VK_NULL_HANDLE;
     ci.basePipelineIndex    = 0;
+    ci.stage.sType    = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     ci.stage.flags    = util::GetNativePipelineShaderStageFlags(desc.shader_stage.flags);
     ci.stage.stage    = util::GetNativeShaderStageFlagBit(desc.shader_stage.stage);
     ci.stage.module   = desc_data->module->GetVkShaderModule();
@@ -178,7 +179,7 @@ B3D_APIENTRY ComputePipelineStateVk::AddRef()
 }
 
 uint32_t
-B3D_APIENTRY ComputePipelineStateVk::Release() 
+B3D_APIENTRY ComputePipelineStateVk::Release()
 {
     B3D_REFCOUNT_DEBUG(ref_count - 1);
     auto count = --ref_count;
@@ -189,19 +190,19 @@ B3D_APIENTRY ComputePipelineStateVk::Release()
 }
 
 uint32_t
-B3D_APIENTRY ComputePipelineStateVk::GetRefCount() const 
+B3D_APIENTRY ComputePipelineStateVk::GetRefCount() const
 {
     return ref_count;
 }
 
 const char*
-B3D_APIENTRY ComputePipelineStateVk::GetName() const 
+B3D_APIENTRY ComputePipelineStateVk::GetName() const
 {
     return name ? name->c_str() : nullptr;
 }
 
 BMRESULT
-B3D_APIENTRY ComputePipelineStateVk::SetName(const char* _name) 
+B3D_APIENTRY ComputePipelineStateVk::SetName(const char* _name)
 {
     if (!util::IsEnabledDebug(this))
         return BMRESULT_FAILED;
@@ -218,7 +219,7 @@ B3D_APIENTRY ComputePipelineStateVk::SetName(const char* _name)
 }
 
 IDevice*
-B3D_APIENTRY ComputePipelineStateVk::GetDevice() const 
+B3D_APIENTRY ComputePipelineStateVk::GetDevice() const
 {
     return device;
 }
