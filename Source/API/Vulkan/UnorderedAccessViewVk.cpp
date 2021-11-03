@@ -138,7 +138,7 @@ public:
         info.imageView = view;
         return vkr;
     }
-    
+
     VkImageLayout GetVkImageLayout() const override
     {
         // UnorderedAccessViewの場合、画像レイアウトはVK_IMAGE_LAYOUT_GENERALと常に同一です。
@@ -173,11 +173,15 @@ B3D_APIENTRY UnorderedAccessViewVk::UnorderedAccessViewVk()
     : ref_count     { 1 }
     , name          {}
     , device        {}
+    , desc          {}
+    , resource      {}
+    , counter_buffer{}
+    , vkdevice      {}
     , inspfn        {}
     , devpfn        {}
-    , desc          {}
     , buffer_view   {}
     , texture_view  {}
+    , impl          {}
 {
 
 }
@@ -337,7 +341,7 @@ B3D_APIENTRY UnorderedAccessViewVk::InitAsBufferView()
     return result;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY UnorderedAccessViewVk::ValidateTextureUAV()
 {
     if (resource->GetDesc().dimension == RESOURCE_DIMENSION_BUFFER)
@@ -384,7 +388,7 @@ B3D_APIENTRY UnorderedAccessViewVk::ValidateTextureUAV()
                           , "UAVでは、mip_levelsは1である必要があります。");
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
-    if (range.offset.mip_slice   + range.mip_levels > t.mip_levels || 
+    if (range.offset.mip_slice   + range.mip_levels > t.mip_levels ||
         range.offset.array_slice + range.array_size > t.array_size)
     {
         B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
@@ -478,7 +482,7 @@ B3D_APIENTRY UnorderedAccessViewVk::InitAsImageView()
 
     BMRESULT result = BMRESULT_SUCCEED;
 
-    // TODO: UnorderedAccessViewVk: VkImageViewASTCDecodeModeEXT, VkSamplerYcbcrConversionInfo 
+    // TODO: UnorderedAccessViewVk: VkImageViewASTCDecodeModeEXT, VkSamplerYcbcrConversionInfo
     B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_OTHER, DEBUG_MESSAGE_CATEGORY_FLAG_B3D_DETAILS, "TODO: UnorderedAccessViewVk: VkImageViewASTCDecodeModeEXT, VkSamplerYcbcrConversionInfo");
     VkImageViewASTCDecodeModeEXT atsc_ci{ VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT };
     VkSamplerYcbcrConversionInfo ycbcr_ci{ VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO };
@@ -665,7 +669,7 @@ B3D_APIENTRY UnorderedAccessViewVk::GetDesc() const
     return desc;
 }
 
-IBuffer* 
+IBuffer*
 B3D_APIENTRY UnorderedAccessViewVk::GetCounterBuffer() const
 {
     return counter_buffer;
