@@ -80,7 +80,7 @@ inline VkQueueFlags GetNativeCommandType(COMMAND_TYPE _type, bool _is_enable_spa
     // case COMMAND_TYPE_VIDEO_DECODE  : break; TODO: ビデオキュー
     // case COMMAND_TYPE_VIDEO_PROCESS : break;
     // case COMMAND_TYPE_VIDEO_ENCODE  : break;
-    default: 
+    default:
         break;
     }
 
@@ -95,7 +95,7 @@ inline VkQueueFlags GetNativeCommandType(COMMAND_TYPE _type, bool _is_enable_spa
 inline COMMAND_TYPE GetB3DCommandType(VkQueueFlags _flags, bool* _is_enable_sparse_bind = nullptr, bool* _is_enable_protected = nullptr)
 {
     COMMAND_TYPE result = (COMMAND_TYPE)-1;
-    
+
     if (_is_enable_sparse_bind)
         *_is_enable_sparse_bind = _flags & VK_QUEUE_SPARSE_BINDING_BIT;
     if (_is_enable_protected)
@@ -126,7 +126,7 @@ inline COMMAND_TYPE GetB3DCommandType(VkQueueFlags _flags, bool* _is_enable_spar
         else if (_flags == VK_QUEUE_COMPUTE_BIT)
             result = COMMAND_TYPE_COMPUTE_ONLY;
     }
-    
+
     return result;
 }
 
@@ -191,11 +191,11 @@ inline VkBufferUsageFlags GetNativeBufferUsageFlags(BUFFER_USAGE_FLAGS _usage_fl
     if (_usage_flags & BUFFER_USAGE_FLAG_CONSTANT_BUFFER)// uniform
         result |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
-    if (_usage_flags & (BUFFER_USAGE_FLAG_UNORDERED_ACCESS_BUFFER | 
+    if (_usage_flags & (BUFFER_USAGE_FLAG_UNORDERED_ACCESS_BUFFER |
                         BUFFER_USAGE_FLAG_STRUCTURED_BYTEADDRESS_TBUFFER))
         result |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
-    if (_usage_flags & (BUFFER_USAGE_FLAG_SHADER_RESOURCE_BUFFER | 
+    if (_usage_flags & (BUFFER_USAGE_FLAG_SHADER_RESOURCE_BUFFER |
                         BUFFER_USAGE_FLAG_TYPED_SHADER_RESOURCE_BUFFER))
         result |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
 
@@ -477,7 +477,7 @@ inline uint32_t GetPlaneSliceFromAspectFlags(TEXTURE_ASPECT_FLAGS _flags)
 
     // if (_flags & buma3d::TEXTURE_ASPECT_FLAG_METADATA)
     // if (_flags & buma3d::TEXTURE_ASPECT_FLAG_PLANE_3)
-    
+
     return (uint32_t)-1;
 }
 
@@ -516,7 +516,7 @@ inline VkSparseImageFormatFlags GetNativeTiledResourceFormatFlags(TILED_RESOURCE
 
     if (_flags & buma3d::TILED_RESOURCE_FORMAT_FLAG_SINGLE_MIPTAIL)
         result |= VK_SPARSE_IMAGE_FORMAT_SINGLE_MIPTAIL_BIT;
-    
+
     if (_flags & buma3d::TILED_RESOURCE_FORMAT_FLAG_ALIGNED_MIP_SIZE)
         result |= VK_SPARSE_IMAGE_FORMAT_ALIGNED_MIP_SIZE_BIT;
 
@@ -636,7 +636,7 @@ inline VkFilter GetNativeTextureSampleMode(const TEXTURE_SAMPLE_MODE _sample_mod
     {
     case buma3d::TEXTURE_SAMPLE_MODE_POINT     : return VK_FILTER_NEAREST;
     case buma3d::TEXTURE_SAMPLE_MODE_LINEAR    : return VK_FILTER_LINEAR;
-    case buma3d::TEXTURE_SAMPLE_MODE_CUBIC_IMG : return VK_FILTER_CUBIC_IMG; 
+    case buma3d::TEXTURE_SAMPLE_MODE_CUBIC_IMG : return VK_FILTER_CUBIC_IMG;
     default:
         return VkFilter(-1);
     }
@@ -824,7 +824,7 @@ inline VkImageLayout GetNativeResourceStateForLayout(RESOURCE_STATE _state, TEXT
     case buma3d::RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_READ       :
     case buma3d::RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_WRITE      :
     case buma3d::RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_READ_WRITE :
-    case buma3d::RESOURCE_STATE_RESOLVE_DEPTH_STENCIL_ATTACHMENT_WRITE: 
+    case buma3d::RESOURCE_STATE_RESOLVE_DEPTH_STENCIL_ATTACHMENT_WRITE:
         return ConvertResourceStateForDepthStencil(_aspect, _state);
 
     case buma3d::RESOURCE_STATE_COPY_SRC_READ                       : return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -986,7 +986,7 @@ inline VkShaderStageFlagBits GetNativeShaderStageFlagBit(SHADER_STAGE_FLAG _a_st
 inline VkShaderStageFlags GetNativeShaderStageFlags(SHADER_STAGE_FLAGS _stages)
 {
     if (_stages == buma3d::SHADER_STAGE_FLAG_ALL)          return VK_SHADER_STAGE_ALL;
-    if (_stages == buma3d::SHADER_STAGE_FLAG_ALL_GRAPGICS) return VK_SHADER_STAGE_ALL_GRAPHICS;
+    if (_stages == buma3d::SHADER_STAGE_FLAG_ALL_GRAPHICS) return VK_SHADER_STAGE_ALL_GRAPHICS;
 
     VkShaderStageFlags result = 0;
     if (_stages & buma3d::SHADER_STAGE_FLAG_VERTEX)       result |= VK_SHADER_STAGE_VERTEX_BIT;
@@ -1025,7 +1025,7 @@ inline VkDescriptorType GetNativeDescriptorType(DESCRIPTOR_TYPE _type)
     case buma3d::DESCRIPTOR_TYPE_SRV_BUFFER_DYNAMIC         : return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
     case buma3d::DESCRIPTOR_TYPE_UAV_BUFFER_DYNAMIC         : return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
 
-    // VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER  
+    // VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     // VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT
     default:
         return VkDescriptorType(-1);
@@ -1284,7 +1284,7 @@ inline VkBaseOutStructure* ConnectPNextChains2(VkBaseOutStructure* _next, Head& 
     return ConnectPNextChains2((VkBaseOutStructure*)&_head, _chains...);
 }
 // pNextチェインを接続します。
-// 親の構造_headが既にpNextを接続している場合、その接続されている構造は_chainsの最後の引数のpNextに再接続されます。 
+// 親の構造_headが既にpNextを接続している場合、その接続されている構造は_chainsの最後の引数のpNextに再接続されます。
 template<typename Head, typename ...Types>
 inline void ConnectPNextChains2(Head& _head, Types& ..._chains)
 {

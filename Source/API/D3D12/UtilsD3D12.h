@@ -866,7 +866,7 @@ inline D3D12_ROOT_SIGNATURE_FLAGS CalcDenyRootAccessPossibility(SHADER_STAGE_FLA
     auto&& f = _accumulated_visibility_flags;
 
     // レイアウト全体を通して、computeまたはレイトレーシングパイプラインに対してのみ可視である場合、グラフィックスパイプラインステージを除外します。
-    if ((f & SHADER_STAGE_FLAG_ALL_GRAPGICS) == SHADER_STAGE_FLAG_NONE &&
+    if ((f & SHADER_STAGE_FLAG_ALL_GRAPHICS) == SHADER_STAGE_FLAG_NONE &&
         (f & (  SHADER_STAGE_FLAG_COMPUTE
               | SHADER_STAGE_FLAG_RAYGEN
               | SHADER_STAGE_FLAG_ANY_HIT

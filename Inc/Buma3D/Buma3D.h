@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 0);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 1);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -992,7 +992,7 @@ enum SHADER_STAGE_FLAG : EnumT
     , SHADER_STAGE_FLAG_INTERSECTION = 0x1000
     , SHADER_STAGE_FLAG_CALLABLE     = 0x2000
 
-    , SHADER_STAGE_FLAG_ALL_GRAPGICS = SHADER_STAGE_FLAG_VERTEX
+    , SHADER_STAGE_FLAG_ALL_GRAPHICS = SHADER_STAGE_FLAG_VERTEX
                                      | SHADER_STAGE_FLAG_HULL
                                      | SHADER_STAGE_FLAG_DOMAIN
                                      | SHADER_STAGE_FLAG_GEOMETRY
