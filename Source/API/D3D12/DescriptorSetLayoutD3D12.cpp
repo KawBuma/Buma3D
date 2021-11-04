@@ -66,6 +66,8 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::Init(DeviceD3D12* _device, const DESCRIPT
 
     PrepareDescriptorPoolSizes();
 
+    CreateDescriptorBatch();
+
     return BMRESULT_SUCCEED;
 }
 
