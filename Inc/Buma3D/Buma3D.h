@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 1);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 2);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -201,6 +201,85 @@ using Enum64T               = uint64_t;
 using EnumFlags64T          = Enum64T;
 using Enum8T                = uint8_t;
 using EnumFlags8T           = Enum8T;
+
+template<typename TEnum>
+struct enum_flags_type
+{
+    using type =
+        std::conditional_t<std::is_same_v<std::underlying_type_t<TEnum>, EnumT>  , EnumFlagsT  ,
+        std::conditional_t<std::is_same_v<std::underlying_type_t<TEnum>, Enum8T> , EnumFlags8T ,
+        std::conditional_t<std::is_same_v<std::underlying_type_t<TEnum>, Enum64T>, EnumFlags64T, void>>>;
+};
+template<typename TEnum>
+using enum_flags_type_t = typename enum_flags_type<TEnum>::type;
+
+template<typename TEnum, std::enable_if_t<!std::is_same_v<enum_flags_type_t<TEnum>, void>, int> = 0>
+struct TEnumFlagsWrapper
+{
+    using EnumType  = TEnum;
+    using FlagsType = enum_flags_type_t<TEnum>;
+
+    FlagsType flags;
+
+    constexpr TEnumFlagsWrapper() = default;
+    constexpr TEnumFlagsWrapper(FlagsType b) : flags{ b }          {}
+    constexpr TEnumFlagsWrapper(EnumType b)  : flags{ convert(b) } {}
+
+    constexpr explicit operator EnumType()  const { return convert(); }
+    constexpr          operator FlagsType() const { return flags; }
+
+    constexpr        EnumType   convert() const      { return static_cast<EnumType>(flags); }
+    static constexpr EnumType   convert(FlagsType b) { return static_cast<EnumType>(b); }
+    static constexpr FlagsType  convert(EnumType b)  { return static_cast<FlagsType>(b); }
+
+    constexpr TEnumFlagsWrapper& operator = (EnumType b) { flags = convert(b); return *this; }
+
+    constexpr TEnumFlagsWrapper& operator |= (EnumType b)                 { flags |=  convert(b); return *this; }
+    constexpr TEnumFlagsWrapper& operator &= (EnumType b)                 { flags &=  convert(b); return *this; }
+    constexpr TEnumFlagsWrapper& operator ^= (EnumType b)                 { flags ^=  convert(b); return *this; }
+    constexpr TEnumFlagsWrapper& operator |= (const TEnumFlagsWrapper& b) { flags |=  b.flags; return *this; }
+    constexpr TEnumFlagsWrapper& operator &= (const TEnumFlagsWrapper& b) { flags &=  b.flags; return *this; }
+    constexpr TEnumFlagsWrapper& operator ^= (const TEnumFlagsWrapper& b) { flags ^=  b.flags; return *this; }
+
+    constexpr TEnumFlagsWrapper  operator ~()                            const { return ~flags; }
+
+    constexpr TEnumFlagsWrapper  operator | (EnumType b)                 const { return flags | convert(b); }
+    constexpr TEnumFlagsWrapper  operator & (EnumType b)                 const { return flags & convert(b); }
+    constexpr TEnumFlagsWrapper  operator ^ (EnumType b)                 const { return flags ^ convert(b); }
+    constexpr bool               operator ==(EnumType b)                 const { return flags == convert(b); }
+    constexpr bool               operator !=(EnumType b)                 const { return flags != convert(b); }
+
+    constexpr TEnumFlagsWrapper  operator | (const TEnumFlagsWrapper& b) const { return flags | b.flags; }
+    constexpr TEnumFlagsWrapper  operator & (const TEnumFlagsWrapper& b) const { return flags & b.flags; }
+    constexpr TEnumFlagsWrapper  operator ^ (const TEnumFlagsWrapper& b) const { return flags ^ b.flags; }
+    constexpr bool               operator ==(const TEnumFlagsWrapper& b) const { return flags == b.flags; }
+    constexpr bool               operator !=(const TEnumFlagsWrapper& b) const { return flags != b.flags; }
+
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr TEnumFlagsWrapper operator | (T b) const { return flags | b; }
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr TEnumFlagsWrapper operator & (T b) const { return flags & b; }
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr TEnumFlagsWrapper operator ^ (T b) const { return flags ^ b; }
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr bool              operator ==(T b) const { return flags == b; }
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr bool              operator !=(T b) const { return flags != b; }
+};
+
+#define B3D_DEFINE_ENUM_FLAGS(TName, TEnum)                                                                                                                                                  \
+    using TName = buma3d::TEnumFlagsWrapper<TEnum>;                                                                                                                                          \
+    inline constexpr TName operator ~ (TEnum a)                 { return ~(TName::convert(a)); }                                                                                             \
+    inline constexpr TName operator | (TEnum a, TEnum        b) { return TName::convert(a) |  TName::convert(b); }                                                                           \
+    inline constexpr TName operator & (TEnum a, TEnum        b) { return TName::convert(a) &  TName::convert(b); }                                                                           \
+    inline constexpr TName operator ^ (TEnum a, TEnum        b) { return TName::convert(a) ^  TName::convert(b); }                                                                           \
+    inline constexpr TName operator | (TEnum a, const TName& b) { return TName::convert(a) |  b.flags; }                                                                                     \
+    inline constexpr TName operator & (TEnum a, const TName& b) { return TName::convert(a) &  b.flags; }                                                                                     \
+    inline constexpr TName operator ^ (TEnum a, const TName& b) { return TName::convert(a) ^  b.flags; }                                                                                     \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator | (TEnum a, T            b) { return TName::convert(a) |  b; }                  \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator & (TEnum a, T            b) { return TName::convert(a) &  b; }                  \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator ^ (TEnum a, T            b) { return TName::convert(a) ^  b; }                  \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator | (T     a, const TName& b) { return a                 |  b.flags; }            \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator & (T     a, const TName& b) { return a                 &  b.flags; }            \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator ^ (T     a, const TName& b) { return a                 ^  b.flags; }            \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr bool  operator ==(T     a, const TName& b) { return a                 == b.flags; }            \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr bool  operator !=(T     a, const TName& b) { return a                 != b.flags; }            \
+
 
 using GpuVirtualAddress     = uint64_t;
 using NodeMask              = uint32_t;
@@ -706,7 +785,7 @@ enum DEBUG_MESSAGE_CATEGORY_FLAG : EnumT
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_B3D_DETAILS
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_PERFORMANCE
 };
-using DEBUG_MESSAGE_CATEGORY_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(DEBUG_MESSAGE_CATEGORY_FLAGS, DEBUG_MESSAGE_CATEGORY_FLAG);
 
 enum DEBUG_MESSAGE_SEVERITY : EnumT
 {
@@ -746,7 +825,7 @@ enum GPU_BASED_VALIDATION_FLAG : EnumT
 {
     GPU_BASED_VALIDATION_FLAG_NONE = 0x0
 };
-using GPU_BASED_VALIDATION_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(GPU_BASED_VALIDATION_FLAGS, GPU_BASED_VALIDATION_FLAG);
 
 struct GPU_BASED_VALIDATION_DESC
 {
@@ -767,7 +846,7 @@ enum DEVICE_FACTORY_FLAG : EnumT
 {
     DEVICE_FACTORY_FLAG_NONE = 0x0
 };
-using DEVICE_FACTORY_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(DEVICE_FACTORY_FLAGS, DEVICE_FACTORY_FLAG);
 
 struct DEVICE_FACTORY_DESC
 {
@@ -811,7 +890,7 @@ enum SAMPLE_COUNT_FLAG : EnumT
     , SAMPLE_COUNT_FLAG_32            = 0x20
     , SAMPLE_COUNT_FLAG_64            = 0x40
 };
-using SAMPLE_COUNT_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(SAMPLE_COUNT_FLAGS, SAMPLE_COUNT_FLAG);
 
 #pragma endregion factory
 
@@ -1002,7 +1081,7 @@ enum SHADER_STAGE_FLAG : EnumT
 
     , SHADER_STAGE_FLAG_ALL          = 0xffffffff
 };
-using SHADER_STAGE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(SHADER_STAGE_FLAGS, SHADER_STAGE_FLAG);
 
 // TODO: DEVICE_FEATURE
 
@@ -1019,13 +1098,13 @@ enum SUBGROUP_FEATURE_FLAG : EnumT
     , WAVE_INTRINSICS_FEATURE_FLAG_QUAD                = 0x80
     , WAVE_INTRINSICS_FEATURE_FLAG_PARTITIONED         = 0x100
 };
-using WAVE_INTRINSICS_FEATURE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(SUBGROUP_FEATURE_FLAGS, SUBGROUP_FEATURE_FLAG);
 
 struct DEVICE_FEATURE_WAVE_INTRINSICS_PROPERTIES
 {
     uint32_t                        wave_lane_count;
     SHADER_STAGE_FLAGS              supported_stages;
-    WAVE_INTRINSICS_FEATURE_FLAGS   supported_operations;
+    SUBGROUP_FEATURE_FLAGS          supported_operations;
     bool                            is_enabled_quad_operations_in_all_stages;
 };
 
@@ -1130,7 +1209,7 @@ enum SWAP_CHAIN_BUFFER_FLAG : EnumT
     , SWAP_CHAIN_BUFFER_FLAG_INPUT_ATTACHMENT             = 0x20
     , SWAP_CHAIN_BUFFER_FLAG_ALLOW_SIMULTANEOUS_ACCESS    = 0x40
 };
-using SWAP_CHAIN_BUFFER_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(SWAP_CHAIN_BUFFER_FLAGS, SWAP_CHAIN_BUFFER_FLAG);
 
 struct SWAP_CHAIN_BUFFER_DESC
 {
@@ -1149,7 +1228,7 @@ enum SWAP_CHAIN_FLAG : EnumT
     , SWAP_CHAIN_FLAG_PROTECT_CONTENTS                 = 0x4 // TODO: SWAP_CHAIN_FLAG_PROTECT_CONTENTS
     , SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE             = 0x8 // 排他フルスクリーンを有効にします。
 };
-using SWAP_CHAIN_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(SWAP_CHAIN_FLAGS, SWAP_CHAIN_FLAG);
 
 enum SWAP_CHAIN_ALPHA_MODE : EnumT
 {
@@ -1242,7 +1321,7 @@ enum COMMAND_QUEUE_FLAG : EnumT
       COMMAND_QUEUE_FLAG_NONE                        = 0x0
     , COMMAND_QUEUE_FLAG_PRIORITY_GLOBAL_REALTIME    = 0x1
 };
-using COMMAND_QUEUE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(COMMAND_QUEUE_FLAGS, COMMAND_QUEUE_FLAG);
 
 enum COMMAND_QUEUE_PRIORITY : EnumT
 {
@@ -1270,7 +1349,7 @@ enum DEVICE_FLAG : EnumT
 {
     DEVICE_FLAG_NONE = 0x0
 };
-using DEVICE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(DEVICE_FLAGS, DEVICE_FLAG);
 
 struct DEVICE_DESC
 {
@@ -1300,7 +1379,7 @@ enum RESOURCE_HEAP_PROPERTY_FLAG : EnumT
     , RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_GENERIC_MEMORY_READ_FIXED = 0x400    // TODO: RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_GENERIC_MEMORY_READ_FIXED このヒープから割り当てられたメモリへのアクセスマスクは変更出来ません。
     , RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_COPY_DST_FIXED            = 0x800    // TODO: RESOURCE_HEAP_PROPERTY_FLAG_ACCESS_COPY_DST_FIXED            このヒープから割り当てられたメモリへのアクセスマスクは変更出来ません。
 };
-using RESOURCE_HEAP_PROPERTY_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(RESOURCE_HEAP_PROPERTY_FLAGS, RESOURCE_HEAP_PROPERTY_FLAG);
 
 enum RESOURCE_HEAP_FLAG : EnumT
 {
@@ -1310,7 +1389,7 @@ enum RESOURCE_HEAP_FLAG : EnumT
     , RESOURCE_HEAP_FLAG_SHARED_CROSS_ADAPTER       = 0x4
     , RESOURCE_HEAP_FLAG_PROTECTED                  = 0x10
 };
-using RESOURCE_HEAP_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(RESOURCE_HEAP_FLAGS, RESOURCE_HEAP_FLAG);
 
 struct RESOURCE_HEAP_PROPERTIES
 {
@@ -1427,7 +1506,7 @@ enum RESOURCE_ACCESS_FLAG : EnumT
     //, RESOURCE_ACCESS_FLAG_COMMAND_PREPROCESS_READ              = 0x00020000                                                  COMMAND_PREPROCESS_READ_BIT_NV 
     //, RESOURCE_ACCESS_FLAG_COMMAND_PREPROCESS_WRITE             = 0x00040000                                                  COMMAND_PREPROCESS_WRITE_BIT_NV 
 };
-using RESOURCE_ACCESS_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(RESOURCE_ACCESS_FLAGS, RESOURCE_ACCESS_FLAG);
 
 enum RESOURCE_STATE : EnumT
 {
@@ -1609,7 +1688,7 @@ enum PIPELINE_STAGE_FLAG : EnumT
     //, PIPELINE_STAGE_FLAG_FRAGMENT_DENSITY_PROCESS          = 0x1000000
     //, PIPELINE_STAGE_FLAG_COMMAND_PROCESS                   = 0x80000
 };
-using PIPELINE_STAGE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(PIPELINE_STAGE_FLAGS, PIPELINE_STAGE_FLAG);
 
 enum TEXTURE_LAYOUT : EnumT
 {
@@ -1621,7 +1700,7 @@ enum BUFFER_CREATE_FLAG : EnumT
 {
     BUFFER_CREATE_FLAG_NONE = 0x0
 };
-using BUFFER_CREATE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(BUFFER_CREATE_FLAGS, BUFFER_CREATE_FLAG);
 
 enum TEXTURE_CREATE_FLAG : EnumT
 {
@@ -1634,7 +1713,7 @@ enum TEXTURE_CREATE_FLAG : EnumT
     , TEXTURE_CREATE_FLAG_SUBSAMPLED                        = 0x20
     //, TEXTURE_CREATE_FLAG_SPLIT_INSTANCE_BIND_REGIONS     = 0x40
 };
-using TEXTURE_CREATE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(TEXTURE_CREATE_FLAGS, TEXTURE_CREATE_FLAG);
 
 enum BUFFER_USAGE_FLAG : EnumT
 {
@@ -1655,7 +1734,7 @@ enum BUFFER_USAGE_FLAG : EnumT
     , BUFFER_USAGE_FLAG_CONDITIONAL_RENDERING           = 0x2000    // このフラグは内部APIによる制約が無く、アプリケーションに影響する動作の変化が無い場合暗黙的に有効になります。
     , BUFFER_USAGE_FLAG_RAY_TRACING                     = 0x4000    // このリソースのアクセスマスクはRESOURCE_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ/WRITEのみ設定可能であることを指定します。
 };
-using BUFFER_USAGE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(BUFFER_USAGE_FLAGS, BUFFER_USAGE_FLAG);
 
 enum TEXTURE_USAGE_FLAG : EnumT
 {
@@ -1670,7 +1749,7 @@ enum TEXTURE_USAGE_FLAG : EnumT
     , TEXTURE_USAGE_FLAG_INPUT_ATTACHMENT         = 0x80
     , TEXTURE_USAGE_FLAG_SHADING_RATE_ATTACHMENT  = 0x100
 };
-using TEXTURE_USAGE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(TEXTURE_USAGE_FLAGS, TEXTURE_USAGE_FLAG);
 
 enum RESOURCE_FLAG : EnumT
 {
@@ -1681,7 +1760,7 @@ enum RESOURCE_FLAG : EnumT
     , RESOURCE_FLAG_ACCESS_GENERIC_MEMORY_READ_FIXED = 0x8  // このリソースのアクセスマスクが不変であることを指定します。
     , RESOURCE_FLAG_ACCESS_COPY_DST_FIXED            = 0x10 // このリソースのアクセスマスクが不変であることを指定します。
 };
-using RESOURCE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(RESOURCE_FLAGS, RESOURCE_FLAG);
 
 struct CLEAR_DEPTH_STENCIL_VALUE
 {
@@ -1770,7 +1849,7 @@ enum TEXTURE_ASPECT_FLAG : EnumT
     , TEXTURE_ASPECT_FLAG_PLANE_2   = 0x40
     , TEXTURE_ASPECT_FLAG_PLANE_3   = 0x80
 };
-using TEXTURE_ASPECT_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(TEXTURE_ASPECT_FLAGS, TEXTURE_ASPECT_FLAG);
 
 struct SUBRESOURCE_OFFSET
 {
@@ -1797,7 +1876,7 @@ enum TILED_RESOURCE_FORMAT_FLAG : EnumT
     , TILED_RESOURCE_FORMAT_FLAG_ALIGNED_MIP_SIZE      = 0x2 // 
 //  , TILED_RESOURCE_FORMAT_FLAG_NONSTANDARD_TILE_SIZE = 0x4 // 
 };
-using TILED_RESOURCE_FORMAT_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(TILED_RESOURCE_FORMAT_FLAGS, TILED_RESOURCE_FORMAT_FLAG);
 
 /**
  * @brief 指定のリソースを割り当てる際に要求されるタイルの形状が指定されます。
@@ -1874,7 +1953,7 @@ enum TILED_RESOURCE_BIND_REGION_FLAG : EnumT
     , TILED_RESOURCE_BIND_REGION_FLAG_MIPTAIL         = 0x2 // バインドする領域がミップテイルであることを指定します。
     , TILED_RESOURCE_BIND_REGION_FLAG_METADATA        = 0x4 // バインドする領域がメタデータであることを指定します。
 };
-using TILED_RESOURCE_BIND_REGION_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(TILED_RESOURCE_BIND_REGION_FLAGS, TILED_RESOURCE_BIND_REGION_FLAG);
 
 struct TILED_RESOURCE_BIND_REGION
 {
@@ -1978,19 +2057,19 @@ enum SHADER_RESOURCE_VIEW_FLAG : EnumT
       SHADER_RESOURCE_VIEW_FLAG_NONE                        = 0x0
     , SHADER_RESOURCE_VIEW_FLAG_DENY_INPUT_ATTACHMENT       = 0x1
 };
-using SHADER_RESOURCE_VIEW_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(SHADER_RESOURCE_VIEW_FLAGS, SHADER_RESOURCE_VIEW_FLAG);
 
 enum UNORDERED_ACCESS_VIEW_FLAG : EnumT
 {
     UNORDERED_ACCESS_VIEW_FLAG_NONE = 0x0
 };
-using UNORDERED_ACCESS_VIEW_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(UNORDERED_ACCESS_VIEW_FLAGS, UNORDERED_ACCESS_VIEW_FLAG);
 
 enum RENDER_TARGET_VIEW_FLAG : EnumT
 {
     RENDER_TARGET_VIEW_FLAG_NONE = 0x0
 };
-using RENDER_TARGET_VIEW_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(RENDER_TARGET_VIEW_FLAGS, RENDER_TARGET_VIEW_FLAG);
 
 enum DEPTH_STENCIL_VIEW_FLAG : EnumT
 {
@@ -1998,7 +2077,7 @@ enum DEPTH_STENCIL_VIEW_FLAG : EnumT
     , DEPTH_STENCIL_VIEW_FLAG_READ_ONLY_DEPTH      = 0x1
     , DEPTH_STENCIL_VIEW_FLAG_READ_ONLY_STENCIL    = 0x2
 };
-using DEPTH_STENCIL_VIEW_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(DEPTH_STENCIL_VIEW_FLAGS, DEPTH_STENCIL_VIEW_FLAG);
 
 struct BUFFER_VIEW
 {
@@ -2243,7 +2322,7 @@ enum FENCE_FLAG : EnumT
     , FENCE_FLAG_SHARED               = 0x1 // 別プロセスの同じアダプタで動作するデバイスへのフェンスの共有を許可します。
     , FENCE_FLAG_SHARED_CROSS_ADAPTER = 0x2 // 異なるアダプタで動作するデバイスへのフェンスの共有を許可します。
 };
-using FENCE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(FENCE_FLAGS, FENCE_FLAG);
 
 struct FENCE_DESC
 {
@@ -2313,7 +2392,7 @@ enum COMMAND_ALLOCATOR_FLAG : EnumT
     */
     , COMMAND_ALLOCATOR_FLAG_ALLOW_RESET_COMMAND_LIST = 0x2
 };
-using COMMAND_ALLOCATOR_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(COMMAND_ALLOCATOR_FLAGS, COMMAND_ALLOCATOR_FLAG);
 
 struct COMMAND_ALLOCATOR_DESC
 {
@@ -2327,13 +2406,13 @@ enum COMMAND_ALLOCATOR_RESET_FLAG : EnumT
       COMMAND_ALLOCATOR_RESET_FLAG_NONE              = 0x0
     , COMMAND_ALLOCATOR_RESET_FLAG_RELEASE_RESOURCES = 0x1 // 記録されたコマンドのリセットに加えて、そのメモリも解放することを指定します。 このフラグが指定されていない場合、記録された全てのコマンドはリセットされますが、メモリは再利用のために保持されます。
 };
-using COMMAND_ALLOCATOR_RESET_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(COMMAND_ALLOCATOR_RESET_FLAGS, COMMAND_ALLOCATOR_RESET_FLAG);
 
-enum COMMAND_LIST_RESET_FLAG
+enum COMMAND_LIST_RESET_FLAG : EnumT
 {
     COMMAND_LIST_RESET_FLAG_NONE   = 0x0
 };
-using COMMAND_LIST_RESET_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(COMMAND_LIST_RESET_FLAGS, COMMAND_LIST_RESET_FLAG);
 
 // NOTE: プライマリとセカンダリのディスクリプタは一致している必要がある。
 struct COMMAND_LIST_DESC
@@ -2363,7 +2442,7 @@ enum QUERY_FLAG : EnumT
       QUERY_FLAG_NONE               = 0x0
     , QUERY_FLAG_PRECISE_OCCLUSION  = 0x1 // オクルージョンクエリのサンプル数の結果に精度が必要であることを指定します。 このフラグが指定されていない場合、オクルージョンクエリの結果は0または0以外となり、精度が不要な場合に効果的です。 QUERY_HEAP_TYPE_OCCLUSION以外で使用することは出来ません。 
 };
-using QUERY_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(QUERY_FLAGS, QUERY_FLAG);
 
 struct COMMAND_LIST_INHERITANCE_DESC
 {
@@ -2380,7 +2459,7 @@ enum COMMAND_LIST_BEGIN_FLAG : EnumT
     , COMMAND_LIST_BEGIN_FLAG_RENDER_PASS_CONTINUE      = 0x2 // 記録されるコマンドのスコープがレンダーパスインスタンス内であることを指定します。
     , COMMAND_LIST_BEGIN_FLAG_ALLOW_SIMULTANEOUS_USE    = 0x4 // バンドルを複数のコマンドリストに同時に記録して使用する事を指定します。 バンドルタイプ以外で使用出来ません。
 };
-using COMMAND_LIST_BEGIN_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(COMMAND_LIST_BEGIN_FLAGS, COMMAND_LIST_BEGIN_FLAG);
 
 struct COMMAND_LIST_BEGIN_DESC
 {
@@ -2400,7 +2479,7 @@ enum CLEAR_FLAG : EnumT
       CLEAR_FLAG_DEPTH   = 0x1
     , CLEAR_FLAG_STENCIL = 0x2
 };
-using CLEAR_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(CLEAR_FLAGS, CLEAR_FLAG);
 
 enum QUERY_HEAP_TYPE : EnumT
 {
@@ -2723,7 +2802,7 @@ enum DESCRIPTOR_POOL_FLAG : EnumT
     */
     DESCRIPTOR_POOL_FLAG_COPY_SRC               = 0x4
 };
-using DESCRIPTOR_POOL_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(DESCRIPTOR_POOL_FLAGS, DESCRIPTOR_POOL_FLAG);
 
 struct DESCRIPTOR_POOL_DESC0
 {
@@ -2745,7 +2824,7 @@ enum DESCRIPTOR_HEAP_FLAG : EnumT
 {
     DESCRIPTOR_HEAP_FLAG_NONE = 0x0
 };
-using DESCRIPTOR_HEAP_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(DESCRIPTOR_HEAP_FLAGS, DESCRIPTOR_HEAP_FLAG);
 
 struct DESCRIPTOR_HEAP_DESC
 {
@@ -2826,7 +2905,7 @@ enum DESCRIPTOR_FLAG : EnumT
 
 //  , DESCRIPTOR_FLAG_DESCRIPTORS_STATIC_KEEPING_BUFFER_BOUNDS_CHECKS   = 0x10000
 };
-using DESCRIPTOR_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(DESCRIPTOR_FLAGS, DESCRIPTOR_FLAG);
 
 #pragma endregion descriptor
 
@@ -2985,7 +3064,7 @@ enum RAY_TRACING_SHADER_VISIBILITY_FLAG : EnumT
     , RAY_TRACING_SHADER_VISIBILITY_FLAG_INTERSECTION = 0x10
     , RAY_TRACING_SHADER_VISIBILITY_FLAG_CALLABLE     = 0x20
 };
-using RAY_TRACING_SHADER_VISIBILITY_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(RAY_TRACING_SHADER_VISIBILITY_FLAGS, RAY_TRACING_SHADER_VISIBILITY_FLAG);
 
 struct DESCRIPTOR_RANGE
 {
@@ -3105,7 +3184,7 @@ enum ROOT_SIGNATURE_FLAG : EnumT
     */
     , ROOT_SIGNATURE_FLAG_RAY_TRACING_SHADER_VISIBILITY = 0x200 
 };
-using ROOT_SIGNATURE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(ROOT_SIGNATURE_FLAGS, ROOT_SIGNATURE_FLAG);
 
 enum SHADER_REGISTER_TYPE : EnumT
 {
@@ -3190,7 +3269,7 @@ enum DESCRIPTOR_SET_LAYOUT_FLAG : EnumT
     , DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL = 0x1 // このフラグが指定されたレイアウトを使用するディスクリプタセットは、DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BINDで作成されたプールから割り当てる必要があることを指定します。
 //  , DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR        = 0x2 // TODO: PUSH_DESCRIPTOR は ID3D12GraphicsCommandList::Set*RootCBV/SRV/UAVに直接的にマップ可能ですがvkCmdPushDescriptorSetKHRの柔軟性は大きく損なわれます。
 };
-using DESCRIPTOR_SET_LAYOUT_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(DESCRIPTOR_SET_LAYOUT_FLAGS, DESCRIPTOR_SET_LAYOUT_FLAG);
 
 struct DESCRIPTOR_SET_LAYOUT_DESC
 {
@@ -3213,7 +3292,7 @@ enum PIPELINE_LAYOUT_FLAG : EnumT
     , PIPELINE_LAYOUT_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT   = 0x1
     , PIPELINE_LAYOUT_FLAG_ALLOW_STREAM_OUTPUT                  = 0x2
 };
-using PIPELINE_LAYOUT_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(PIPELINE_LAYOUT_FLAGS, PIPELINE_LAYOUT_FLAG);
 
 struct PIPELINE_LAYOUT_DESC
 {
@@ -3232,7 +3311,7 @@ enum FRAMEBUFFER_FLAG : EnumT
 {
     FRAMEBUFFER_FLAG_NONE = 0x0
 };
-using FRAMEBUFFER_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(FRAMEBUFFER_FLAGS, FRAMEBUFFER_FLAG);
 
 struct FRAMEBUFFER_DESC
 {
@@ -3247,7 +3326,7 @@ enum ATTACHMENT_FLAG : EnumT
       ATTACHMENT_FLAG_NONE      = 0x0
     , ATTACHMENT_FLAG_MAY_ALIAS = 0x1
 };
-using ATTACHMENT_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(ATTACHMENT_FLAGS, ATTACHMENT_FLAG);
 
 enum ATTACHMENT_LOAD_OP : EnumT
 {
@@ -3289,7 +3368,7 @@ enum SUBPASS_FLAG : EnumT
 {
     SUBPASS_FLAG_NONE = 0x0
 };
-using SUBPASS_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(SUBPASS_FLAGS, SUBPASS_FLAG);
 
 enum PIPELINE_BIND_POINT : EnumT
 {
@@ -3304,7 +3383,7 @@ enum DEPENDENCY_FLAG : EnumT
     , DEPENDENCY_FLAG_BY_REGION     = 0x1
     , DEPENDENCY_FLAG_VIEW_LOCAL    = 0x2
 };
-using DEPENDENCY_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(DEPENDENCY_FLAGS, DEPENDENCY_FLAG);
 
 struct SHADING_RATE_ATTACHMENT;
 
@@ -3349,7 +3428,7 @@ enum RENDER_PASS_FLAG : EnumT
 {
     RENDER_PASS_FLAG_NONE = 0x0
 };
-using RENDER_PASS_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(RENDER_PASS_FLAGS, RENDER_PASS_FLAG);
 
 struct RENDER_PASS_DESC
 {
@@ -3396,7 +3475,7 @@ enum SHADER_MODULE_FLAG : EnumT
 {
     SHADER_MODULE_FLAG_NONE = 0x0
 };
-using SHADER_MODULE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(SHADER_MODULE_FLAGS, SHADER_MODULE_FLAG);
 
 struct SHADER_BYTECODE
 {
@@ -3714,13 +3793,13 @@ enum PIPELINE_STATE_FLAG : EnumT
 {
     PIPELINE_STATE_FLAG_NONE = 0x0
 };
-using PIPELINE_STATE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(PIPELINE_STATE_FLAGS, PIPELINE_STATE_FLAG);
 
 enum PIPELINE_SHADER_STAGE_FLAG : EnumT
 {
     PIPELINE_SHADER_STAGE_FLAG_NONE = 0x0
 };
-using PIPELINE_SHADER_STAGE_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(PIPELINE_SHADER_STAGE_FLAGS, PIPELINE_SHADER_STAGE_FLAG);
 
 struct PIPELINE_SHADER_STAGE_DESC
 {
@@ -4137,7 +4216,7 @@ enum RESOURCE_BARRIER_FLAG : EnumT
       */
     , RESOURCE_BARRIER_FLAG_OWNERSHIP_TRANSFER = 0x1 
 };
-using RESOURCE_BARRIER_FLAGS = EnumFlagsT;
+B3D_DEFINE_ENUM_FLAGS(RESOURCE_BARRIER_FLAGS, RESOURCE_BARRIER_FLAG);
 
 struct BUFFER_BARRIER_DESC
 {

@@ -94,7 +94,7 @@ B3D_APIENTRY DescriptorSetLayoutD3D12::VerifyDesc(const DESCRIPTOR_SET_LAYOUT_DE
         }
         register_numbers.insert(b.base_shader_register);
 
-        has_update_after_bind |= b.flags & DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND;
+        has_update_after_bind |= bool(b.flags & DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND);
 
         auto NonDynamic = [&]() {
             if (b.static_sampler && b.num_descriptors != 1)

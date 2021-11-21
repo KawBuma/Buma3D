@@ -143,7 +143,7 @@ B3D_APIENTRY CommandListVk::CreateVkCommandList()
     auto vkr = vkAllocateCommandBuffers(vkdevice, &ai, &command_buffer);
     B3D_RET_IF_FAILED(VKR_TRACE_IF_FAILED(vkr));
 
-    if (desc.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)
+    if (desc.level == COMMAND_LIST_LEVEL_SECONDARY)
     {
         inheritance_info_data = B3DMakeUnique(INHERITANCE_INFO_DATA);
         inheritance_info_data->Init(&begin_info_data);

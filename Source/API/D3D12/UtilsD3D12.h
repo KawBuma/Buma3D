@@ -679,7 +679,7 @@ inline D3D12_SHADER_VISIBILITY GetNativeShaderVisibility(SHADER_STAGE_FLAGS _sha
     if (_shader_visibility == SHADER_STAGE_FLAG_ALL)
         return D3D12_SHADER_VISIBILITY_ALL;
 
-    switch (_shader_visibility)
+    switch (_shader_visibility.convert())
     {
     case SHADER_STAGE_FLAG_VERTEX       : return D3D12_SHADER_VISIBILITY_VERTEX;
     case SHADER_STAGE_FLAG_HULL         : return D3D12_SHADER_VISIBILITY_HULL;

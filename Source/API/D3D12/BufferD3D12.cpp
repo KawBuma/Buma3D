@@ -30,7 +30,7 @@ BMRESULT
 B3D_APIENTRY BufferD3D12::Init(RESOURCE_CREATE_TYPE _create_type, DeviceD3D12* _device, const RESOURCE_DESC& _desc)
 {
     create_type = _create_type;
-    
+
     (device = _device)->AddRef();
     device12 = _device->GetD3D12Device();
     CopyDesc(_desc);
@@ -84,7 +84,7 @@ B3D_APIENTRY BufferD3D12::CopyDesc(const RESOURCE_DESC& _desc)
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY BufferD3D12::PrepareBindNodeMasks(uint32_t _heap_index, uint32_t _num_bind_node_masks, const NodeMask* _bind_node_masks)
 {
     auto&& props = device->GetResourceHeapPropertiesForImpl()[_heap_index];
@@ -97,7 +97,7 @@ B3D_APIENTRY BufferD3D12::PrepareBindNodeMasks(uint32_t _heap_index, uint32_t _n
                           , "非マルチインスタンスヒープへのバインドの際に、num_bind_node_masksは0以外であってはなりません。また、マルチインスタンスヒープへのバインドの際に、num_bind_node_masksはIDevice内のノード数と同じである必要があります。");
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
-    
+
     if (is_multi_instance_heap)
     {
         // ノードマスクをキャッシュ
@@ -139,7 +139,7 @@ B3D_APIENTRY BufferD3D12::InitAsPlaced()
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY BufferD3D12::InitAsReserved()
 {
     D3D12_RESOURCE_DESC desc12{};
@@ -158,7 +158,7 @@ B3D_APIENTRY BufferD3D12::InitAsReserved()
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY BufferD3D12::InitAsCommitted(DeviceD3D12* _device, const COMMITTED_RESOURCE_DESC& _desc)
 {
     Init(RESOURCE_CREATE_TYPE_COMMITTED, _device, _desc.resource_desc);
@@ -177,7 +177,7 @@ B3D_APIENTRY BufferD3D12::InitAsCommitted(DeviceD3D12* _device, const COMMITTED_
                                                 , nullptr
                                                 , IID_PPV_ARGS(&buffer));
     B3D_RET_IF_FAILED(HR_TRACE_IF_FAILED(hr));
-    
+
     // コミットリソース用ヒープを作成。
     B3D_RET_IF_FAILED(ResourceHeapD3D12::CreateForCommitted(_device, _desc, this, &heap));
 
@@ -186,7 +186,7 @@ B3D_APIENTRY BufferD3D12::InitAsCommitted(DeviceD3D12* _device, const COMMITTED_
     return BMRESULT_SUCCEED;
 }
 
-void 
+void
 B3D_APIENTRY BufferD3D12::MarkAsBound()
 {
     is_bound = true;
@@ -195,7 +195,7 @@ B3D_APIENTRY BufferD3D12::MarkAsBound()
         util::SetName(buffer, *name);
 }
 
-void 
+void
 B3D_APIENTRY BufferD3D12::Uninit()
 {
     desc = {};
@@ -221,7 +221,7 @@ B3D_APIENTRY BufferD3D12::Create(RESOURCE_CREATE_TYPE _create_type, DeviceD3D12*
     return BMRESULT_SUCCEED;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY BufferD3D12::CreateCommitted(DeviceD3D12* _device, const COMMITTED_RESOURCE_DESC& _desc, BufferD3D12** _dst)
 {
     util::Ptr<BufferD3D12> ptr;
@@ -278,7 +278,7 @@ B3D_APIENTRY BufferD3D12::Bind(const BIND_RESOURCE_HEAP_INFO* _info)
     return BMRESULT_SUCCEED;
 }
 
-ID3D12Resource* 
+ID3D12Resource*
 B3D_APIENTRY BufferD3D12::GetD3D12Resource() const
 {
     return buffer;
@@ -290,7 +290,7 @@ B3D_APIENTRY BufferD3D12::GetCreateType() const
     return create_type;
 }
 
-BMRESULT 
+BMRESULT
 B3D_APIENTRY BufferD3D12::SetupBindRegions(uint32_t _num_regions, const TILED_RESOURCE_BIND_REGION* _regions, D3D12_TILED_RESOURCE_COORDINATE* _dst_start_coords, D3D12_TILE_REGION_SIZE* _dst_region_sizes) const
 {
     for (uint32_t i = 0; i < _num_regions; i++)
@@ -342,7 +342,7 @@ B3D_APIENTRY BufferD3D12::SetupBindRegions(uint32_t _num_regions, const TILED_RE
     return BMRESULT_SUCCEED;
 }
 
-uint32_t 
+uint32_t
 B3D_APIENTRY BufferD3D12::GetTiledResourceAllocationInfo(TILED_RESOURCE_ALLOCATION_INFO* _dst_infos) const
 {
     if (create_type != RESOURCE_CREATE_TYPE_RESERVED)
@@ -431,7 +431,7 @@ B3D_APIENTRY BufferD3D12::GetDesc() const
     return desc;
 }
 
-IResourceHeap* 
+IResourceHeap*
 B3D_APIENTRY BufferD3D12::GetHeap() const
 {
     return heap;

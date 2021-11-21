@@ -392,7 +392,7 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
             hp12    = &hd12->Properties;
         }
     };
-    auto Set = [&](HEAP_TYPE _heap_type, D3D12_HEAP_FLAGS _heap_flags, const D3D12_HEAP_PROPERTIES& _props, RESOURCE_HEAP_FLAGS _flags)
+    auto Set = [&](HEAP_TYPE _heap_type, D3D12_HEAP_FLAGS _heap_flags, const D3D12_HEAP_PROPERTIES& _props, RESOURCE_HEAP_PROPERTY_FLAGS _flags)
     {
         heap_type_bits[_heap_type]  |= 1 << index;
         hp  ->heap_index            = index;
@@ -400,7 +400,7 @@ B3D_APIENTRY DeviceD3D12::MakeResourceHeapProperties()
         hd12->Flags                 = _heap_flags;
         *hp12                       = _props;
     };
-    auto SetForEachTypes = [&](const D3D12_HEAP_PROPERTIES& _props, RESOURCE_HEAP_FLAGS _flags)
+    auto SetForEachTypes = [&](const D3D12_HEAP_PROPERTIES& _props, RESOURCE_HEAP_PROPERTY_FLAGS _flags)
     {
         if (is_heap_tier2)
         {
