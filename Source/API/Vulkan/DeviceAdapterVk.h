@@ -23,6 +23,8 @@ private:
     BMRESULT B3D_APIENTRY GetFeatures();
     BMRESULT B3D_APIENTRY GetProperties();
     void B3D_APIENTRY InitDesc();
+    void B3D_APIENTRY GetVkQueueFamilyProperties();
+    void B3D_APIENTRY PrepareQueueFamilyPropertiesMap();
     void B3D_APIENTRY Uninit();
 
 public:

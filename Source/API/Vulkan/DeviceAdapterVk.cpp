@@ -64,23 +64,8 @@ B3D_APIENTRY DeviceAdapterVk::Init(DeviceFactoryVk* _factory, VkPhysicalDevice _
 
     InitDesc();
 
-    uint32_t num_qf_props = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &num_qf_props, nullptr);
-    util::DyArray<VkQueueFamilyProperties2> qf_props(num_qf_props, { VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2 });
-    vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &num_qf_props, qf_props.data());
-
-    uint32_t qf_index = 0;
-    for (auto& i : qf_props)
-    {
-        auto type = util::GetB3DCommandType(i.queueFamilyProperties.queueFlags);
-        if (type != -1)
-        {
-            auto&& prop = *(queue_properties_map[type] = B3DMakeUnique(QUEUE_PROPERTIES_MAP));
-            prop.queue_family_index = qf_index;
-            prop.queue_flags        = i.queueFamilyProperties.queueFlags;
-        }
-        qf_index++;
-    }
+    GetVkQueueFamilyProperties();
+    PrepareQueueFamilyPropertiesMap();
 
     return BMRESULT_SUCCEED;
 }
@@ -315,7 +300,7 @@ B3D_APIENTRY DeviceAdapterVk::GetProperties()
     return BMRESULT_SUCCEED;
 }
 
-void 
+void
 B3D_APIENTRY DeviceAdapterVk::InitDesc()
 {
     auto&& pd_props = pd_data->properties2;
@@ -400,6 +385,40 @@ B3D_APIENTRY DeviceAdapterVk::InitDesc()
     desc.node_count = phys_dev_group_props ? phys_dev_group_props->physicalDeviceCount : 1;
 
     desc.adapter_type = util::GetB3DDeviceAdapterType(props.deviceType);
+}
+
+void
+B3D_APIENTRY DeviceAdapterVk::GetVkQueueFamilyProperties()
+{
+    uint32_t num_qf_props = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &num_qf_props, nullptr);
+
+    auto&& qf_props = pd_data->queue_family_props;
+    qf_props.resize(num_qf_props, { VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2 });
+    vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &num_qf_props, qf_props.data());
+
+    // Vulkan仕様によって追加されたが、B3D側でサポートが追いついていないキュータイプを予め除外します
+    auto remove = std::remove_if(qf_props.begin(), qf_props.end(), [](const VkQueueFamilyProperties2& _props) {
+        return util::GetB3DCommandType(_props.queueFamilyProperties.queueFlags) == COMMAND_TYPE(-1);
+    });
+    qf_props.erase(remove, qf_props.end());
+}
+
+void
+B3D_APIENTRY DeviceAdapterVk::PrepareQueueFamilyPropertiesMap()
+{
+    uint32_t qf_index = 0;
+    for (auto& i : pd_data->queue_family_props)
+    {
+        auto type = util::GetB3DCommandType(i.queueFamilyProperties.queueFlags);
+        if (type != -1)
+        {
+            auto&& prop = *(queue_properties_map[type] = B3DMakeUnique(QUEUE_PROPERTIES_MAP));
+            prop.queue_family_index = qf_index;
+            prop.queue_flags        = i.queueFamilyProperties.queueFlags;
+        }
+        qf_index++;
+    }
 }
 
 void 
@@ -489,14 +508,11 @@ B3D_APIENTRY DeviceAdapterVk::GetDesc() const
 uint32_t 
 B3D_APIENTRY DeviceAdapterVk::GetCommandQueueProperties(COMMAND_QUEUE_PROPERTIES* _properties)
 {
-    uint32_t num_qf_props = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &num_qf_props, nullptr);
+    auto&& qf_props = pd_data->queue_family_props;
+    uint32_t num_qf_props = (uint32_t)qf_props.size();
 
     if (_properties)
     {
-        util::DyArray<VkQueueFamilyProperties2> qf_props(num_qf_props, { VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2 });
-        vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &num_qf_props, qf_props.data());
-
         auto qf_data = qf_props.data();
         for (uint32_t i = 0; i < num_qf_props; i++)
         {

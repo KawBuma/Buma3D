@@ -77,17 +77,16 @@ inline VkQueueFlags GetNativeCommandType(COMMAND_TYPE _type, bool _is_enable_spa
     case COMMAND_TYPE_DIRECT_ONLY   : result = VK_QUEUE_GRAPHICS_BIT;                        break;
     case COMMAND_TYPE_COMPUTE_ONLY  : result = VK_QUEUE_COMPUTE_BIT;                         break;
     case COMMAND_TYPE_COPY_ONLY     : result = VK_QUEUE_TRANSFER_BIT;                        break;
-    // case COMMAND_TYPE_VIDEO_DECODE  : break; TODO: ビデオキュー
-    // case COMMAND_TYPE_VIDEO_PROCESS : break;
-    // case COMMAND_TYPE_VIDEO_ENCODE  : break;
+    // TODO: ビデオキュー
+    // case COMMAND_TYPE_VIDEO_DECODE  : result = VK_QUEUE_VIDEO_DECOCE_BIT_KHR; break;
+    // case COMMAND_TYPE_VIDEO_PROCESS : result = VK_QUEUE_VIDEO_; break;
+    // case COMMAND_TYPE_VIDEO_ENCODE  : result = VK_QUEUE_VIDEO_ENCODE_BIT_KHR; break;
     default:
         break;
     }
 
-    if (_is_enable_sparse_bind)
-        result |= VK_QUEUE_SPARSE_BINDING_BIT;
-    if (_is_enable_protected)
-        result |= VK_QUEUE_PROTECTED_BIT;
+    if (_is_enable_sparse_bind) result |= VK_QUEUE_SPARSE_BINDING_BIT;
+    if (_is_enable_protected)   result |= VK_QUEUE_PROTECTED_BIT;
 
     return result;
 }
@@ -96,10 +95,8 @@ inline COMMAND_TYPE GetB3DCommandType(VkQueueFlags _flags, bool* _is_enable_spar
 {
     COMMAND_TYPE result = (COMMAND_TYPE)-1;
 
-    if (_is_enable_sparse_bind)
-        *_is_enable_sparse_bind = _flags & VK_QUEUE_SPARSE_BINDING_BIT;
-    if (_is_enable_protected)
-        *_is_enable_protected = _flags & VK_QUEUE_PROTECTED_BIT;
+    if (_is_enable_sparse_bind) *_is_enable_sparse_bind = _flags & VK_QUEUE_SPARSE_BINDING_BIT;
+    if (_is_enable_protected)   *_is_enable_protected   = _flags & VK_QUEUE_PROTECTED_BIT;
     // 以降の分岐の邪魔にならないよう排除
     _flags &= ~(VK_QUEUE_SPARSE_BINDING_BIT | VK_QUEUE_PROTECTED_BIT);
 
@@ -115,16 +112,17 @@ inline COMMAND_TYPE GetB3DCommandType(VkQueueFlags _flags, bool* _is_enable_spar
         _flags &= ~VK_QUEUE_TRANSFER_BIT;
 
         // graphics | compute
-        if (_flags == (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
-            result = COMMAND_TYPE_DIRECT;
+        if (_flags == (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) result = COMMAND_TYPE_DIRECT;
 
         // graphicsのみ
-        else if (_flags == VK_QUEUE_GRAPHICS_BIT)
-            result = COMMAND_TYPE_DIRECT_ONLY;
+        else if (_flags == VK_QUEUE_GRAPHICS_BIT) result = COMMAND_TYPE_DIRECT_ONLY;
 
         // computeのみ
-        else if (_flags == VK_QUEUE_COMPUTE_BIT)
-            result = COMMAND_TYPE_COMPUTE_ONLY;
+        else if (_flags == VK_QUEUE_COMPUTE_BIT) result = COMMAND_TYPE_COMPUTE_ONLY;
+
+        // TODO: video
+        //else if (_flags == VK_QUEUE_VIDEO_DECODE_BIT_KHR) result = COMMAND_TYPE_VIDEO_DECODE;
+        //else if (_flags == VK_QUEUE_VIDEO_ENCODE_BIT_KHR) result = COMMAND_TYPE_VIDEO_ENCODE;
     }
 
     return result;
@@ -1512,6 +1510,8 @@ struct PHYSICAL_DEVICE_FEATURES_CHAIN
 
 struct PHYSICAL_DEVICE_DATA
 {
+    util::DyArray<VkQueueFamilyProperties2> queue_family_props;
+
     VkPhysicalDeviceFeatures2               features2;
     util::PHYSICAL_DEVICE_FEATURES_CHAIN    features_chain;
 
