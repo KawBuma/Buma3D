@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 4);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 5);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -2056,6 +2056,22 @@ enum SHADER_RESOURCE_VIEW_FLAG : EnumT
 {
       SHADER_RESOURCE_VIEW_FLAG_NONE                        = 0x0
     , SHADER_RESOURCE_VIEW_FLAG_DENY_INPUT_ATTACHMENT       = 0x1
+
+    /**
+     * @brief このSRVに含むサブリソースが、深度アスペクトが読み取り専用の深度ステンシルアタッチメントとして同時に利用される事を指定します
+    */
+    , SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_DEPTH_READ   = 0x2
+
+    /**
+     * @brief このSRVに含むサブリソースが、ステンシルアスペクトが読み取り専用の深度ステンシルアタッチメントとして同時に利用される事を指定します
+    */
+    , SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_STENCIL_READ = 0x4
+
+    /**
+     * @brief このSRVに含むサブリソースが、深度とステンシルアスペクト両方が読み取り専用の深度ステンシルアタッチメントとして同時に利用される事を指定します
+    */
+    , SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_DEPTH_STENCIL_READ = SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_DEPTH_READ
+                                                                    | SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_STENCIL_READ
 };
 B3D_DEFINE_ENUM_FLAGS(SHADER_RESOURCE_VIEW_FLAGS, SHADER_RESOURCE_VIEW_FLAG);
 

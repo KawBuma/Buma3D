@@ -285,6 +285,18 @@ B3D_APIENTRY ShaderResourceViewD3D12::ValidateTextureSRV()
         break;
     }
 
+    if (tdesc.subresource_range.offset.aspect & ~(TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL))
+    {
+        if (desc.flags & (SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_DEPTH_READ | SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_STENCIL_READ))
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
+                              , "aspectが深度、またはステンシルアスペクトではない場合、SHADER_RESOURCE_VIEW_DESC::flagsには"
+                                "SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_DEPTH_READまたはSHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_STENCIL_READ"
+                                "が含まれていない必要があります。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
+        }
+    }
+
     return BMRESULT_SUCCEED;
 }
 

@@ -52,6 +52,11 @@ public:
         return BMRESULT_SUCCEED;
     }
 
+    const VkDescriptorBufferInfo* GetVkDescriptorBufferInfo() const override
+    {
+        return info;
+    }
+
     VkBufferView GetBufferView() const override
     {
         return view;
@@ -130,13 +135,17 @@ public:
         util::ConvertNativeSubresourceRange(owner.desc.texture.subresource_range, &image_subresource_range);
         auto vkr = vkCreateImageView(owner.vkdevice, _ci, owner.GetVkAllocationCallbacks(), &view);
         info.imageView = view;
+
+             if (owner.desc.flags & SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_DEPTH_READ)         info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+        else if (owner.desc.flags & SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_STENCIL_READ)       info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+        else if (owner.desc.flags & SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_DEPTH_STENCIL_READ) info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
         return vkr;
     }
 
     VkImageLayout GetVkImageLayout() const override
     {
-        // ShaderResourceViewの場合、画像レイアウトはVK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMALと常に同一です。
-        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        return info.imageLayout;
     }
 
     BMRESULT AddDescriptorWriteRange(DescriptorSet0Vk::UPDATE_DESCRIPTOR_RANGE_BUFFER* _dst, uint32_t _array_index) const override
@@ -442,6 +451,18 @@ B3D_APIENTRY ShaderResourceViewVk::ValidateTextureSRV()
     }
     default:
         break;
+    }
+
+    if (tdesc.subresource_range.offset.aspect & ~(TEXTURE_ASPECT_FLAG_DEPTH | TEXTURE_ASPECT_FLAG_STENCIL))
+    {
+        if (desc.flags & (SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_DEPTH_READ | SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_STENCIL_READ))
+        {
+            B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
+                              , "aspectが深度、またはステンシルアスペクトではない場合、SHADER_RESOURCE_VIEW_DESC::flagsには"
+                                "SHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_DEPTH_READまたはSHADER_RESOURCE_VIEW_FLAG_DSV_SIMULTANEOUS_STENCIL_READ"
+                                "が含まれていない必要があります。");
+            return BMRESULT_FAILED_INVALID_PARAMETER;
+        }
     }
 
     return BMRESULT_SUCCEED;
