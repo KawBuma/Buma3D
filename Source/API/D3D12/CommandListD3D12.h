@@ -86,7 +86,7 @@ public:
         B3D_APIENTRY BindDescriptorSets(
               PIPELINE_BIND_POINT               _bind_point
             , const CMD_BIND_DESCRIPTOR_SETS&   _args) override;
-    
+
     void
         B3D_APIENTRY Push32BitConstants(
               PIPELINE_BIND_POINT               _bind_point
@@ -142,12 +142,12 @@ public:
         B3D_APIENTRY SetDepthBias(
             const CMD_SET_DEPTH_BIAS& _args) override;
 
-    void 
+    void
         B3D_APIENTRY SetStencilCompareMask(
               STENCIL_FACE  _faces_to_set
             , uint32_t      _compare_mask) override;
 
-    void 
+    void
         B3D_APIENTRY SetStencilWriteMask(
               STENCIL_FACE  _faces_to_set
             , uint32_t      _write_mask) override;
@@ -214,7 +214,7 @@ public:
     void
         B3D_APIENTRY CopyBufferToTexture(
             const CMD_COPY_BUFFER_TO_TEXTURE& _args) override;
-    
+
     void
         B3D_APIENTRY CopyTextureToBuffer(
             const CMD_COPY_TEXTURE_TO_BUFFER& _args) override;
@@ -644,8 +644,8 @@ private:
 
         void RecordBarriers(ID3D12GraphicsCommandList* _list)
         {
-            if (num_total_barriers)
-                _list->ResourceBarrier(num_total_barriers, barriers_data);
+            if (barriers_count)
+                _list->ResourceBarrier(barriers_count, barriers_data);
         }
 
     private:
@@ -720,10 +720,10 @@ private:
         }
 
         template<typename T>
-        void SetCommonParameters(D3D12_RESOURCE_BARRIER& _native_barrier, const T& _barrier)
+        void SetCommonParameters(D3D12_RESOURCE_BARRIER& _native_barrier, const T& _barrier, D3D12_RESOURCE_STATES _before, D3D12_RESOURCE_STATES _after)
         {
-            _native_barrier.Transition.StateBefore = util::GetNativeResourceState(_barrier.src_state);
-            _native_barrier.Transition.StateAfter  = util::GetNativeResourceState(_barrier.dst_state);
+            _native_barrier.Transition.StateBefore = _before;
+            _native_barrier.Transition.StateAfter  = _after;
 
             if (_barrier.barrier_flags & RESOURCE_BARRIER_FLAG_OWNERSHIP_TRANSFER)
             {
@@ -734,24 +734,41 @@ private:
                     _native_barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
             }
         }
+        template<typename T>
+        bool TrySetCommonParameters(D3D12_RESOURCE_BARRIER& _native_barrier, const T& _barrier)
+        {
+            auto before = util::GetNativeResourceState(_barrier.src_state);
+            auto after  = util::GetNativeResourceState(_barrier.dst_state);
+            if (before == after)
+                return false;
+
+            SetCommonParameters(_native_barrier, _barrier, before, after);
+            return true;
+        }
 
         void AddTexBarrierAll(ID3D12Resource* _resource, const TEXTURE_BARRIER_DESC& _tb)
         {
-            auto&& native_barrier = barriers_data[barriers_count++];
-            native_barrier.Transition.pResource   = _resource;
-            native_barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-            SetCommonParameters(native_barrier, _tb);
+            auto&& native_barrier = barriers_data[barriers_count];
+            if (TrySetCommonParameters(native_barrier, _tb))
+            {
+                barriers_count++;
+                native_barrier.Transition.pResource   = _resource;
+                native_barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            }
         }
 
         void AddTexBarrier(ID3D12Resource* _resource, const TEXTURE_BARRIER_DESC& _tb, const RESOURCE_DESC& _tex_desc, const SUBRESOURCE_RANGE& _range
                            , const uint32_t _i_mip, const uint32_t _i_ary, const uint32_t _plane_slice)
         {
-            auto&& native_barrier = barriers_data[barriers_count++];
-            native_barrier.Transition.pResource   = _resource;
-            native_barrier.Transition.Subresource = util::CalcSubresourceOffset(_tex_desc.texture.mip_levels        , _tex_desc.texture.array_size
-                                                                                , _range.offset.mip_slice + _i_mip  , _range.offset.array_slice + _i_ary
-                                                                                , _plane_slice);
-            SetCommonParameters(native_barrier, _tb);
+            auto&& native_barrier = barriers_data[barriers_count];
+            if (TrySetCommonParameters(native_barrier, _tb))
+            {
+                barriers_count++;
+                native_barrier.Transition.pResource   = _resource;
+                native_barrier.Transition.Subresource = util::CalcSubresourceOffset(_tex_desc.texture.mip_levels        , _tex_desc.texture.array_size
+                                                                                    , _range.offset.mip_slice + _i_mip  , _range.offset.array_slice + _i_ary
+                                                                                    , _plane_slice);
+            }
         }
 
         void AddTexBarrierRange(ID3D12Resource* _resource, const TEXTURE_BARRIER_DESC& _tb, const RESOURCE_DESC& _tex_desc, const SUBRESOURCE_RANGE& _range)
@@ -822,10 +839,13 @@ private:
             {
                 auto&& bb = _args.buffer_barriers[i];
 
-                auto&& native_barrier = barriers_data[barriers_count++];
-                native_barrier.Transition.pResource   = bb.buffer->As<BufferD3D12>()->GetD3D12Resource();
-                native_barrier.Transition.Subresource = 0;// バッファリソースにサブリソースはありません。
-                SetCommonParameters(native_barrier, bb);
+                auto&& native_barrier = barriers_data[barriers_count];
+                if (TrySetCommonParameters(native_barrier, bb))
+                {
+                    barriers_count++;
+                    native_barrier.Transition.pResource   = bb.buffer->As<BufferD3D12>()->GetD3D12Resource();
+                    native_barrier.Transition.Subresource = 0;// バッファリソースにサブリソースはありません。
+                }
             }
         }
 
