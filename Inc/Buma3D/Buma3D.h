@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 2);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 3);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -48,7 +48,7 @@ inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, ui
 }// namespace buma3d
 
 
-// 前方宣言 
+// 前方宣言
 namespace buma3d
 {
 
@@ -133,7 +133,7 @@ struct TVECTOR4
 #define DEFINE_VECTORS(Name, T, _Name)     \
     using Name##2##_Name = TVECTOR2<T>;    \
     using Name##3##_Name = TVECTOR3<T>;    \
-    using Name##4##_Name = TVECTOR4<T> 
+    using Name##4##_Name = TVECTOR4<T>
 
 DEFINE_VECTORS(INT  , int32_t    , );
 DEFINE_VECTORS(UINT , uint32_t   , );
@@ -193,7 +193,7 @@ using Char8T = char8_t;
  *        char*が使用されている場合、英数字を使用してください。
 */
 using Char8T = char;
-#endif 
+#endif
 
 using EnumT                 = uint32_t;
 using EnumFlagsT            = EnumT;
@@ -222,11 +222,11 @@ struct TEnumFlagsWrapper
     FlagsType flags;
 
     constexpr TEnumFlagsWrapper() = default;
-    constexpr TEnumFlagsWrapper(FlagsType b) : flags{ b }          {}
-    constexpr TEnumFlagsWrapper(EnumType b)  : flags{ convert(b) } {}
+    constexpr TEnumFlagsWrapper(EnumType b) : flags{ convert(b) } {}
+    constexpr explicit TEnumFlagsWrapper(FlagsType b) : flags{ b } {}
 
-    constexpr explicit operator EnumType()  const { return convert(); }
-    constexpr          operator FlagsType() const { return flags; }
+    constexpr          operator EnumType()  const { return convert(); }
+    constexpr explicit operator FlagsType() const { return flags; }
 
     constexpr        EnumType   convert() const      { return static_cast<EnumType>(flags); }
     static constexpr EnumType   convert(FlagsType b) { return static_cast<EnumType>(b); }
@@ -241,44 +241,44 @@ struct TEnumFlagsWrapper
     constexpr TEnumFlagsWrapper& operator &= (const TEnumFlagsWrapper& b) { flags &=  b.flags; return *this; }
     constexpr TEnumFlagsWrapper& operator ^= (const TEnumFlagsWrapper& b) { flags ^=  b.flags; return *this; }
 
-    constexpr TEnumFlagsWrapper  operator ~()                            const { return ~flags; }
+    constexpr TEnumFlagsWrapper  operator ~()                            const { return TEnumFlagsWrapper{ ~flags }; }
 
-    constexpr TEnumFlagsWrapper  operator | (EnumType b)                 const { return flags | convert(b); }
-    constexpr TEnumFlagsWrapper  operator & (EnumType b)                 const { return flags & convert(b); }
-    constexpr TEnumFlagsWrapper  operator ^ (EnumType b)                 const { return flags ^ convert(b); }
+    constexpr TEnumFlagsWrapper  operator | (EnumType b)                 const { return TEnumFlagsWrapper{ flags | convert(b) }; }
+    constexpr TEnumFlagsWrapper  operator & (EnumType b)                 const { return TEnumFlagsWrapper{ flags & convert(b) }; }
+    constexpr TEnumFlagsWrapper  operator ^ (EnumType b)                 const { return TEnumFlagsWrapper{ flags ^ convert(b) }; }
     constexpr bool               operator ==(EnumType b)                 const { return flags == convert(b); }
     constexpr bool               operator !=(EnumType b)                 const { return flags != convert(b); }
 
-    constexpr TEnumFlagsWrapper  operator | (const TEnumFlagsWrapper& b) const { return flags | b.flags; }
-    constexpr TEnumFlagsWrapper  operator & (const TEnumFlagsWrapper& b) const { return flags & b.flags; }
-    constexpr TEnumFlagsWrapper  operator ^ (const TEnumFlagsWrapper& b) const { return flags ^ b.flags; }
+    constexpr TEnumFlagsWrapper  operator | (const TEnumFlagsWrapper& b) const { return TEnumFlagsWrapper{ flags | b.flags }; }
+    constexpr TEnumFlagsWrapper  operator & (const TEnumFlagsWrapper& b) const { return TEnumFlagsWrapper{ flags & b.flags }; }
+    constexpr TEnumFlagsWrapper  operator ^ (const TEnumFlagsWrapper& b) const { return TEnumFlagsWrapper{ flags ^ b.flags }; }
     constexpr bool               operator ==(const TEnumFlagsWrapper& b) const { return flags == b.flags; }
     constexpr bool               operator !=(const TEnumFlagsWrapper& b) const { return flags != b.flags; }
 
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr TEnumFlagsWrapper operator | (T b) const { return flags | b; }
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr TEnumFlagsWrapper operator & (T b) const { return flags & b; }
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr TEnumFlagsWrapper operator ^ (T b) const { return flags ^ b; }
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr TEnumFlagsWrapper operator | (T b) const { return TEnumFlagsWrapper{ flags | b }; }
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr TEnumFlagsWrapper operator & (T b) const { return TEnumFlagsWrapper{ flags & b }; }
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr TEnumFlagsWrapper operator ^ (T b) const { return TEnumFlagsWrapper{ flags ^ b }; }
     template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr bool              operator ==(T b) const { return flags == b; }
     template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> constexpr bool              operator !=(T b) const { return flags != b; }
 };
 
-#define B3D_DEFINE_ENUM_FLAGS(TName, TEnum)                                                                                                                                                  \
-    using TName = buma3d::TEnumFlagsWrapper<TEnum>;                                                                                                                                          \
-    inline constexpr TName operator ~ (TEnum a)                 { return ~(TName::convert(a)); }                                                                                             \
-    inline constexpr TName operator | (TEnum a, TEnum        b) { return TName::convert(a) |  TName::convert(b); }                                                                           \
-    inline constexpr TName operator & (TEnum a, TEnum        b) { return TName::convert(a) &  TName::convert(b); }                                                                           \
-    inline constexpr TName operator ^ (TEnum a, TEnum        b) { return TName::convert(a) ^  TName::convert(b); }                                                                           \
-    inline constexpr TName operator | (TEnum a, const TName& b) { return TName::convert(a) |  b.flags; }                                                                                     \
-    inline constexpr TName operator & (TEnum a, const TName& b) { return TName::convert(a) &  b.flags; }                                                                                     \
-    inline constexpr TName operator ^ (TEnum a, const TName& b) { return TName::convert(a) ^  b.flags; }                                                                                     \
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator | (TEnum a, T            b) { return TName::convert(a) |  b; }                  \
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator & (TEnum a, T            b) { return TName::convert(a) &  b; }                  \
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator ^ (TEnum a, T            b) { return TName::convert(a) ^  b; }                  \
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator | (T     a, const TName& b) { return a                 |  b.flags; }            \
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator & (T     a, const TName& b) { return a                 &  b.flags; }            \
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator ^ (T     a, const TName& b) { return a                 ^  b.flags; }            \
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr bool  operator ==(T     a, const TName& b) { return a                 == b.flags; }            \
-    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr bool  operator !=(T     a, const TName& b) { return a                 != b.flags; }            \
+#define B3D_DEFINE_ENUM_FLAGS(TName, TEnum)                                                                                                                                                 \
+    using TName = buma3d::TEnumFlagsWrapper<TEnum>;                                                                                                                                         \
+    inline constexpr TName operator ~ (TEnum a)                 { return TName{ ~(TName::convert(a)) }; }                                                                                   \
+    inline constexpr TName operator | (TEnum a, TEnum        b) { return TName{ TName::convert(a) |  TName::convert(b) }; }                                                                 \
+    inline constexpr TName operator & (TEnum a, TEnum        b) { return TName{ TName::convert(a) &  TName::convert(b) }; }                                                                 \
+    inline constexpr TName operator ^ (TEnum a, TEnum        b) { return TName{ TName::convert(a) ^  TName::convert(b) }; }                                                                 \
+    inline constexpr TName operator | (TEnum a, const TName& b) { return TName{ TName::convert(a) |  b.flags }; }                                                                           \
+    inline constexpr TName operator & (TEnum a, const TName& b) { return TName{ TName::convert(a) &  b.flags }; }                                                                           \
+    inline constexpr TName operator ^ (TEnum a, const TName& b) { return TName{ TName::convert(a) ^  b.flags }; }                                                                           \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator | (TEnum a, T            b) { return TName{ TName::convert(a) |  b }; }        \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator & (TEnum a, T            b) { return TName{ TName::convert(a) &  b }; }        \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator ^ (TEnum a, T            b) { return TName{ TName::convert(a) ^  b }; }        \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator | (T     a, const TName& b) { return TName{ a                 |  b.flags }; }  \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator & (T     a, const TName& b) { return TName{ a                 &  b.flags }; }  \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr TName operator ^ (T     a, const TName& b) { return TName{ a                 ^  b.flags }; }  \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr bool  operator ==(T     a, const TName& b) { return        a                 == b.flags; }    \
+    template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0> inline constexpr bool  operator !=(T     a, const TName& b) { return        a                 != b.flags; }    \
 
 
 using GpuVirtualAddress     = uint64_t;
