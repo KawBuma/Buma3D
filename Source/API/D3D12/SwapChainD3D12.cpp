@@ -800,6 +800,7 @@ BMRESULT SwapChainD3D12::SWAPCHAIN_FENCES_DATA::ResizeFences(DeviceD3D12* _devic
         {
             util::Ptr<FenceD3D12> f;
             B3D_RET_IF_FAILED(FenceD3D12::Create(_device, fdesc, &f, /*for swapchain*/true));
+            f->SetName(hlp::StringConvolution("SwapChainD3D12::present_fences[", i, "]").c_str());
             present_fences_head[i] = f.Detach();
         }
     }
