@@ -36,7 +36,7 @@ inline constexpr uint32_t EncodeHeaderVersion(uint32_t _major, uint32_t _minor, 
     return ((((uint32_t)(_major)) << 22) | (((uint32_t)(_minor)) << 12) | ((uint32_t)(_patch)));
 }
 
-inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 3);
+inline constexpr uint32_t B3D_HEADER_VERSION = EncodeHeaderVersion(0, 15, 4);
 
 inline constexpr void DecodeHeaderVersion(uint32_t* _major, uint32_t* _minor, uint32_t* _patch)
 {
@@ -1530,7 +1530,7 @@ enum RESOURCE_STATE : EnumT
     , RESOURCE_STATE_COLOR_ATTACHMENT_WRITE                 // D3D12_RENDER_TARGET                          COLOR_ATTACHMENT_WRITE_BIT                      COLOR_ATTACHMENT_OPTIMAL
     , RESOURCE_STATE_COLOR_ATTACHMENT_READ_WRITE            // D3D12_RENDER_TARGET                          COLOR_ATTACHMENT_{READ|WRITE}_BIT               COLOR_ATTACHMENT_OPTIMAL
 
-    , RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_READ          // D3D12_DEPTH_READ                             DEPTH_STENCIL_ATTACHMENT_READ_BIT               DEPTH/STENCIL_READ_ONLY_OPTIMAL
+    , RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_READ          // D3D12_DEPTH_READ|PIXEL|NON_PIXEL             DEPTH_STENCIL_ATTACHMENT_READ_BIT               DEPTH/STENCIL_READ_ONLY_OPTIMAL
     , RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_WRITE         // D3D12_DEPTH_WRITE                            DEPTH_STENCIL_ATTACHMENT_WRITE_BIT              DEPTH/STENCIL_ATTACHMENT_OPTIMAL
     , RESOURCE_STATE_DEPTH_STENCIL_ATTACHMENT_READ_WRITE    // D3D12_DEPTH_WRITE                            DEPTH_STENCIL_ATTACHMENT_WRITE_BIT              DEPTH/STENCIL_ATTACHMENT_OPTIMAL
 
