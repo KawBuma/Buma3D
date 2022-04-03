@@ -36,10 +36,10 @@ B3D_APIENTRY DepthStencilViewVk::Init(DeviceVk* _device, IResource* _resource, c
     (resource = _resource)->AddRef();
     CopyDesc(_desc);
 
-    if (desc.view.type != VIEW_TYPE_RENDER_TARGET)
+    if (desc.view.type != VIEW_TYPE_DEPTH_STENCIL)
     {
         B3D_ADD_DEBUG_MSG(DEBUG_MESSAGE_SEVERITY_ERROR, DEBUG_MESSAGE_CATEGORY_FLAG_INITIALIZATION
-                          , "DEPTH_STENCIL_VIEW_DESC::view.typeはVIEW_TYPE_RENDER_TARGETである必要があります。");
+                          , "DEPTH_STENCIL_VIEW_DESC::view.typeはVIEW_TYPE_DEPTH_STENCILである必要があります。");
         return BMRESULT_FAILED_INVALID_PARAMETER;
     }
 
