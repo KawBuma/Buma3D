@@ -5,14 +5,17 @@ namespace buma3d
 {
 
 B3D_APIENTRY DepthStencilViewVk::DepthStencilViewVk()
-    : ref_count                 { 1 }
-    , name                      {}
-    , device                    {}
-    , inspfn                    {}
-    , devpfn                    {}
-    , desc                      {}
-    , image_layout              {}
-    , image_subresource_range   {}
+    : ref_count               { 1 }
+    , name                    {}
+    , device                  {}
+    , desc                    {}
+    , resource                {}
+    , vkdevice                {}
+    , inspfn                  {}
+    , devpfn                  {}
+    , image_view              {}
+    , image_layout            {}
+    , image_subresource_range {}
 {
 
 }
