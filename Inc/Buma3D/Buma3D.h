@@ -411,7 +411,7 @@ enum RESOURCE_FORMAT : EnumT
     , RESOURCE_FORMAT_R32_FLOAT                                     // VK_FORMAT_R32_SFLOAT
 
     // RG
-    , RESOURCE_FORMAT_R8G8_TYPELESS                                 // VK_FORMAT_R8G8_* (MUTABLE_FORMAT) 
+    , RESOURCE_FORMAT_R8G8_TYPELESS                                 // VK_FORMAT_R8G8_* (MUTABLE_FORMAT)
     , RESOURCE_FORMAT_R8G8_UNORM                                    // VK_FORMAT_R8G8_UNORM
     , RESOURCE_FORMAT_R8G8_SNORM                                    // VK_FORMAT_R8G8_SNORM
     , RESOURCE_FORMAT_R8G8_UINT                                     // VK_FORMAT_R8G8_UINT
@@ -469,13 +469,13 @@ enum RESOURCE_FORMAT : EnumT
     // RGBE
     , RESOURCE_FORMAT_R9G9B9E5_UFLOAT                               // VK_FORMAT_E5B9G9R9_UFLOAT_PACK32
 
-    // 深度ステンシルフォーマット                        
+    // 深度ステンシルフォーマット
     , RESOURCE_FORMAT_D16_UNORM                                     // VK_FORMAT_D16_UNORM
     , RESOURCE_FORMAT_D32_FLOAT                                     // VK_FORMAT_D32_SFLOAT
     , RESOURCE_FORMAT_D24_UNORM_S8_UINT                             // VK_FORMAT_D24_UNORM_S8_UINT
     , RESOURCE_FORMAT_D32_FLOAT_S8X24_UINT                          // VK_FORMAT_D32_SFLOAT_S8_UINT
 
-    // 圧縮フォーマット                                
+    // 圧縮フォーマット
     , RESOURCE_FORMAT_BC1_TYPELESS                                  // VK_FORMAT_BC1_RGBA_UNORM_* (MUTABLE_FORMAT)
     , RESOURCE_FORMAT_BC1_UNORM                                     // VK_FORMAT_BC1_RGBA_UNORM_BLOCK
     , RESOURCE_FORMAT_BC1_UNORM_SRGB                                // VK_FORMAT_BC1_RGBA_SRGB_BLOCK
@@ -498,7 +498,7 @@ enum RESOURCE_FORMAT : EnumT
     , RESOURCE_FORMAT_BC7_UNORM                                     // VK_FORMAT_BC7_UNORM_BLOCK
     , RESOURCE_FORMAT_BC7_UNORM_SRGB                                // VK_FORMAT_BC7_SRGB_BLOCK
 
-    // ビデオフォーマット                    
+    // ビデオフォーマット
     , RESOURCE_FORMAT_Y8U8Y8V8_422_UNORM                            // YUY2 VK_FORMAT_G8B8G8R8_422_UNORM
     , RESOURCE_FORMAT_X6Y10X6U10X6Y10X6V10_422_UNORM                // Y210 VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16
     , RESOURCE_FORMAT_Y16U16Y16V16_422_UNORM                        // Y216 VK_FORMAT_G16B16G16R16_422_UNORM
@@ -599,14 +599,14 @@ enum RESOURCE_FORMAT : EnumT
 /*
     // Vulkanフォーマット
     // R_VK
-    , RESOURCE_FORMAT_R8_USCALED                                    // VK_FORMAT_R8_USCALED 
-    , RESOURCE_FORMAT_R8_SSCALED                                    // VK_FORMAT_R8_SSCALED 
-    , RESOURCE_FORMAT_R8_SRGB                                       // VK_FORMAT_R8_SRGB    
+    , RESOURCE_FORMAT_R8_USCALED                                    // VK_FORMAT_R8_USCALED
+    , RESOURCE_FORMAT_R8_SSCALED                                    // VK_FORMAT_R8_SSCALED
+    , RESOURCE_FORMAT_R8_SRGB                                       // VK_FORMAT_R8_SRGB
     , RESOURCE_FORMAT_R16_USCALED                                   // VK_FORMAT_R16_USCALED
     , RESOURCE_FORMAT_R16_SSCALED                                   // VK_FORMAT_R16_SSCALED
-    , RESOURCE_FORMAT_R64_UINT                                      // VK_FORMAT_R64_UINT   
-    , RESOURCE_FORMAT_R64_SINT                                      // VK_FORMAT_R64_SINT   
-    , RESOURCE_FORMAT_R64_SFLOAT                                    // VK_FORMAT_R64_SFLOAT 
+    , RESOURCE_FORMAT_R64_UINT                                      // VK_FORMAT_R64_UINT
+    , RESOURCE_FORMAT_R64_SINT                                      // VK_FORMAT_R64_SINT
+    , RESOURCE_FORMAT_R64_SFLOAT                                    // VK_FORMAT_R64_SFLOAT
 
     // RG_VK
     , RESOURCE_FORMAT_R8G8_USCALED                                  // VK_FORMAT_R8G8_USCALED
@@ -781,7 +781,7 @@ enum DEBUG_MESSAGE_CATEGORY_FLAG : EnumT
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_RESOURCE_MANIPULATION
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_EXECUTION
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_SHADER
-                                                            | DEBUG_MESSAGE_CATEGORY_FLAG_B3D        
+                                                            | DEBUG_MESSAGE_CATEGORY_FLAG_B3D
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_B3D_DETAILS
                                                             | DEBUG_MESSAGE_CATEGORY_FLAG_PERFORMANCE
 };
@@ -799,8 +799,8 @@ enum DEBUG_MESSAGE_SEVERITY : EnumT
 
 /**
  * @brief ユーザー定義用のメッセージコールバック関数ポインタの宣言。
- * @param _severity メッセージの重要度が指定されます。 
- * @param _category メッセージのカテゴリが指定されます。 
+ * @param _severity メッセージの重要度が指定されます。
+ * @param _category メッセージのカテゴリが指定されます。
  * @param _message メッセージ文字列。
  * @param _user_data DEBUG_MESSAGE_CALLABCK_DESC::user_data で指定されたユーザーデータ。
  * @note この関数は重要度、カテゴリが引数に渡るため、関数内でメッセージのフィルタリングが可能です。
@@ -837,7 +837,7 @@ struct DEVICE_FACTORY_DEBUG
 {
     bool                           is_enabled;              // デバッグメッセージを有効にするかを指定します。
     DEBUG_MESSAGE_CALLABCK_DESC    debug_message_callback;  // デバッグメッセージ発行時のコールバック関数を指定します。
-    uint32_t                       num_debug_messages;      // デバッグメッセージの重要度の数です [0 ~ DEBUG_MESSAGE_SEVERITY_END)。 この値が0の場合、キューにメッセージは追加されませんが、引き続きdebug_message_callbackに指定されたコールバック関数には全ての重要度、カテゴリのメッセージが通知されます。 
+    uint32_t                       num_debug_messages;      // デバッグメッセージの重要度の数です [0 ~ DEBUG_MESSAGE_SEVERITY_END)。 この値が0の場合、キューにメッセージは追加されませんが、引き続きdebug_message_callbackに指定されたコールバック関数には全ての重要度、カテゴリのメッセージが通知されます。
     const DEBUG_MESSAGE_DESC*      debug_messages;          // デバッグメッセージの重要度配列への有効なポインタです。
     GPU_BASED_VALIDATION_DESC      gpu_based_validation;    // 実装によるGPU検証を有効にするかを指定します。
 };
@@ -916,34 +916,34 @@ struct DEVICE_ADAPTER_LIMITS
     uint32_t                max_typed_buffer_elements;                                  // UINT32_MAX n/a
     uint32_t                max_constant_buffer_range;                                  // UINT32_MAX n/a
     uint32_t                max_unordered_access_buffer_range;                          // UINT32_MAX n/a
-    uint32_t                max_push_32bit_constants_range;                             // D3D12_MAX_ROOT_COST(64) ルートシグネチャ内全てをプッシュ定数にした場合の最大値です。 
+    uint32_t                max_push_32bit_constants_range;                             // D3D12_MAX_ROOT_COST(64) ルートシグネチャ内全てをプッシュ定数にした場合の最大値です。
     uint32_t                max_memory_allocation_count;                                // UINT32_MAX n/a
     uint32_t                max_sampler_allocation_count;                               // D3D12_REQ_SAMPLER_OBJECT_COUNT_PER_DEVICE
 
     /**
-     * @brief 1 (D3D12_ * _RESOURCE_PLACEMENT_ALIGNMENTで決定) 
-     *        ヒープ内に線形リソースと非線形リソースが順序を問わず隣接する場合に、エイリアスを発生させない割り当てに必要なアライメントです。 
-     *        この要求が満たされない場合、隣接するリソースはエイリアスします。 
+     * @brief 1 (D3D12_ * _RESOURCE_PLACEMENT_ALIGNMENTで決定)
+     *        ヒープ内に線形リソースと非線形リソースが順序を問わず隣接する場合に、エイリアスを発生させない割り当てに必要なアライメントです。
+     *        この要求が満たされない場合、隣接するリソースはエイリアスします。
     */
     uint64_t                buffer_texture_granularity;
     uint64_t                sparse_address_space_size;                                  // UINT64_MAX n/a
 
     //uint32_t              max_bound_register_spaces;                                  // ｍaxBoundDescriptorSets
     //uint32_t              max_per_stage_descriptor_samplers;                          // tier1:16 tier2:full-heap tier3:full-heap
-    //uint32_t              max_per_stage_descriptor_constant_buffers;                  // 
-    //uint32_t              max_per_stage_descriptor_unordered_access_buffers;          // 
-    //uint32_t              max_per_stage_descriptor_srv_textures;                      // 
-    //uint32_t              max_per_stage_descriptor_uav_textures;                      // 
-    //uint32_t              max_per_stage_descriptor_input_attachments;                 // 
-    //uint32_t              max_per_stage_resources;                                    // 
-    //uint32_t              max_descriptor_set_samplers;                                // 
-    //uint32_t              max_descriptor_set_constant_buffers;                        // 
-    //uint32_t              max_descriptor_set_constant_buffers_dynamic;                // 
-    //uint32_t              max_descriptor_set_unordered_access_buffers;                // 
-    //uint32_t              max_descriptor_set_unordered_access_buffers_dynamic;        // 
-    //uint32_t              max_descriptor_set_srv_textures;                            // 
-    //uint32_t              max_descriptor_set_uav_textures;                            // 
-    //uint32_t              max_descriptor_set_input_attachments;                       // 
+    //uint32_t              max_per_stage_descriptor_constant_buffers;                  //
+    //uint32_t              max_per_stage_descriptor_unordered_access_buffers;          //
+    //uint32_t              max_per_stage_descriptor_srv_textures;                      //
+    //uint32_t              max_per_stage_descriptor_uav_textures;                      //
+    //uint32_t              max_per_stage_descriptor_input_attachments;                 //
+    //uint32_t              max_per_stage_resources;                                    //
+    //uint32_t              max_descriptor_set_samplers;                                //
+    //uint32_t              max_descriptor_set_constant_buffers;                        //
+    //uint32_t              max_descriptor_set_constant_buffers_dynamic;                //
+    //uint32_t              max_descriptor_set_unordered_access_buffers;                //
+    //uint32_t              max_descriptor_set_unordered_access_buffers_dynamic;        //
+    //uint32_t              max_descriptor_set_srv_textures;                            //
+    //uint32_t              max_descriptor_set_uav_textures;                            //
+    //uint32_t              max_descriptor_set_input_attachments;                       //
 
     uint32_t                max_vertex_input_attributes;                                // D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT
     uint32_t                max_vertex_input_bindings;                                  // D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT
@@ -1006,20 +1006,20 @@ struct DEVICE_ADAPTER_LIMITS
 
     uint32_t                max_framebuffer_width;                                      // D3D12_VIEWPORT_BOUNDS_MAX
     uint32_t                max_framebuffer_height;                                     // D3D12_VIEWPORT_BOUNDS_MAX
-    //SAMPLE_COUNT_FLAG     framebuffer_color_sample_counts;                            
-    //SAMPLE_COUNT_FLAG     framebuffer_depth_sample_counts;                            
-    //SAMPLE_COUNT_FLAG     framebuffer_stencil_sample_counts;                          
-    //SAMPLE_COUNT_FLAG     framebuffer_no_attachments_sample_counts;                   
+    //SAMPLE_COUNT_FLAG     framebuffer_color_sample_counts;
+    //SAMPLE_COUNT_FLAG     framebuffer_depth_sample_counts;
+    //SAMPLE_COUNT_FLAG     framebuffer_stencil_sample_counts;
+    //SAMPLE_COUNT_FLAG     framebuffer_no_attachments_sample_counts;
 
     uint32_t                max_color_attachments;                                      // D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT
-    //SAMPLE_COUNT_FLAG     sampled_texture_color_sample_counts;                        // 
-    //SAMPLE_COUNT_FLAG     sampled_texture_integer_sample_counts;                      // 
-    //SAMPLE_COUNT_FLAG     sampled_texture_depth_sample_counts;                        // 
-    //SAMPLE_COUNT_FLAG     sampled_texture_stencil_sample_counts;                      // 
-    //SAMPLE_COUNT_FLAG     storage_texture_sample_counts;                              // 
-    //uint32_t              max_sample_mask_words;                                      // 
-    //bool                  timestamp_compute_and_graphics;                             // 
-    //float                 timestamp_period;                                           // 
+    //SAMPLE_COUNT_FLAG     sampled_texture_color_sample_counts;                        //
+    //SAMPLE_COUNT_FLAG     sampled_texture_integer_sample_counts;                      //
+    //SAMPLE_COUNT_FLAG     sampled_texture_depth_sample_counts;                        //
+    //SAMPLE_COUNT_FLAG     sampled_texture_stencil_sample_counts;                      //
+    //SAMPLE_COUNT_FLAG     storage_texture_sample_counts;                              //
+    //uint32_t              max_sample_mask_words;                                      //
+    //bool                  timestamp_compute_and_graphics;                             //
+    //float                 timestamp_period;                                           //
 
     uint32_t                max_clip_distances;                                         // D3D12_CLIP_OR_CULL_DISTANCE_COUNT
     uint32_t                max_cull_distances;                                         // D3D12_CLIP_OR_CULL_DISTANCE_COUNT
@@ -1045,12 +1045,12 @@ struct DEVICE_ADAPTER_LIMITS
     uint64_t                non_coherent_atom_size;
 
     /**
-     * @brief D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT 
+     * @brief D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT
      *        RESOURCE_HEAP_DESC::alignment を参照してください。
     */
     uint64_t                default_resource_heap_alignment;
-    uint64_t                min_resource_heap_alignment;                                // D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT 
-    uint64_t                max_resource_heap_alignment;                                // D3D12_DEFAULT_MSAA_RESOURCE_PLACEMENT_ALIGNMENT 
+    uint64_t                min_resource_heap_alignment;                                // D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT
+    uint64_t                max_resource_heap_alignment;                                // D3D12_DEFAULT_MSAA_RESOURCE_PLACEMENT_ALIGNMENT
 };
 
 enum SHADER_STAGE_FLAG : EnumT
@@ -1129,7 +1129,7 @@ struct DEVICE_FEATURE_STREAM_OUTPUT_PROPERTIES
     uint32_t            max_stream_output_buffer_data_stride;                   // D3D12_SO_BUFFER_MAX_STRIDE_IN_BYTES
     bool                is_enabled_stream_output_queries;                       // true
     bool                is_enabled_stream_output_streams_lines_triangles;       // false (When multiple GS output streams are used they must be pointlists)
-    bool                is_enabled_stream_output_rasterization_stream_select;   // true 
+    bool                is_enabled_stream_output_rasterization_stream_select;   // true
 };
 
 // TODO: DEVICE_FEATURE_TILED_RESOURCE_PROPERTIES
@@ -1224,7 +1224,7 @@ enum SWAP_CHAIN_FLAG : EnumT
 {
       SWAP_CHAIN_FLAG_NONE                             = 0x0
     , SWAP_CHAIN_FLAG_DISABLE_VERTICAL_SYNC            = 0x1 // 垂直同期を無効にすることを指定します。
-    , SWAP_CHAIN_FLAG_ALLOW_DISCARD_AFTER_PRESENT      = 0x2 // プレゼントが完了したバックバッファの内容を保持する必要がないことを指定します。 
+    , SWAP_CHAIN_FLAG_ALLOW_DISCARD_AFTER_PRESENT      = 0x2 // プレゼントが完了したバックバッファの内容を保持する必要がないことを指定します。
     , SWAP_CHAIN_FLAG_PROTECT_CONTENTS                 = 0x4 // TODO: SWAP_CHAIN_FLAG_PROTECT_CONTENTS
     , SWAP_CHAIN_FLAG_FULLSCREEN_EXCLUSIVE             = 0x8 // 排他フルスクリーンを有効にします。
 };
@@ -1274,7 +1274,7 @@ struct SWAP_CHAIN_ACQUIRE_NEXT_BUFFER_INFO
     IFence*        signal_fence_to_cpu;
 
     /**
-     * @brief 利用可能な状態であるバッファのacquireをCPUで待機するミリ秒単位の値です。 
+     * @brief 利用可能な状態であるバッファのacquireをCPUで待機するミリ秒単位の値です。
     */
     uint32_t       timeout_millisec;
 };
@@ -1295,7 +1295,7 @@ struct SWAP_CHAIN_HDR_METADATA
     FLOAT2 white_point;                   // 色度座標でのマスタリングディスプレイのホワイトポイントです。 0-1 [nit]
     float  max_luminance;                 // マスタリングディスプレイの最大輝度です。 [nit]
     float  min_luminance;                 // マスタリングディスプレイの最小輝度です。 [nit]
-    float  max_content_light_level;       // コンテンツの任意の場所で使用される最も明るいピクセルに対応する最大ニット値です。 [nit] ; SMPTE 2086 MaxCLL 
+    float  max_content_light_level;       // コンテンツの任意の場所で使用される最も明るいピクセルに対応する最大ニット値です。 [nit] ; SMPTE 2086 MaxCLL
     float  max_frame_average_light_level; // コンテンツの平均輝度が最も明るいフレームの平均輝度に対応する最大ニット値です。 [nit] ; SMPTE 2086 MaxFALL
 };
 
@@ -1366,10 +1366,10 @@ struct DEVICE_DESC
 enum RESOURCE_HEAP_PROPERTY_FLAG : EnumT
 {
       RESOURCE_HEAP_PROPERTY_FLAG_NONE                             = 0x0
-    , RESOURCE_HEAP_PROPERTY_FLAG_DEVICE_LOCAL                     = 0x1      // デバイスのビデオメモリであることを示します。 通常、このフラグが含まれているヒープには、高いパフォーマンスがあります。 
+    , RESOURCE_HEAP_PROPERTY_FLAG_DEVICE_LOCAL                     = 0x1      // デバイスのビデオメモリであることを示します。 通常、このフラグが含まれているヒープには、高いパフォーマンスがあります。
     , RESOURCE_HEAP_PROPERTY_FLAG_HOST_READABLE                    = 0x2      // デバイスとホストで共有可能なメモリであり、ホストはメモリを読み取り可能であることを示します。
     , RESOURCE_HEAP_PROPERTY_FLAG_HOST_WRITABLE                    = 0x4      // デバイスとホストで共有可能なメモリであり、ホストはメモリを書き込み可能であることを示します。
-    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_CACHED                      = 0x8      // メモリの内容がホストにキャッシュされることを示します。 RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENTがフラグに含まれていない場合、Flush,Invalidateを使用する必要があります。 
+    , RESOURCE_HEAP_PROPERTY_FLAG_HOST_CACHED                      = 0x8      // メモリの内容がホストにキャッシュされることを示します。 RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENTがフラグに含まれていない場合、Flush,Invalidateを使用する必要があります。
     , RESOURCE_HEAP_PROPERTY_FLAG_HOST_COHERENT                    = 0x10     // Flush,Invalidateによって、デバイスへのホスト書き込みをフラッシュしたり、デバイスの書き込みをホストへ可視にする操作が不要であることを示します。
     , RESOURCE_HEAP_PROPERTY_FLAG_MULTI_INSTANCE                   = 0x20     // TODO: creation_node_maskで複数のノードを指定可能です。このフラグが指定されていない場合は有効なノードを示す単一のビットのみ指定する必要があります。
     , RESOURCE_HEAP_PROPERTY_FLAG_SUBSET_ALLOCATION                = 0x40     // TODO: 各ノードへの割り当てがcreation_node_maskによって制限可能。それ以外は全てのノードで割り当てられる(依然として、任意のビットを指定することは有効です)。RESOURCE_HEAP_PROPERTY_FLAG_MULTI_INSTANCEが指定されていない場合依然としてビットは1つのみ指定可能。
@@ -1403,19 +1403,19 @@ struct RESOURCE_HEAP_DESC
     uint64_t             size_in_bytes;
 
     /**
-     * @brief ヒープのアライメントを指定します。 作成時に0を指定して、内部APIのデフォルトアライメントを設定可能です。 
-     * 
-     * @remark ヒープのオフセットがゼロの位置に配置されるビデオメモリアドレスのアライメントはこの値によって保証されます。 
-     *         例外として、デフォルトのアライメントが存在しない、またはヒープアライメントがドライバ側で管理されている場合、強制的に1が設定され、アライメントの指定が存在しないことを示します。 
-     *         ヒープのデフォルトアライメントは DEVICE_ADAPTER_LIMITS::default_resource_heap_alignment を介して提供されます(上記の例外も適用されています)。 
-     * 
-     *         これはヒープの開始アドレスのアライメントを保証するものです;マルチサンプルテクスチャ等をバインドするケースでは、バインドオフセットにデフォルトアライメント以上の値が必要な場合があります。 
-     *         この場合、IDevice::GetResourceAllocationInfoから返されるアライメントを使用してヒープ自体のアライメントを明示的に指定する必要があります。 
-     *         これらの複雑な要件を回避するには、DEVICE_ADAPTER_LIMITS::max_resource_heap_alignment アライメントを使用する、巨大なヒープを作成し、リソースへのヒープメモリのサブ割当を管理します。 
-     * 
-     * @note リソースをバインドする際のヒープオフセットにIDevice::GetResourceAllocationInfoから返されるアライメントを使用することは引き続き必要です。 
+     * @brief ヒープのアライメントを指定します。 作成時に0を指定して、内部APIのデフォルトアライメントを設定可能です。
+     *
+     * @remark ヒープのオフセットがゼロの位置に配置されるビデオメモリアドレスのアライメントはこの値によって保証されます。
+     *         例外として、デフォルトのアライメントが存在しない、またはヒープアライメントがドライバ側で管理されている場合、強制的に1が設定され、アライメントの指定が存在しないことを示します。
+     *         ヒープのデフォルトアライメントは DEVICE_ADAPTER_LIMITS::default_resource_heap_alignment を介して提供されます(上記の例外も適用されています)。
+     *
+     *         これはヒープの開始アドレスのアライメントを保証するものです;マルチサンプルテクスチャ等をバインドするケースでは、バインドオフセットにデフォルトアライメント以上の値が必要な場合があります。
+     *         この場合、IDevice::GetResourceAllocationInfoから返されるアライメントを使用してヒープ自体のアライメントを明示的に指定する必要があります。
+     *         これらの複雑な要件を回避するには、DEVICE_ADAPTER_LIMITS::max_resource_heap_alignment アライメントを使用する、巨大なヒープを作成し、リソースへのヒープメモリのサブ割当を管理します。
+     *
+     * @note リソースをバインドする際のヒープオフセットにIDevice::GetResourceAllocationInfoから返されるアライメントを使用することは引き続き必要です。
     */
-    uint64_t             alignment; 
+    uint64_t             alignment;
 
     RESOURCE_HEAP_FLAGS  flags;
     NodeMask             creation_node_mask;    // ヒープのインスタンスを作成するノードのインデックスビットです。RESOURCE_HEAP_TYPE_MULTI_INSTANCEヒープの場合この複数のノードにメモリインスタンスを作成します。それ以外の場合単一のビットのみを指定する必要があります。
@@ -1485,14 +1485,14 @@ enum RESOURCE_ACCESS_FLAG : EnumT
     , RESOURCE_ACCESS_FLAG_RESOLVE_READ                             = 0x4000        // D3D12_RESOLVE_SOURCE                         TRANSFER_READ_BIT                               TRANSFER_SRC_OPTIMAL
     , RESOURCE_ACCESS_FLAG_RESOLVE_WRITE                            = 0x8000        // D3D12_RESOLVE_DEST                           TRANSFER_WRITE_BIT                              TRANSFER_DST_OPTIMAL
 
-    , RESOURCE_ACCESS_FLAG_HOST_READ                                = 0x10000       // D3D12_GENERIC_READ|COMMON                    HOST_READ_BIT                                   GENERAL , PREINITIALIZED  
-    , RESOURCE_ACCESS_FLAG_HOST_WRITE                               = 0x20000       // D3D12_GENERIC_READ|COMMON|COPY_DST           HOST_WRITE_BIT                                  GENERAL , PREINITIALIZED  
+    , RESOURCE_ACCESS_FLAG_HOST_READ                                = 0x10000       // D3D12_GENERIC_READ|COMMON                    HOST_READ_BIT                                   GENERAL , PREINITIALIZED
+    , RESOURCE_ACCESS_FLAG_HOST_WRITE                               = 0x20000       // D3D12_GENERIC_READ|COMMON|COPY_DST           HOST_WRITE_BIT                                  GENERAL , PREINITIALIZED
 
     , RESOURCE_ACCESS_FLAG_GENERIC_MEMORY_READ                      = 0x40000       // D3D12_GENERIC_READ                           MEMORY_READ_BIT                                 GENERAL , PREINITIALIZED
 
-    , RESOURCE_ACCESS_FLAG_STREAM_OUTPUT_WRITE                      = 0x80000       // D3D12_STREAM_OUTPUT                          TRANSFORM_FEEDBACK_WRITE_BIT_EXT                n/a  
-    , RESOURCE_ACCESS_FLAG_STREAM_OUTPUT_COUNTER_READ               = 0x100000      // D3D12_STREAM_OUTPUT                          TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT         n/a 
-    , RESOURCE_ACCESS_FLAG_STREAM_OUTPUT_COUNTER_WRITE              = 0x200000      // D3D12_STREAM_OUTPUT                          TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT        n/a  
+    , RESOURCE_ACCESS_FLAG_STREAM_OUTPUT_WRITE                      = 0x80000       // D3D12_STREAM_OUTPUT                          TRANSFORM_FEEDBACK_WRITE_BIT_EXT                n/a
+    , RESOURCE_ACCESS_FLAG_STREAM_OUTPUT_COUNTER_READ               = 0x100000      // D3D12_STREAM_OUTPUT                          TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT         n/a
+    , RESOURCE_ACCESS_FLAG_STREAM_OUTPUT_COUNTER_WRITE              = 0x200000      // D3D12_STREAM_OUTPUT                          TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT        n/a
 
     , RESOURCE_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ              = 0x400000      // D3D12_RAYTRACING_ACCELERATION_STRUCTURE      ACCELERATION_STRUCTURE_READ_BIT_KHR             n/a
     , RESOURCE_ACCESS_FLAG_ACCELERATION_STRUCTURE_WRITE             = 0x800000      // D3D12_RAYTRACING_ACCELERATION_STRUCTURE      ACCELERATION_STRUCTURE_WRITE_BIT_KHR            n/a
@@ -1502,9 +1502,9 @@ enum RESOURCE_ACCESS_FLAG : EnumT
     , RESOURCE_ACCESS_FLAG_PRESENT                                  = RESOURCE_ACCESS_FLAG_NONE //                                  0x0                                             PRESENT_KHR
 
 
-    //, RESOURCE_ACCESS_FLAG_MEMORY_WRITE                         = 0x00010000  // D3D12_GENERIC_READ                                                                            GENERAL , PREINITIALIZED  
-    //, RESOURCE_ACCESS_FLAG_COMMAND_PREPROCESS_READ              = 0x00020000                                                  COMMAND_PREPROCESS_READ_BIT_NV 
-    //, RESOURCE_ACCESS_FLAG_COMMAND_PREPROCESS_WRITE             = 0x00040000                                                  COMMAND_PREPROCESS_WRITE_BIT_NV 
+    //, RESOURCE_ACCESS_FLAG_MEMORY_WRITE                         = 0x00010000  // D3D12_GENERIC_READ                                                                            GENERAL , PREINITIALIZED
+    //, RESOURCE_ACCESS_FLAG_COMMAND_PREPROCESS_READ              = 0x00020000                                                  COMMAND_PREPROCESS_READ_BIT_NV
+    //, RESOURCE_ACCESS_FLAG_COMMAND_PREPROCESS_WRITE             = 0x00040000                                                  COMMAND_PREPROCESS_WRITE_BIT_NV
 };
 B3D_DEFINE_ENUM_FLAGS(RESOURCE_ACCESS_FLAGS, RESOURCE_ACCESS_FLAG);
 
@@ -1543,9 +1543,9 @@ enum RESOURCE_STATE : EnumT
     , RESOURCE_STATE_RESOLVE_SRC_READ                       // D3D12_RESOLVE_SOURCE                         TRANSFER_READ_BIT                               TRANSFER_SRC_OPTIMAL
     , RESOURCE_STATE_RESOLVE_DST_WRITE                      // D3D12_RESOLVE_DEST                           TRANSFER_WRITE_BIT                              TRANSFER_DST_OPTIMAL
 
-    , RESOURCE_STATE_HOST_READ                              // D3D12_GENERIC_READ|COMMON                    HOST_READ_BIT                                   GENERAL , PREINITIALIZED  
-    , RESOURCE_STATE_HOST_WRITE                             // D3D12_GENERIC_READ|COMMON,COPY_DST           HOST_WRITE_BIT                                  GENERAL , PREINITIALIZED  
-    , RESOURCE_STATE_HOST_READ_WRITE                        // D3D12_GENERIC_READ|COMMON,COPY_DST           HOST_{READ|WRITE}_BIT                           GENERAL , PREINITIALIZED  
+    , RESOURCE_STATE_HOST_READ                              // D3D12_GENERIC_READ|COMMON                    HOST_READ_BIT                                   GENERAL , PREINITIALIZED
+    , RESOURCE_STATE_HOST_WRITE                             // D3D12_GENERIC_READ|COMMON,COPY_DST           HOST_WRITE_BIT                                  GENERAL , PREINITIALIZED
+    , RESOURCE_STATE_HOST_READ_WRITE                        // D3D12_GENERIC_READ|COMMON,COPY_DST           HOST_{READ|WRITE}_BIT                           GENERAL , PREINITIALIZED
 
     // D3D12: 深度ステンシルフォーマットの場合DEPTH_READも必須
     , RESOURCE_STATE_GENERIC_MEMORY_READ                    // D3D12_GENERIC_READ                           MEMORY_READ_BIT                                 GENERAL , PREINITIALIZED
@@ -1564,11 +1564,11 @@ enum RESOURCE_STATE : EnumT
     , RESOURCE_STATE_PRESENT                                // D3D12_PRESENT                                0x0                                             PRESENT_KHR
 
     //, RESOURCE_STATE_MEMORY_WRITE                         // D3D12_GENERIC_READ                           MEMORY_WRITE_BIT                                GENERAL
-    //, RESOURCE_STATE_COMMAND_PREPROCESS_READ                                                              COMMAND_PREPROCESS_READ_BIT_NV 
-    //, RESOURCE_STATE_COMMAND_PREPROCESS_WRITE                                                             COMMAND_PREPROCESS_WRITE_BIT_NV 
+    //, RESOURCE_STATE_COMMAND_PREPROCESS_READ                                                              COMMAND_PREPROCESS_READ_BIT_NV
+    //, RESOURCE_STATE_COMMAND_PREPROCESS_WRITE                                                             COMMAND_PREPROCESS_WRITE_BIT_NV
 };
 
-/* 
+/*
 VK_ACCESS_INDIRECT_COMMAND_READ_BIT                     PIPELINE_STAGE_DRAW_INDIRECT_BIT
 VK_ACCESS_INDEX_READ_BIT                                PIPELINE_STAGE_VERTEX_INPUT_BIT
 VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT                     PIPELINE_STAGE_VERTEX_INPUT_BIT
@@ -1680,10 +1680,10 @@ enum PIPELINE_STAGE_FLAG : EnumT
     , PIPELINE_STAGE_FLAG_STREAM_OUTPUT                     = 0x20000   // TRANSFORM_FEEDBACK
     , PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING             = 0x40000
     , PIPELINE_STAGE_FLAG_SHADING_RATE_ATTACHMENT           = 0x80000   // SHADING_RATE_SOURCE
-    , PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER                = 0x100000 
+    , PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER                = 0x100000
     , PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD      = 0x200000
     , PIPELINE_STAGE_FLAG_TASK_SHADER                       = 0x400000  // AMPLIFICATION
-    , PIPELINE_STAGE_FLAG_MESH_SHADER                       = 0x800000 
+    , PIPELINE_STAGE_FLAG_MESH_SHADER                       = 0x800000
 
     //, PIPELINE_STAGE_FLAG_FRAGMENT_DENSITY_PROCESS          = 0x1000000
     //, PIPELINE_STAGE_FLAG_COMMAND_PROCESS                   = 0x80000
@@ -1692,7 +1692,7 @@ B3D_DEFINE_ENUM_FLAGS(PIPELINE_STAGE_FLAGS, PIPELINE_STAGE_FLAG);
 
 enum TEXTURE_LAYOUT : EnumT
 {
-      TEXTURE_LAYOUT_UNKNOWN    
+      TEXTURE_LAYOUT_UNKNOWN
     , TEXTURE_LAYOUT_ROW_MAJOR
 };
 
@@ -1823,8 +1823,8 @@ struct COMMITTED_RESOURCE_DESC
     uint32_t               heap_index;
     RESOURCE_HEAP_FLAGS    heap_flags;
     NodeMask               creation_node_mask;
-    NodeMask               visible_node_mask;    
-    RESOURCE_DESC          resource_desc;    
+    NodeMask               visible_node_mask;
+    RESOURCE_DESC          resource_desc;
     uint32_t               num_bind_node_masks;// bind_node_masks配列の要素数です。内部で作成されるheap_indexヒープがRESOURCE_HEAP_PROPERTY_FLAG_MULTI_INSTANCEを含む場合、この値はIDevice内のノード数と同じである必要があります。RESOURCE_HEAP_PROPERTY_FLAG_MULTI_INSTANCEを含まない場合、この値は0でなければならず、作成するリソース内の全インスタンスにバインドされるヒープインスタンスは、creation_node_maskで指定された単一のビットのみとなります。
     const NodeMask*        bind_node_masks;// 作成されるリソースの各インスタンスにバインドする、ヒープのヒープインスタンスを示す、単一のノードマスクを指定するNodeMask配列です。ここで、この配列要素に対するインデックスをiと定義し、iはデバイスの有効なノードのインデックスを示します。bind_node_masks[i]の値が(1<<i)である場合、そのリソースインスタンスがバインドするヒープインスタンスはローカルメモリにあります。それ以外の場合、ヒープのインスタンスはピアメモリにあります。
 };
@@ -1873,8 +1873,8 @@ enum TILED_RESOURCE_FORMAT_FLAG : EnumT
 {
       TILED_RESOURCE_FORMAT_FLAG_NONE                  = 0x0
     , TILED_RESOURCE_FORMAT_FLAG_SINGLE_MIPTAIL        = 0x1 // 画像配列の各要素毎のミップテイルが、1つのミップテイル領域に集約されることを示します。このフラグが指定されている場合、全てのミップテイルを一度にバインドする必要があります。
-    , TILED_RESOURCE_FORMAT_FLAG_ALIGNED_MIP_SIZE      = 0x2 // 
-//  , TILED_RESOURCE_FORMAT_FLAG_NONSTANDARD_TILE_SIZE = 0x4 // 
+    , TILED_RESOURCE_FORMAT_FLAG_ALIGNED_MIP_SIZE      = 0x2 //
+//  , TILED_RESOURCE_FORMAT_FLAG_NONSTANDARD_TILE_SIZE = 0x4 //
 };
 B3D_DEFINE_ENUM_FLAGS(TILED_RESOURCE_FORMAT_FLAGS, TILED_RESOURCE_FORMAT_FLAG);
 
@@ -1989,7 +1989,7 @@ struct SUBMIT_TILE_BINDINGS_DESC
 {
     uint32_t                            num_bind_infos;
     const TILED_RESOURCE_BIND_INFO*     bind_infos;
-    IFence*                             signal_fence_to_cpu; // FENCE_TYPE_BINARY_GPU_TO_CPUフェンスです。    
+    IFence*                             signal_fence_to_cpu; // FENCE_TYPE_BINARY_GPU_TO_CPUフェンスです。
 };
 
 
@@ -2231,14 +2231,14 @@ enum BORDER_COLOR : EnumT
 
 enum COMPARISON_FUNC : EnumT
 {
-      COMPARISON_FUNC_NEVER         // if (false) 
-    , COMPARISON_FUNC_LESS          // if (src < dst) 
-    , COMPARISON_FUNC_EQUAL         // if (src == dst) 
-    , COMPARISON_FUNC_LESS_EQUAL    // if (src <= dst) 
-    , COMPARISON_FUNC_GREATER       // if (src > dst) 
-    , COMPARISON_FUNC_NOT_EQUAL     // if (src != dst) 
-    , COMPARISON_FUNC_GREATER_EQUAL // if (src >= dst) 
-    , COMPARISON_FUNC_ALWAYS        // if (true) 
+      COMPARISON_FUNC_NEVER         // if (false)
+    , COMPARISON_FUNC_LESS          // if (src < dst)
+    , COMPARISON_FUNC_EQUAL         // if (src == dst)
+    , COMPARISON_FUNC_LESS_EQUAL    // if (src <= dst)
+    , COMPARISON_FUNC_GREATER       // if (src > dst)
+    , COMPARISON_FUNC_NOT_EQUAL     // if (src != dst)
+    , COMPARISON_FUNC_GREATER_EQUAL // if (src >= dst)
+    , COMPARISON_FUNC_ALWAYS        // if (true)
 };
 
 struct SAMPLER_FILTER_DESC
@@ -2292,25 +2292,25 @@ struct SAMPLER_DESC
 enum FENCE_TYPE : EnumT
 {
     /**
-     * @brief コマンドキューからホストへの同期を実行します。 
+     * @brief コマンドキューからホストへの同期を実行します。
      *        ICommandQueue::Submit*を介してのみシグナル操作が可能です。 CPUシグナル(IFence::Signal)は使用出来ません。
-     *        シグナル送信後、IFence::Waitを使用してCPUで待機することが出来ます。 
-     *        待機完了後にシグナルの状態がリセットされることはありません。 そのため再度シグナルを送信する場合、IFence::Resetで事前に状態をリセットする必要があります。 
-     *        従って、 単一のSignal -> 単一または任意の数のWait -> 単一のReset が同期操作のセットとなります。 
+     *        シグナル送信後、IFence::Waitを使用してCPUで待機することが出来ます。
+     *        待機完了後にシグナルの状態がリセットされることはありません。 そのため再度シグナルを送信する場合、IFence::Resetで事前に状態をリセットする必要があります。
+     *        従って、 単一のSignal -> 単一または任意の数のWait -> 単一のReset が同期操作のセットとなります。
     */
     FENCE_TYPE_BINARY_GPU_TO_CPU,
-      
+
     /**
-     * @brief コマンドキューの実行間で同期を実行します。 
+     * @brief コマンドキューの実行間で同期を実行します。
      *        ICommandQueue::Submit*を介してのみシグナル、待機操作が可能です。 IFence::Reset以外のメソッドを使用することは出来ません。
-     *        キューでの待機完了後にシグナルの状態が自動的にリセットさます。 
-     *        従って、 単一のSignal -> 単一のWait が同期操作のセットとなります。 
+     *        キューでの待機完了後にシグナルの状態が自動的にリセットさます。
+     *        従って、 単一のSignal -> 単一のWait が同期操作のセットとなります。
     */
     FENCE_TYPE_BINARY_GPU_TO_GPU,
 
     /**
-     * @brief コマンドキューまたはホストの実行間で同期を実行します。 シグナルは値ベースで管理します。 
-     *        ICommandQueue::Submit*を介してシグナル、待機操作が可能です。 IFenceのメソッドをフルサポートします。 
+     * @brief コマンドキューまたはホストの実行間で同期を実行します。 シグナルは値ベースで管理します。
+     *        ICommandQueue::Submit*を介してシグナル、待機操作が可能です。 IFenceのメソッドをフルサポートします。
      *        このタイプの操作セットは、 単一のSignal -> 任意の数のWait です。
     */
     FENCE_TYPE_TIMELINE
@@ -2330,8 +2330,8 @@ struct FENCE_DESC
 
     /**
      * @brief フェンスの初期値です。
-     *        typeがFENCE_TYPE_BINARY_GPU_TO_CPUの場合、値を1以上に設定するとシグナルされた状態で作成されます。 
-     *        typeがFENCE_TYPE_BINARY_GPU_TO_GPUの場合、値は0である必要があります。 
+     *        typeがFENCE_TYPE_BINARY_GPU_TO_CPUの場合、値を1以上に設定するとシグナルされた状態で作成されます。
+     *        typeがFENCE_TYPE_BINARY_GPU_TO_GPUの場合、値は0である必要があります。
     */
     uint64_t        initial_value;
     FENCE_FLAGS     flags;
@@ -2386,8 +2386,8 @@ enum COMMAND_ALLOCATOR_FLAG : EnumT
 
     /*
     * @brief アロケータから割り当てられたコマンドリストは、記録時、記録終了時に個別にリセット可能であることを指定します。
-    * @remark このフラグを使用して作成されたアロケーターを使用するコマンドリストは、フレーム毎等の短い周期でリセットするべきではありません。 
-    *         実装によっては、コマンドリストでの個別のResetでは、アロケーターへメモリが返却されないにもかかわらず、新しいメモリを割り当てる可能性があるためです。 
+    * @remark このフラグを使用して作成されたアロケーターを使用するコマンドリストは、フレーム毎等の短い周期でリセットするべきではありません。
+    *         実装によっては、コマンドリストでの個別のResetでは、アロケーターへメモリが返却されないにもかかわらず、新しいメモリを割り当てる可能性があるためです。
     *         メモリの肥大化を回避するには、コマンドアロケータのResetを呼び出す必要があります。
     */
     , COMMAND_ALLOCATOR_FLAG_ALLOW_RESET_COMMAND_LIST = 0x2
@@ -2424,9 +2424,9 @@ struct COMMAND_LIST_DESC
 };
 
 /**
- * @brief コマンドリストの状態を定義します。 
- * @note 実行中(PENDING)であるかどうかの判定は、同期オブジェクトを介して間接的に取得する必要があります。 
- *       この列挙の値は、コマンドリストが正常に使用される場合の状態遷移を理論的に表現するためのものです。 
+ * @brief コマンドリストの状態を定義します。
+ * @note 実行中(PENDING)であるかどうかの判定は、同期オブジェクトを介して間接的に取得する必要があります。
+ *       この列挙の値は、コマンドリストが正常に使用される場合の状態遷移を理論的に表現するためのものです。
  *       *記録されたリソースの破棄等の、コマンドアロケータ、コマンドリストの範囲外で発生したエラーを確認することはできません。
 */
 enum COMMAND_LIST_STATE : EnumT
@@ -2434,13 +2434,13 @@ enum COMMAND_LIST_STATE : EnumT
       COMMAND_LIST_STATE_INITIAL    // コマンドリストが割り当てられた、またはリセットされた状態です。
     , COMMAND_LIST_STATE_RECORDING  // コマンドを記録可能な状態です。
     , COMMAND_LIST_STATE_EXECUTABLE // コマンドをキューに送信、実行が可能な状態です。
-    , COMMAND_LIST_STATE_INVALID    // アロケータのリセット、記録されたリソース等の破棄*、またはCOMMAND_LIST_BEGIN_FLAG_ONE_TIME_SUBMITによって、リセットや破棄以外の使用が不可能となった状態です。 
+    , COMMAND_LIST_STATE_INVALID    // アロケータのリセット、記録されたリソース等の破棄*、またはCOMMAND_LIST_BEGIN_FLAG_ONE_TIME_SUBMITによって、リセットや破棄以外の使用が不可能となった状態です。
 };
 
 enum QUERY_FLAG : EnumT
 {
       QUERY_FLAG_NONE               = 0x0
-    , QUERY_FLAG_PRECISE_OCCLUSION  = 0x1 // オクルージョンクエリのサンプル数の結果に精度が必要であることを指定します。 このフラグが指定されていない場合、オクルージョンクエリの結果は0または0以外となり、精度が不要な場合に効果的です。 QUERY_HEAP_TYPE_OCCLUSION以外で使用することは出来ません。 
+    , QUERY_FLAG_PRECISE_OCCLUSION  = 0x1 // オクルージョンクエリのサンプル数の結果に精度が必要であることを指定します。 このフラグが指定されていない場合、オクルージョンクエリの結果は0または0以外となり、精度が不要な場合に効果的です。 QUERY_HEAP_TYPE_OCCLUSION以外で使用することは出来ません。
 };
 B3D_DEFINE_ENUM_FLAGS(QUERY_FLAGS, QUERY_FLAG);
 
@@ -2470,7 +2470,7 @@ struct COMMAND_LIST_BEGIN_DESC
 enum STENCIL_FACE : EnumT
 {
       STENCIL_FACE_FLAG_FRONT_AND_BACK
-    , STENCIL_FACE_FLAG_FRONT     
+    , STENCIL_FACE_FLAG_FRONT
     , STENCIL_FACE_FLAG_BACK
 };
 
@@ -2531,7 +2531,7 @@ struct QUERY_DATA_SO_STATISTICS
 struct STREAM_OUTPUT_BUFFER_VIEW
 {
     GpuVirtualAddress buffer_location;              // vkCmdBeginTransformFeedbackEXT::pCounterBuffers[i]
-    uint64_t          size_in_bytes;                // 
+    uint64_t          size_in_bytes;                //
     GpuVirtualAddress buffer_filled_size_location;  // vkCmdBeginTransformFeedbackEXT::pCounterBufferOffsets[i]
 };
 
@@ -2570,9 +2570,9 @@ struct INDIRECT_COMMAND_DESC
 
 enum INDIRECT_ARGUMENT_TYPE : EnumT
 {
-      INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW     // VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV 
-    , INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW      // VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_NV 
-    , INDIRECT_ARGUMENT_TYPE_PUSH_32BIT_CONSTANT    // VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_NV 
+      INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW     // VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV
+    , INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW      // VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_NV
+    , INDIRECT_ARGUMENT_TYPE_PUSH_32BIT_CONSTANT    // VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_NV
     , INDIRECT_ARGUMENT_TYPE_DRAW
     , INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED           // VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_NV
     , INDIRECT_ARGUMENT_TYPE_DISPATCH
@@ -2669,12 +2669,12 @@ struct COMMAND_SIGNATURE_DESC
 //{
 //     INDIRECT_ARGUMENT_TYPE           type;
 //     INDIRECT_COMMANDS_TOKEN_TYPE     token_type;
-//      
+//
 //     // Vulkanではインダイレクト引数バッファを分割可能です。 コマンドシグネチャ作成時にstreamというバッファのスロットを指定することが出来、間接コマンド起動時に複数のstreamに複数のバッファを関連付けます。
 //     // これにより、部分的なコマンド値の変更時にキャッシュ効率が向上する可能性があります。
 //     uint32_t                         stream;
 //     uint32_t                         offset;
-// 
+//
 //     union
 //     {
 //         struct
@@ -2689,10 +2689,10 @@ struct COMMAND_SIGNATURE_DESC
 //             uint32_t        num_32bit_values_to_set;
 //         } constant;
 //     };
-// 
+//
 //     uint32_t                            num_index_types;
 //     const INDIRECT_ARGUMENT_INDEX_TYPE* index_types;
-// 
+//
 //     // 他のAPIとのインデックスタイプ値に関する互換性を保つために使用されます。
 //     // この値がnullptrではない場合、index_type_valuesの各インデックスの要素の値を対応するindex_typesの要素のVkIndexType値としてマッピングし、
 //     // インデックスタイプを指定する間接コマンド用のデータ     を格納するバッファの値として使用することが可能です(map<uint32_t,VkIndexType>のように)。
@@ -2727,7 +2727,7 @@ SRV_TEXTURE
 SRV_BUFFER
     STRUCTUREDBUFFER        : storage buffer
     BYTEADDRESSBUFFER       : storage buffer
-    TBUFFER                 : storage buffer https://blog.csdn.net/P_hantom/article/details/108083086 
+    TBUFFER                 : storage buffer https://blog.csdn.net/P_hantom/article/details/108083086
     TEXTUREBUFFER           : storage buffer
 SRV_TYPED_BUFFER
     BUFFER                  : uniform texel buffer
@@ -2761,7 +2761,7 @@ STATIC_SAMPLER
     D3D12_DESCRIPTOR_RANGE_TYPE_SRV
     D3D12_DESCRIPTOR_RANGE_TYPE_UAV
     D3D12_DESCRIPTOR_RANGE_TYPE_CBV
-    
+
 */
 enum DESCRIPTOR_TYPE : EnumT
 {
@@ -2797,7 +2797,7 @@ enum DESCRIPTOR_POOL_FLAG : EnumT
     DESCRIPTOR_POOL_FLAG_UPDATE_AFTER_BIND_POOL = 0x2, // UPDATE_AFTER_BINDフラグのディスクリプタを割り当て可能なプールが作成されることを示します。非UPDATE_AFTER_BINDフラグのディスクリプタは引き続き割り当て可能です。
 
     /**
-     * @brief コピー可能ディスクリプタヒープであることを指定します。 
+     * @brief コピー可能ディスクリプタヒープであることを指定します。
      *        このフラグが指定されたヒープから割り当てられたディスクリプタセットは、COPY_DESCRIPTOR_SET::src_setまたはIDescriptorSet0::CopyDescriptorSet::_srcでコピー元ディスクリプタとして利用可能です。
     */
     DESCRIPTOR_POOL_FLAG_COPY_SRC               = 0x4
@@ -2852,44 +2852,44 @@ struct DESCRIPTOR_SET_ALLOCATE_DESC
 enum DESCRIPTOR_FLAG : EnumT
 {
     /**
-     * @brief コマンドリストにセットされた後、ディスクリプタ自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。 
+     * @brief コマンドリストにセットされた後、ディスクリプタ自体が静的であり、コマンドリストの破棄またはリセットを行うまで変更出来ません。
      *        これは、コマンドリストにセットされた後、ディスクリプタが指すリソースの参照を、UpdateDescriptorSet等によって変更できない事を示します。
     */
     DESCRIPTOR_FLAG_NONE                                                = 0x0
 
     /**
-     * @brief コマンドリストにセットされた後、ディスクリプタ自体が揮発性である事を指定します。 
+     * @brief コマンドリストにセットされた後、ディスクリプタ自体が揮発性である事を指定します。
      *        コマンドリストを送信し、実行が完了するまでの間を除き、UpdateDescriptorSet等によって変更することが出来ます。 (DESCRIPTORS_VOLATILE)
     */
     , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_AFTER_BIND                     = 0x1
 
     /**
-     * @brief コマンドリストにセットされていないディスクリプタを更新出来ることを指定します。 
+     * @brief コマンドリストにセットされていないディスクリプタを更新出来ることを指定します。
      *        コマンドリストに参照される範囲のディスクリプタの更新は引き続き無効です。
     */
     , DESCRIPTOR_FLAG_DESCRIPTORS_UPDATE_UNUSED_WHILE_PENDING           = 0x2
 
     /**
-     * @brief リソースがシェーダー側で参照されない場合、ディスクリプタへリソースを設定する必要が無いことを指定します。 
+     * @brief リソースがシェーダー側で参照されない場合、ディスクリプタへリソースを設定する必要が無いことを指定します。
     */
     , DESCRIPTOR_FLAG_PARTIALLY_BOUND                                   = 0x4
 
     /**
      * @brief このフラグが指定されるDESCRIPTOR_SET_LAYOUT_BINDING::base_shader_register番号がDESCRIPTOR_SET_LAYOUT_DESC::bindingsの各要素において最も大きい場合、
-     *        シェーダー側で可変長のリソース配列が使用可能であることを示します。 
+     *        シェーダー側で可変長のリソース配列が使用可能であることを示します。
     */
     , DESCRIPTOR_FLAG_VARIABLE_DESCRIPTOR_COUNT                         = 0x8
 
 
     /**
-     * @brief コマンドリストにセットされた後、ディスクリプタが指すリソースが揮発性である事を指定します。 
+     * @brief コマンドリストにセットされた後、ディスクリプタが指すリソースが揮発性である事を指定します。
      *        コマンドリストを送信し、実行が完了するまでの間を除き、CPUによってリソースのデータを操作可能です。
      *        UAV等の値ランダムアクセスを必要とするリソースに対して効果的です。
     */
     , DESCRIPTOR_FLAG_DATA_VOLATILE                                     = 0x10
 
     /**
-     * @brief コマンドリストにセットされた後、ディスクリプタが指すリソースを参照するドローコールが実行されている間、その内容自体が静的である事を指定します。 
+     * @brief コマンドリストにセットされた後、ディスクリプタが指すリソースを参照するドローコールが実行されている間、その内容自体が静的である事を指定します。
      *        もう一度セットし直すことでリソースが変更された事をドライバに通知することが出来ます。
      *        このフラグが指定されている場合、バインド時にディスクリプタにリソースが書き込まれている必要があります。
      *        render-to-textureなどの読み取りと書き込みのタイミングを制御するリソースに効果的です。
@@ -2916,12 +2916,12 @@ struct WRITE_DESCRIPTOR_RANGE
     uint32_t                        dst_range_index;            // 宛先ディスクリプタテーブル内のディスクリプタレンジのオフセットです。
     uint32_t                        dst_first_array_element;    // 宛先ディスクリプタレンジの、ディスクリプタの書き込み先配列オフセットです。
     uint32_t                        num_descriptors;            // src_viewsの要素数です。
-    IView*const *                   src_views;                  // 関連付けるビューの配列です。 ビューのタイプはルートシグネチャで指定されたディスクリプタタイプとの互換性が必要です。 
+    IView*const *                   src_views;                  // 関連付けるビューの配列です。 ビューのタイプはルートシグネチャで指定されたディスクリプタタイプとの互換性が必要です。
 };
 
 struct WRITE_DESCRIPTOR_TABLE
 {
-    uint32_t                        dst_root_parameter_index;   // 宛先ルートパラメータのインデックスです。 
+    uint32_t                        dst_root_parameter_index;   // 宛先ルートパラメータのインデックスです。
     uint32_t                        num_ranges;                 // rangesの要素数です。
     const WRITE_DESCRIPTOR_RANGE*   ranges;                     // テーブル内のレンジを指定するWRITE_DESCRIPTOR_RANGE配列です。
 };
@@ -2930,7 +2930,7 @@ struct WRITE_DYNAMIC_DESCRIPTOR0
 {
     uint32_t                        dst_root_parameter_index;   // 宛先ルートパラメータのインデックスです。
     IView*                          src_view;                   // 宛先ディスクリプタに関連付けるバッファーリソースのビューです。 テクスチャリソース、型付きバッファのビューを含めることはできません。
-    uint64_t                        src_view_buffer_offset;     // 指定のビューを基準にしたオフセットです。 
+    uint64_t                        src_view_buffer_offset;     // 指定のビューを基準にしたオフセットです。
 };
 
 struct WRITE_DESCRIPTOR_SET0
@@ -2952,7 +2952,7 @@ struct COPY_DESCRIPTOR_TABLE
 {
     uint32_t                        src_root_parameter_index;   // コピーするディスクリプタテーブルのルートパラメータインデックスを指定します。
     uint32_t                        dst_root_parameter_index;   // 宛先ディスクリプタテーブルのルートパラメータインデックスを指定します。
-    uint32_t                        num_ranges;                 // src_ranges, dst_ranges, num_descriptors 配列の要素数です。 
+    uint32_t                        num_ranges;                 // src_ranges, dst_ranges, num_descriptors 配列の要素数です。
     const COPY_DESCRIPTOR_RANGE*    src_ranges;                 // コピーするディスクリプタレンジを指定するCOPY_DESCRIPTOR_RANGE構造の配列です。
     const COPY_DESCRIPTOR_RANGE*    dst_ranges;                 // 宛先のディスクリプタレンジを指定するCOPY_DESCRIPTOR_RANGE構造の配列です。
     const uint32_t*                 num_descriptors;            // src_rangesとdst_rangesの各first_array_elementからコピーされるディスクリプタの数を指定する配列です。
@@ -2987,8 +2987,8 @@ struct WRITE_DESCRIPTOR_BINDING
 {
     uint32_t                                dst_binding_index;          // 宛先ディスクリプタセットが使用するレイアウトのbindings配列に対応するインデックスです。
     uint32_t                                dst_first_array_element;    // 宛先バインディングの、ディスクリプタの書き込み先配列オフセットです。
-    uint32_t                                num_descriptors;            // src_viewsの要素数です。 
-    IView*const *                           src_views;                  // 関連付けるビューの配列です。 ビューのタイプはバインディングで指定されたディスクリプタタイプとの互換性が必要です。 
+    uint32_t                                num_descriptors;            // src_viewsの要素数です。
+    IView*const *                           src_views;                  // 関連付けるビューの配列です。 ビューのタイプはバインディングで指定されたディスクリプタタイプとの互換性が必要です。
 };
 
 struct WRITE_DYNAMIC_DESCRIPTOR_BINDING
@@ -3035,7 +3035,7 @@ struct UPDATE_DESCRIPTOR_SET_DESC
 
 struct DESCRIPTOR_UPDATE_DESC
 {
-    /* currently reserved structure */ 
+    /* currently reserved structure */
 };
 
 #pragma endregion descriptor updates
@@ -3110,7 +3110,7 @@ struct ROOT_PARAMETER
     union
     {
         /**
-         * @brief 各コマンドリストの記録時にセット可能な32ビット値の定数バッファです。 コマンドリストの記録時に値が直接保存されるため、ディスクリプタを割り当てる必要がありません。 
+         * @brief 各コマンドリストの記録時にセット可能な32ビット値の定数バッファです。 コマンドリストの記録時に値が直接保存されるため、ディスクリプタを割り当てる必要がありません。
          *        ROOT_SIGNATURE_DESC::parameters内に、 同じshader_visibilityを持ったinline_constantsを使用するパラメータ が含まれていない必要があります。
          *        shader_visibilityがALL_GRAPHICS_COMPUTEの場合全て可視となり、inline_constantsはそれ以上含めることは出来ません。さらに、それ以前、または以降に別のinline_constantsパラメータが存在してはなりません。
          *        push-constantsによる制約です。
@@ -3149,7 +3149,7 @@ enum ROOT_SIGNATURE_FLAG : EnumT
     , ROOT_SIGNATURE_FLAG_ALLOW_MESH_SHADER_ROOT_ACCESS         = 0x80  // メッシュシェーダー                      を 許可します。
     , ROOT_SIGNATURE_FLAG_ALLOW_TASK_SHADER_ROOT_ACCESS         = 0x100 // タスク(アンプリフィケーション)シェーダーを 許可します。
 
-    /* 
+    /*
     * NOTE: D3D12のローカルルートシグネチャの概念を取り除き、Vulkanベースの設計に寄せます。
     *       D3D12では D3D12_SHADER_VISIBILITYを使用して特定のレイトレーシングシェーダーのみに対して可視のルートシグネチャ を作成する事が出来ず、
     *       レイトレーシングパイプラインである状態オブジェクトの作成時にシェーダーに対してローカルルートシグネチャを関連付けなければ、
@@ -3165,7 +3165,7 @@ enum ROOT_SIGNATURE_FLAG : EnumT
     *             また、D3D12_SHADER_VISIBILITYは特定の単一のグラフィックスパイプラインのシェーダーステージ、または全て(_ALL)しか設定出来ず、VulkanのVkShaderStageFlagsとの互換性がありません。
     *             但し、状態オブジェクト作成時にROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATUREを使用して作成されたルートシグネチャを特定のレイトレーシングシェーダー(ローカル)に対して関連付ける事で可視性を操作できます。
     *           - シェーダーレコードには上記のローカルルートシグネチャに対応するGPUディスクリプタハンドル、32ビット定数を書き込む事ができます。
-    * 
+    *
     *       これらの事から両APIの間では、レイトレーシングシェーダーへの可視性を操作するインターフェースが異なるため、抽象化が困難です。
     *       現状、レイトレーシングシェーダーへのリソースバインディングは以下の制限を設ける必要があります:
     *           - 全てのレイトレーシングシェーダーステージに対して可視のルートシグネチャのみに、通常の定数バッファやテクスチャ等のリソースをバインドする。
@@ -3173,16 +3173,16 @@ enum ROOT_SIGNATURE_FLAG : EnumT
     *       これにより、APIレベルでの可視性の設定は出来なくなりますが、RegisterSpace等の機能を使用してアプリケーション側で可視性の管理を行うことは可能です(DESCRIPTOR_FLAG等の制約は引き続き有効です)。
     *
     *       要約すると、ローカルルートシグネチャの機能をほとんど使用せず、定数バッファやテクスチャは全てのレイトレーシングシェーダーステージに対して可視であり、シェーダーレコードに32ビット定数のみを含めるという制限を設ける必要があります。
-    * 
+    *
     * TODO: パイプラインのキャッシュや、ディスクリプタのコピーの制約は、今後検証する必要があります。
     */
 
     // WARNING: レイトレーシングAPIはWIPです。現在は対応していません。
-    /* 
+    /*
     * @brief レイトレーシング用ルートシグネチャである事を指定します。
     *        このフラグを指定する場合、他の全てのフラグは設定されていない必要があり、ROOT_SIGNATURE_DESC::parameters内の全てのシェーダー可視性はALL_GRAPHICS_COMPUTEである必要があります。(LOCAL_ROOT_SIGNATURE)
     */
-    , ROOT_SIGNATURE_FLAG_RAY_TRACING_SHADER_VISIBILITY = 0x200 
+    , ROOT_SIGNATURE_FLAG_RAY_TRACING_SHADER_VISIBILITY = 0x200
 };
 B3D_DEFINE_ENUM_FLAGS(ROOT_SIGNATURE_FLAGS, ROOT_SIGNATURE_FLAG);
 
@@ -3231,9 +3231,9 @@ struct DESCRIPTOR_SET_LAYOUT_BINDING
      * @brief このバインディングのディスクリプタに関連づけるリソースのタイプを指定します。
     */
     DESCRIPTOR_TYPE         descriptor_type;
-    
+
     /**
-     * @brief hlslでの "register(*n)" のnの値です。 
+     * @brief hlslでの "register(*n)" のnの値です。
      *        t,b,u,sで一意に使用されます;例えば、t0とb0は同時に定義できません。
     */
     uint32_t                base_shader_register;
@@ -3246,7 +3246,7 @@ struct DESCRIPTOR_SET_LAYOUT_BINDING
     uint32_t                num_descriptors;
 
     /**
-     * @brief このバインディングのリソースにアクセスできるパイプラインシェーダーステージを指定します。 
+     * @brief このバインディングのリソースにアクセスできるパイプラインシェーダーステージを指定します。
      *        SHADER_STAGE_FLAG_ALLは、定義されたすべてのシェーダーステージがリソースにアクセスできることを指定します。
     */
     SHADER_STAGE_FLAGS      shader_visibility;
@@ -3330,15 +3330,15 @@ B3D_DEFINE_ENUM_FLAGS(ATTACHMENT_FLAGS, ATTACHMENT_FLAG);
 
 enum ATTACHMENT_LOAD_OP : EnumT
 {
-      ATTACHMENT_LOAD_OP_LOAD       // レンダーパス開始時点でのデータが保持されます。 
+      ATTACHMENT_LOAD_OP_LOAD       // レンダーパス開始時点でのデータが保持されます。
     , ATTACHMENT_LOAD_OP_CLEAR      // レンダーパス開始時にバッファをクリアします。 RENDER_PASS_BEGIN_DESCで指定されたクリア値が適用されます。
     , ATTACHMENT_LOAD_OP_DONT_CARE  // レンダーパス開始時にバッファが破棄される可能性があり値は未定義になります。 バッファの以前の値が必要無い場合に効果的です。
 };
 
 enum ATTACHMENT_STORE_OP : EnumT
 {
-      ATTACHMENT_STORE_OP_STORE     // レンダーパス終了時にバッファに値が書き込まれることが保証されます。 
-    , ATTACHMENT_STORE_OP_DONT_CARE // レンダーパス終了時にバッファに値が書き込まれることが保証されず、結果の値は未定義です。 
+      ATTACHMENT_STORE_OP_STORE     // レンダーパス終了時にバッファに値が書き込まれることが保証されます。
+    , ATTACHMENT_STORE_OP_DONT_CARE // レンダーパス終了時にバッファに値が書き込まれることが保証されず、結果の値は未定義です。
 };
 
 struct ATTACHMENT_DESC
@@ -3350,17 +3350,17 @@ struct ATTACHMENT_DESC
     ATTACHMENT_STORE_OP     store_op;               // レンダーパスが終了する際に行われる操作を指定します。
     ATTACHMENT_LOAD_OP      stencil_load_op;        // formatが深度ステンシルフォーマットの場合、ステンシルに対して操作を指定する場合に使用します。それ以外の場合、この値は無視されます。
     ATTACHMENT_STORE_OP     stencil_store_op;       // formatが深度ステンシルフォーマットの場合、ステンシルに対して操作を指定する場合に使用します。それ以外の場合、この値は無視されます。
-    RESOURCE_STATE          begin_state;            // レンダーパス開始時の状態です。 実際にレンダーパスが開始される際、アタッチメントの状態はこの値である必要があります。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachmentsの各要素のIViewが参照する全てのサブリソースによって定義されます。 
-    RESOURCE_STATE          end_state;              // レンダーパス終了時の状態です。 終了時、アタッチメントはこの状態に遷移しています。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachmentsの各要素のIViewが参照する全てのサブリソースによって定義されます。 
-    RESOURCE_STATE          stencil_begin_state;    // 深度とステンシルに対して個別のレイアウトを指定する場合に使用します。それ以外の場合、RESOURCE_STATE_UNDEFINEDです。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachmentsの各要素のIViewが参照する全てのステンシルサブリソースによって定義されます。 
-    RESOURCE_STATE          stencil_end_state;      // 深度とステンシルに対して個別のレイアウトを指定する場合に使用します。それ以外の場合、RESOURCE_STATE_UNDEFINEDです。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachmentsの各要素のIViewが参照する全てのステンシルサブリソースによって定義されます。 
+    RESOURCE_STATE          begin_state;            // レンダーパス開始時の状態です。 実際にレンダーパスが開始される際、アタッチメントの状態はこの値である必要があります。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachmentsの各要素のIViewが参照する全てのサブリソースによって定義されます。
+    RESOURCE_STATE          end_state;              // レンダーパス終了時の状態です。 終了時、アタッチメントはこの状態に遷移しています。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachmentsの各要素のIViewが参照する全てのサブリソースによって定義されます。
+    RESOURCE_STATE          stencil_begin_state;    // 深度とステンシルに対して個別のレイアウトを指定する場合に使用します。それ以外の場合、RESOURCE_STATE_UNDEFINEDです。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachmentsの各要素のIViewが参照する全てのステンシルサブリソースによって定義されます。
+    RESOURCE_STATE          stencil_end_state;      // 深度とステンシルに対して個別のレイアウトを指定する場合に使用します。それ以外の場合、RESOURCE_STATE_UNDEFINEDです。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachmentsの各要素のIViewが参照する全てのステンシルサブリソースによって定義されます。
 };
 
 struct ATTACHMENT_REFERENCE
 {
     uint16_t                attachment_index;               // RENDER_PASS_DESC::attachments配列に対応するインデックスです。
-    RESOURCE_STATE          state_at_pass;                  // サブパス内でのアタッチメントのレイアウトを指定します。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachments[attachment_index]の各要素のIViewが参照する全てのサブリソースによって定義されます。 
-    RESOURCE_STATE          stencil_state_at_pass;          // 深度とステンシルに対して個別のレイアウトを指定する(例えば、ステンシルのみをアタッチメントとして使用し、深度を読み取り専用にするビュー)場合に使用します。それ以外の場合、RESOURCE_STATE_UNDEFINEDです。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachments[attachment_index]の各要素のIViewが参照する全てのステンシルサブリソースによって定義されます。 
+    RESOURCE_STATE          state_at_pass;                  // サブパス内でのアタッチメントのレイアウトを指定します。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachments[attachment_index]の各要素のIViewが参照する全てのサブリソースによって定義されます。
+    RESOURCE_STATE          stencil_state_at_pass;          // 深度とステンシルに対して個別のレイアウトを指定する(例えば、ステンシルのみをアタッチメントとして使用し、深度を読み取り専用にするビュー)場合に使用します。それ以外の場合、RESOURCE_STATE_UNDEFINEDです。 この状態に遷移するサブリソースの影響範囲は、FRAMEBUFFER_DESC::attachments[attachment_index]の各要素のIViewが参照する全てのステンシルサブリソースによって定義されます。
     TEXTURE_ASPECT_FLAGS    input_attachment_aspect_mask;   // SUBPASS_DESC::input_attachmentsとして使用する際に使用するアスペクトです。(COLOR、DEPTH、STENCIL)
 };
 
@@ -3416,9 +3416,9 @@ struct SUBPASS_DEPENDENCY
     DEPENDENCY_FLAGS            dependency_flags;// サブパスに複数のビューがある(popcount(view_mask) > 1)場合は、dependency_flagsにDEPENDENCY_FLAG_VIEW_LOCALを含める必要があります。
 
     /**
-     * @brief 依存関係がビューローカルの場合、dstViewは、「ソースサブパスの」ビュー dstView + view_offset に依存します。 
+     * @brief 依存関係がビューローカルの場合、dstViewは、「ソースサブパスの」ビュー dstView + view_offset に依存します。
      *        srcView, dstViewはそれぞれ、ソースサブパスと宛先サブパスに存在するビューのインデックスです。
-     *        言い換えると、宛先で使用されている各ビューのビットは、view_offsetでシフトされます。 宛先の各ビューは、ソースで使用されている、シフトされた結果の各ビットに対応する各ビューに依存します。 
+     *        言い換えると、宛先で使用されている各ビューのビットは、view_offsetでシフトされます。 宛先の各ビューは、ソースで使用されている、シフトされた結果の各ビットに対応する各ビューに依存します。
      *        この際、シフトされた結果の各ビットに対応するビューがソースで使用されていなかった(有効なビットが存在しなかった)場合、宛先のビューはそのビットのビューに依存しません。
     */
     int32_t                     view_offset; // DEPENDENCY_FLAG_VIEW_LOCALが指定されていない場合、値は0である必要があります。
@@ -3452,7 +3452,7 @@ enum SUBPASS_CONTENTS : EnumT
 struct RENDER_PASS_BEGIN_DESC
 {
     IRenderPass*            render_pass;
-    IFramebuffer*           framebuffer;        // フレームバッファーの作成時に指定されたFRAMEBUFFER_DESCのrender_passメンバーと互換性がある必要があります。 
+    IFramebuffer*           framebuffer;        // フレームバッファーの作成時に指定されたFRAMEBUFFER_DESCのrender_passメンバーと互換性がある必要があります。
     uint32_t                num_clear_values;
     const CLEAR_VALUE*      clear_values;
 };
@@ -3495,16 +3495,16 @@ struct SO_DECLARATION_ENTRY
     const char*     semantic_name;  // セマンティック名。1つのインデックスにつき、最大4コンポーネント(xyzw)を表現出来ます。(float4x4の場合、4コンポーネントの、(インデックスのみ異なる)同じセマンティックが4つ存在します。)
     uint32_t        semantic_index; // セマンティック名に関するインデックスです。(例: MATRIXi の "i")
     uint8_t         start_component;// セマンティック名に関する、書き込みを開始するエントリのコンポーネントのオフセットです。
-    uint8_t         component_count;// start_componentからのコンポーネント数です。[start_component, component_count) 
+    uint8_t         component_count;// start_componentからのコンポーネント数です。[start_component, component_count)
     uint8_t         output_slot;    // パイプラインにバインドされている関連付けられたストリーム出力バッファーのスロットです。buffer_strides[output_slot]を超えるデータは書き込まれません。 XfbBuffers
 };
 
 struct STREAM_OUTPUT_DESC
 {
     uint32_t                       num_entries;
-    const SO_DECLARATION_ENTRY*    entries;             // ...xfb_offset,xfb_stride  
+    const SO_DECLARATION_ENTRY*    entries;             // ...xfb_offset,xfb_stride
     uint32_t                       num_buffer_strides;  // vkCmdBindTransformFeedbackBuffersEXT::bindingCount
-    const uint32_t*                buffer_strides;      // ストリーム出力時の各頂点の開始間の間隔。 ストリーム出力中に、ストリーム出力構造のサイズを超える量はメモリ内で変更されません。 vkCmdBindTransformFeedbackBuffersEXT::pSizes 
+    const uint32_t*                buffer_strides;      // ストリーム出力時の各頂点の開始間の間隔。 ストリーム出力中に、ストリーム出力構造のサイズを超える量はメモリ内で変更されません。 vkCmdBindTransformFeedbackBuffersEXT::pSizes
     uint32_t                       rasterized_stream;   // VkPipelineRasterizationStateStreamCreateInfoEXT::rasterizationStream
 };
 
@@ -3528,7 +3528,7 @@ struct DEPTH_STENCILOP_DESC
     COMPARISON_FUNC comparison_func;
 
     /**
-     * @brief ステンシルのreference値とアタッチメントの値srとsaは、論理AND演算を使用して、compare_mask scとそれぞれ独立して結合され、マスクされたreference値とアタッチメントの値s'rとs'aが作成されます。 
+     * @brief ステンシルのreference値とアタッチメントの値srとsaは、論理AND演算を使用して、compare_mask scとそれぞれ独立して結合され、マスクされたreference値とアタッチメントの値s'rとs'aが作成されます。
      *        s'rとs'aは、COMPARISON_FUNCで指定された操作で、それぞれAとBとして使用されます。 (StencilReadMask)
     */
     uint32_t        compare_mask;
@@ -3558,9 +3558,9 @@ struct DEPTH_STENCIL_STATE_DESC
 };
 
 /**
- * @brief Rs0、Gs0、Bs0、As0は、任意の出力のソースカラー、またはデュアルソースブレンドモードで使用されるソースカラー0のR、G、B、Aコンポーネントをそれぞれ表します。 
- *        Rs1、Gs1、Bs1、As1は、デュアルソースブレンドモードで使用されるソースカラー1のR、G、B、Aコンポーネントをそれぞれ表します。 
- *        Rd、Gd、Bd、Adは、宛先の色のR、G、B、Aコンポーネントを表します。 これは、セットされているカラーアタッチメントに現在ある色です。 
+ * @brief Rs0、Gs0、Bs0、As0は、任意の出力のソースカラー、またはデュアルソースブレンドモードで使用されるソースカラー0のR、G、B、Aコンポーネントをそれぞれ表します。
+ *        Rs1、Gs1、Bs1、As1は、デュアルソースブレンドモードで使用されるソースカラー1のR、G、B、Aコンポーネントをそれぞれ表します。
+ *        Rd、Gd、Bd、Adは、宛先の色のR、G、B、Aコンポーネントを表します。 これは、セットされているカラーアタッチメントに現在ある色です。
  *        Rc、Gc、Bc、Acは、それぞれブレンド定数のR、G、B、Aコンポーネントを表します。 (BLEND_STATE_DESC::blend_constants)
  * @remark デュアルソースブレンド機能により、出力0と出力1の両方を、アタッチメント0とのブレンド操作への入力ソースとして同時に使用できます。 この機能を利用するには、SRC1の列挙を使用します。
  *         Vulkanによる追加の使用法として、ソース1を"blending unit (blender)"のインデックス1へ入力することを指定する必要があり、
@@ -3590,10 +3590,10 @@ enum BLEND_FACTOR : EnumT
 };
 
 /**
- * @brief Rs0、Gs0、Bs0、As0は、それぞれ最初のソースカラーのR、G、B、Aコンポーネントを表します。 
-          Rd、Gd、Bd、Adは、宛先の色のR、G、B、Aコンポーネントを表します。 セットされているカラーアタッチメントに現在ある色です。 
-          Sr、Sg、Sb、Saは、それぞれソースブレンドファクターのR、G、B、Aコンポーネントを表します。 
-          Dr、Dg、Db、Daは、それぞれ宛先ブレンドファクターのR、G、B、Aコンポーネントを表します。 
+ * @brief Rs0、Gs0、Bs0、As0は、それぞれ最初のソースカラーのR、G、B、Aコンポーネントを表します。
+          Rd、Gd、Bd、Adは、宛先の色のR、G、B、Aコンポーネントを表します。 セットされているカラーアタッチメントに現在ある色です。
+          Sr、Sg、Sb、Saは、それぞれソースブレンドファクターのR、G、B、Aコンポーネントを表します。
+          Dr、Dg、Db、Daは、それぞれ宛先ブレンドファクターのR、G、B、Aコンポーネントを表します。
 */
 enum BLEND_OP : EnumT
 {
@@ -3628,7 +3628,7 @@ enum LOGIC_OP : EnumT
     , LOGIC_OP_NO_OP            //     d
     , LOGIC_OP_INVERT           //    ~d
     , LOGIC_OP_AND              //     s &  d
-    , LOGIC_OP_NAND             //  ~( s &  d)   
+    , LOGIC_OP_NAND             //  ~( s &  d)
     , LOGIC_OP_OR               //     s |  d
     , LOGIC_OP_NOR              //  ~( s |  d)
     , LOGIC_OP_XOR              //     s ^  d
@@ -3687,20 +3687,20 @@ struct INPUT_ELEMENT_DESC
     const char*                 semantic_name;          // セマンティック名です。 (float4x4の場合、同じセマンティック名であり、異なるsemantic_indexを持つ4コンポーネントINPUT_ELEMENT_DESCが4つ必要です。)
     uint32_t                    semantic_index;         // セマンティック名に関するインデックスです。 1つのインデックスにつき32ビットの型を最大4コンポーネント(xyzw)表現出来ます。
     RESOURCE_FORMAT             format;                 // この要素のフォーマットです。 VkVertexInputAttributeDescription::format
-    uint32_t                    aligned_byte_offset;    // 指定のスロットのデータの開始(0)からこの要素へのバイトオフセットです。値は4バイトに整列されている必要があります。 B3D_APPEND_ALIGNED_ELEMENTを指定した場合、INPUT_SLOT_DESC::elementsの要素の順序で、input_slotへの4バイトアラインオフセットが自動的に計算されます。 VkVertexInputAttributeDescription::offset 
+    uint32_t                    aligned_byte_offset;    // 指定のスロットのデータの開始(0)からこの要素へのバイトオフセットです。値は4バイトに整列されている必要があります。 B3D_APPEND_ALIGNED_ELEMENTを指定した場合、INPUT_SLOT_DESC::elementsの要素の順序で、input_slotへの4バイトアラインオフセットが自動的に計算されます。 VkVertexInputAttributeDescription::offset
 };
 
 struct INPUT_SLOT_DESC
 {
     /**
-     * @brief スロット番号を指定します。 
-     * @note slot_numberと、hlslでの頂点入力の順序の不一致に注意してください。 
+     * @brief スロット番号を指定します。
+     * @note slot_numberと、hlslでの頂点入力の順序の不一致に注意してください。
      *       hlslでは、slot_number 0 のスロットから順番に展開され、そのスロット内の各エレメントはaligned_byte_offsetに従って、またはB3D_APPEND_ALIGNED_ELEMENTが指定されている場合は配列の要素の順番に展開されます。
     */
     uint32_t                    slot_number;
     uint32_t                    stride_in_bytes;        // 頂点毎の要素間のバイト単位のサイズです。バインドする頂点バッファビューの頂点ストライドは、この値と同一である必要があります。 VkVertexInputBindingDescription::stride
     INPUT_CLASSIFICATION        classification;         // VkVertexInputBindingDescription::inputRate
-    uint32_t                    instance_data_step_rate;// VkVertexInputBindingDivisorDescriptionEXT::divisor 
+    uint32_t                    instance_data_step_rate;// VkVertexInputBindingDivisorDescriptionEXT::divisor
     uint32_t                    num_elements;
     const INPUT_ELEMENT_DESC*   elements;
 };
@@ -3853,16 +3853,16 @@ struct SAMPLE_POSITION_STATE_DESC
 struct MULTISAMPLE_STATE_DESC
 {
     /**
-     * @brief UAVへのマルチサンプルレンダリング、またはカラーアタッチメントのリソース以上のサンプル数でマルチサンプルされた値を書き込む場合にサンプル数を変更します。 
-     *        深度ステンシルアタッチメントを使用せず、深度/ステンシルテストが有効でないレンダーパスである必要があります。それ以外の場合この値はサブパスで使用する各アタッチメントのサンプル数を指定する必要があります。 
+     * @brief UAVへのマルチサンプルレンダリング、またはカラーアタッチメントのリソース以上のサンプル数でマルチサンプルされた値を書き込む場合にサンプル数を変更します。
+     *        深度ステンシルアタッチメントを使用せず、深度/ステンシルテストが有効でないレンダーパスである必要があります。それ以外の場合この値はサブパスで使用する各アタッチメントのサンプル数を指定する必要があります。
      * @remark FIXME: VulkanのValidUsageに基づき、AMDのハードウェアが使用されている場合、上記の制限に加えてカラーアタッチメントは使用出来ず、UAVへの書き込みのみが有効です。
      *                D3D12では、ForcedSampleCountを有効にする場合、カラーアタッチメントのリソースのサンプル数が1である必要があります。
     */
     uint32_t            rasterization_samples;
 
     /**
-     * @brief カバレッジマスクとAND演算によって比較(テスト)されるビットマスクです。比較に成功した場合｢サンプルカバレッジマスク｣のビットが有効になります。 
-     *        32サンプルカウント毎に1つのsample_maskが必要です。nullptrの場合、デフォルトで全てのビットに1が指定されているかのようになります。 
+     * @brief カバレッジマスクとAND演算によって比較(テスト)されるビットマスクです。比較に成功した場合｢サンプルカバレッジマスク｣のビットが有効になります。
+     *        32サンプルカウント毎に1つのsample_maskが必要です。nullptrの場合、デフォルトで全てのビットに1が指定されているかのようになります。
      * @remark ｢カバレッジマスク｣は、ラスタライズ時に、1ピクセル内の各サンプル位置にプリミティブが存在したかを表現するビットマスクであり、(サンプル数とは関係無く)各ピクセルシェーダーに対して生成されます。
      *         ｢サンプルカバレッジマスク(カラーサンプルカバレッジ)｣は、AND演算後のマスクの結果です。 このマスクの各ビットは、1ピクセル内の各サンプル位置に対応するインデックスとして表現されます。
      *         対応するビットの値が1のサンプル位置を含むピクセルシェーダーの結果は、出力マージステージ(フレームバッファステージ)に到達します。
@@ -3895,13 +3895,13 @@ enum DYNAMIC_STATE : EnumT
     , DYNAMIC_STATE_STENCIL_REFERENCE             // OMSetStencilRef
     , DYNAMIC_STATE_SAMPLE_POSITIONS              // SetSamplePositions _EXT
     , DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE   // IASetVertexBuffers::pBufferStrides _EXT
-    , DYNAMIC_STATE_SHADING_RATE                  // RSSetShadingRate 
+    , DYNAMIC_STATE_SHADING_RATE                  // RSSetShadingRate
     , DYNAMIC_STATE_LINE_WIDTH                    // Vulkan only
     , DYNAMIC_STATE_DEPTH_BIAS                    // Vulkan only
     , DYNAMIC_STATE_STENCIL_COMPARE_MASK          // Vulkan only
     , DYNAMIC_STATE_STENCIL_WRITE_MASK            // Vulkan only
-    //, DYNAMIC_STATE_VIEWPORT_W_SCALING            // Vulkan only _NV  
-    //, DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER  // Vulkan only RSSetShadingRate _NV 
+    //, DYNAMIC_STATE_VIEWPORT_W_SCALING            // Vulkan only _NV
+    //, DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER  // Vulkan only RSSetShadingRate _NV
 
     , DYNAMIC_STATE_END
 };
@@ -3970,8 +3970,8 @@ struct DYNAMIC_DESCRIPTOR_OFFSET
 struct CMD_BIND_DESCRIPTOR_SET0
 {
     IDescriptorSet0*                    descriptor_set;
-    uint32_t                            num_dynamic_descriptor_offsets; // 更新する動的ディスクリプタのオフセットの配列の要素数です。 
-    const DYNAMIC_DESCRIPTOR_OFFSET*    dynamic_descriptor_offsets;     // 更新する動的ディスクリプタのオフセットの配列です。 
+    uint32_t                            num_dynamic_descriptor_offsets; // 更新する動的ディスクリプタのオフセットの配列の要素数です。
+    const DYNAMIC_DESCRIPTOR_OFFSET*    dynamic_descriptor_offsets;     // 更新する動的ディスクリプタのオフセットの配列です。
 };
 
 struct CMD_PUSH_32BIT_CONSTANTS
@@ -4043,7 +4043,7 @@ struct CMD_BIND_VERTEX_BUFFERS
     IBuffer*const *     buffers;
     const uint64_t*     buffer_offsets;     // リソースのオフセットを指定する、要素数がnum_buffersの配列です。
     const uint64_t*     sizes_in_bytes;     // 頂点バッファのサイズを指定する、要素数がnum_buffersの配列です。
-    const uint64_t*     strides_in_bytes;   // 頂点間のストライドを指定する、要素数がnum_buffersの配列です。 DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE が指定されないパイプラインの場合、この値は無視されます。 
+    const uint64_t*     strides_in_bytes;   // 頂点間のストライドを指定する、要素数がnum_buffersの配列です。 DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE が指定されないパイプラインの場合、この値は無視されます。
 };
 
 struct CMD_BIND_STREAM_OUTPUT_BUFFER_VIEWS
@@ -4093,7 +4093,7 @@ struct SUBRESOURCE_ARRAY
     SUBRESOURCE_OFFSET offset; // コピーする最初のミップレベル、配列オフセット、アスペクトを指定します。 offset.array_sliceは3Dテクスチャのzオフセットを表現するものではありません。
 
     /**
-     * @brief ソース、または宛先のoffset.array_sliceからの、コピーする配列数です。 
+     * @brief ソース、または宛先のoffset.array_sliceからの、コピーする配列数です。
      *        3Dテクスチャの場合、この値は1である必要があります; 3Dテクスチャのdepthを表現するものではありません(代わりに、TEXTURE_COPY_REGION::copy_extent->depthを使用します)。
      *        ソース、または宛先のテクスチャの次元に応じて、ソース、または宛先それぞれのarray_countまたはcopy_extent->depthの値は、(ソース、または宛先の)array_countまたはcopy_extent->depthと同一である必要があります。
     */
@@ -4108,7 +4108,7 @@ struct TEXTURE_COPY_REGION
     const OFFSET3D*     dst_offset;         // nullptrの場合、(0,0,0)が使用されます。 3Dテクスチャの以外の場合、zの値は0にする必要があります(1Dの場合、yも同様です)。
 
     /**
-     * @brief コピーするソースの範囲です。 nullptrの場合ソースのサイズが指定されます。 
+     * @brief コピーするソースの範囲です。 nullptrの場合ソースのサイズが指定されます。
      *        宛先、ソースのサイズを超えてはなりません。 3Dテクスチャの以外の場合、depthの値は1にする必要があります(1Dの場合、heightも同様です)。
      * @note D3D12で深度ステンシルまたはマルチサンプルリソースでCopyTextureRegionを使用する場合は、サブリソースの矩形全体をコピーする必要があり、オフセットは全て0である必要があります。
      *       TODO: D3D12の制約に従うか、あるいはオプションによってアプリケーションにコピー時の制約を判断出来るようにAPIを追加します。
@@ -4118,8 +4118,8 @@ struct TEXTURE_COPY_REGION
 
 struct CMD_COPY_TEXTURE_REGION
 {
-    ITexture*                   src_texture; 
-    ITexture*                   dst_texture; 
+    ITexture*                   src_texture;
+    ITexture*                   dst_texture;
     uint32_t                    num_regions;
     const TEXTURE_COPY_REGION*  regions;
 };
@@ -4133,14 +4133,14 @@ struct BUFFER_SUBRESOURCE_LAYOUT
     uint64_t                    offset;
 
     /**
-     * @brief バッファに配置されている画像データのレイアウトを指定します。 
+     * @brief バッファに配置されている画像データのレイアウトを指定します。
      *        値はDEVICE_ADAPTER_LIMITS::buffer_copy_row_pitch_alignmentにアラインされている必要があります。
     */
     uint64_t                    row_pitch;
 
     /**
      * @brief バッファ内のレイアウトにおける、テクスチャの配列要素毎の画像の高さの値です。
-     * 
+     *
      * @remark 次の配列要素へのオフセットは次のように計算されます: (offset + ((row_pitch * texture_height) * i))  iは配列インデックスです。
      *         この際、オフセットはDEVICE_ADAPTER_LIMITS::buffer_copy_offset_alignmentにアラインされている必要があります。
     */
@@ -4183,7 +4183,7 @@ struct TEXTURE_RESOLVE_REGION
 
 struct CMD_RESOLVE_TEXTURE_REGION
 {
-    ITexture*                       src_texture; 
+    ITexture*                       src_texture;
     ITexture*                       dst_texture;
     uint32_t                        num_regions;
     const TEXTURE_RESOLVE_REGION*   regions;
@@ -4209,12 +4209,12 @@ enum RESOURCE_BARRIER_FLAG : EnumT
       RESOURCE_BARRIER_FLAG_NONE               = 0x0
 
       /*
-       * @brief 異なるキュータイプ間でリソースを共有する場合、ソースのキューから宛先のキューへのリソースの所有権の転送が必要です。 
-       *        このフラグを指定する場合、キューファミリの所有権転送が定義され、異種キュー間でのリソースの値が保持されます。 
-       *        この際、バリアは2回の操作に分けて実行する必要があり、初めにソースキューでの「解放」操作のバリアを実行し、宛先キューで「取得」操作のバリアを実行する必要があります。 
-       *        src_state と dst_state は取得操作と解放操作で同一である必要があります。 
+       * @brief 異なるキュータイプ間でリソースを共有する場合、ソースのキューから宛先のキューへのリソースの所有権の転送が必要です。
+       *        このフラグを指定する場合、キューファミリの所有権転送が定義され、異種キュー間でのリソースの値が保持されます。
+       *        この際、バリアは2回の操作に分けて実行する必要があり、初めにソースキューでの「解放」操作のバリアを実行し、宛先キューで「取得」操作のバリアを実行する必要があります。
+       *        src_state と dst_state は取得操作と解放操作で同一である必要があります。
       */
-    , RESOURCE_BARRIER_FLAG_OWNERSHIP_TRANSFER = 0x1 
+    , RESOURCE_BARRIER_FLAG_OWNERSHIP_TRANSFER = 0x1
 };
 B3D_DEFINE_ENUM_FLAGS(RESOURCE_BARRIER_FLAGS, RESOURCE_BARRIER_FLAG);
 
@@ -4245,7 +4245,7 @@ struct TEXTURE_BARRIER_RANGE
 struct TEXTURE_BARRIER_DESC
 {
     TEXTURE_BARRIER_TYPE type;
-    union 
+    union
     {
         const TEXTURE_BARRIER_RANGE*    barrier_range;
         IView*                          view;
@@ -4293,13 +4293,13 @@ struct IAllocator
 {
     virtual ~IAllocator() {}
 
-    virtual void* 
+    virtual void*
         MAlloc(size_t _size, size_t _alignment) = 0;
 
-    virtual void* 
+    virtual void*
         Realloc(void* _ptr, size_t _size, size_t _alignment) = 0;
 
-    virtual void 
+    virtual void
         Free(void* _ptr) = 0;
 
 };
@@ -4387,8 +4387,8 @@ public:
 
     //virtual void
     //    B3D_APIENTRY GetWeakRefCount() const = 0;
-    
-    //virtual bool 
+
+    //virtual bool
     //    B3D_APIENTRY IsExpired() const = 0;
 
     /**
@@ -4475,7 +4475,7 @@ public:
 
 B3D_INTERFACE INameableObject : public ISharedBase
 {
-protected: 
+protected:
     B3D_APIENTRY ~INameableObject() {}
 
 public:
@@ -4575,7 +4575,7 @@ public:
 
     /**
      * @brief 現在キューに存在するメッセージオブジェクトの数を取得します。
-     * @return 現在キューに存在するメッセージオブジェクトの数を取得します。 
+     * @return 現在キューに存在するメッセージオブジェクトの数を取得します。
     */
     virtual size_t
         B3D_APIENTRY GetNumStoredMessages() = 0;
@@ -4710,7 +4710,7 @@ public:
      * @return 正常に終了した場合、BMRESULT_SUCCEEDが返ります。_resources配列の要素の全てに対応可能なヒープタイプ見つからなかった場合、BMRESULT_FAILEDが返ります。
      * @remark _resources配列内のリソースオブジェクトの順序によってヒープの合計サイズが変動します。
      *         これは各リソースのアライメント要求が異なる場合に発生する可能性があります。(C++における、構造体の変数アライメントによるサイズの変動と同様です。)
-     * 
+     *
      *         DEVICE_ADAPTER_LIMITS::buffer_texture_granularityはRESOURCE_ALLOCATION_INFO::alignmentに対して考慮されないことに注意してください。
      *         buffer_texture_granularityはエイリアスを発生させないための要件であり、リソース作成の要件ではないためです。
     */
@@ -4816,7 +4816,7 @@ public:
             , IDescriptorPool0**           _dst) = 0;
 
     /**
-     * @brief 指定のリソースでディスクリプタセットを更新します。 
+     * @brief 指定のリソースでディスクリプタセットを更新します。
      * @param _update_desc UPDATE_DESCRIPTOR_SET_DESC0
      * @return BMRESULT
     */
@@ -4853,14 +4853,14 @@ public:
 
     /**
      * @brief シェーダーモジュールを作成します。
-     * @param _desc シェーダーモジュールの作成に使用されるシェーダーコードを指定します。 TODO: HLSL、または DXIL/SIPR-V 
+     * @param _desc シェーダーモジュールの作成に使用されるシェーダーコードを指定します。 TODO: HLSL、または DXIL/SIPR-V
      * @param _dst 作成されたシェーダーモジュールを受け取ります。
      * @return BMRESULT
     */
     virtual BMRESULT
         B3D_APIENTRY CreateShaderModule(
               const SHADER_MODULE_DESC& _desc
-            , IShaderModule**           _dst) = 0;    
+            , IShaderModule**           _dst) = 0;
 
     virtual BMRESULT
         B3D_APIENTRY CreateGraphicsPipelineState0(
@@ -4901,7 +4901,7 @@ public:
             , IResourceHeap**           _dst) = 0;
 
     /**
-     * @brief  CreatePlacedResourceで作成されたリソースを指定のヒープとバインドします。 
+     * @brief  CreatePlacedResourceで作成されたリソースを指定のヒープとバインドします。
      * @param _num_bind_infos _bind_infos配列の要素数です。
      * @param _bind_infos バインドするリソースとヒープの情報を指定するBIND_RESOURCE_HEAP_INFO構造の配列です。
      * @return いずれかの要素のバインドに失敗した場合、BMRESULT_FAILED以下の値が返ります。
@@ -4988,7 +4988,7 @@ public:
             const QUERY_HEAP_DESC& _desc
             , IQueryHeap**         _dst) = 0;
 
-    //virtual BMRESULT 
+    //virtual BMRESULT
     //    B3D_APIENTRY CreateCommandSignature(
     //        const COMMAND_SIGNATURE_DESC&    _desc
     //        , CommandSignaturePtr*            _dst) = 0;
@@ -5063,14 +5063,14 @@ public:
 
     /**
      * @brief 次のプレゼント操作に使用するバックバッファのインデックスを取得し、そのバックバッファが利用可能になった際に指定のフェンスへシグナルを送信します。
-     * @param      _info             バックバッファイの取得に使用するパラメータを指定します。 
-     * @param[out] _dst_buffer_index 成功した場合、次のプレゼント操作に使用する、取得されたバックバッファのインデックスを返します。 
-     * @return 利用可能なバッファが取得された場合BMRESULT_SUCCEEDが返ります。 
-     *         利用可能バッファが取得されないままタイムアウトした場合BMRESULT_SUCCEED_TIMEOUTが返ります。 
-     *         利用可能バッファが存在せず、timeoutがゼロの場合BMRESULT_SUCCEED_NOT_READYが返ります。 
-     * @remark タイムアウトが発生した場合、 _info.signal_fence または _info.signal_fence_to_cpu を待機してバッファが利用可能となるタイミングを待機します。 
-     *         タイムアウトが発生したかどうかに関わらず、 _info.signal_fence または _info.signal_fence_to_cpu を待機して非シグナル状態にする必要があります。 
-     *         _dst_buffer_indexのバッファはアプリケーションによって所有された状態になり、利用可能になり次第任意のコマンドでバッファの内容を編集することができます。 
+     * @param      _info             バックバッファイの取得に使用するパラメータを指定します。
+     * @param[out] _dst_buffer_index 成功した場合、次のプレゼント操作に使用する、取得されたバックバッファのインデックスを返します。
+     * @return 利用可能なバッファが取得された場合BMRESULT_SUCCEEDが返ります。
+     *         利用可能バッファが取得されないままタイムアウトした場合BMRESULT_SUCCEED_TIMEOUTが返ります。
+     *         利用可能バッファが存在せず、timeoutがゼロの場合BMRESULT_SUCCEED_NOT_READYが返ります。
+     * @remark タイムアウトが発生した場合、 _info.signal_fence または _info.signal_fence_to_cpu を待機してバッファが利用可能となるタイミングを待機します。
+     *         タイムアウトが発生したかどうかに関わらず、 _info.signal_fence または _info.signal_fence_to_cpu を待機して非シグナル状態にする必要があります。
+     *         _dst_buffer_indexのバッファはアプリケーションによって所有された状態になり、利用可能になり次第任意のコマンドでバッファの内容を編集することができます。
      *         この所有権はISwapChain::Presentを呼び出すことによって解放する必要があります。
      *         この関数とISwapChain::Presentは1つの操作セットです。 Presentを呼び出すまで、再びこの関数を呼び出してはなりません。
      * @note バッファの取得(acquire)と、そのバッファが利用可能(available)になることは別々に扱われます。
@@ -5221,10 +5221,10 @@ protected:
     B3D_APIENTRY ~IView() {}
 
 public:
-    virtual const VIEW_DESC& 
+    virtual const VIEW_DESC&
         B3D_APIENTRY GetViewDesc() const = 0;
 
-    virtual IResource* 
+    virtual IResource*
         B3D_APIENTRY GetResource() const = 0;
 
     virtual const BUFFER_VIEW*
@@ -5391,7 +5391,7 @@ public:
      * @param[out] _dst 作成されたIDescriptorSet0を取得します。 DESCRIPTOR_POOL_FLAG_FREE_DESCRIPTOR_SETを使用して作成されたプールの場合、IDescriptorSet0が解放される時、割り当てられていたディスクリプタはプールに返還されます。
      *                   そうでない場合返還はされず、ResetPoolAndInvalidateAllocatedSets()を介してのみ割り当てカウントを減少させることができます。
      * @return 断片化、またはディスクリプタセットの割り当て回数の上限を超える場合、BMRESULT_FAILED以下を返します。
-     * @remark プールの作成時または最後にリセットされてからプールから割り当てられたすべてのセットが、(各タイプの)同じ数のディスクリプタを使用し、要求された割り当ても同じ数の(各タイプの)ディスクリプタを使用する場合、断片化によって割り当てが失敗することはありません。 
+     * @remark プールの作成時または最後にリセットされてからプールから割り当てられたすべてのセットが、(各タイプの)同じ数のディスクリプタを使用し、要求された割り当ても同じ数の(各タイプの)ディスクリプタを使用する場合、断片化によって割り当てが失敗することはありません。
      *         単一のルートシグネチャ専用でプールを作成する場合に有効です。
     */
     virtual BMRESULT
@@ -5409,14 +5409,14 @@ protected:
 public:
     /**
      * @brief このセットに対応するのシグネチャを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
-     * @return IRootSignature* 
+     * @return IRootSignature*
     */
     virtual IRootSignature*
         B3D_APIENTRY GetRootSignature() const = 0;
 
     /**
      * @brief 割り当て元のプールを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
-     * @return IDescriptorPool0* 
+     * @return IDescriptorPool0*
     */
     virtual IDescriptorPool0*
         B3D_APIENTRY GetPool() const = 0;
@@ -5446,7 +5446,7 @@ protected:
     B3D_APIENTRY ~IRootSignature() {}
 
 public:
-    virtual const ROOT_SIGNATURE_DESC& 
+    virtual const ROOT_SIGNATURE_DESC&
         B3D_APIENTRY GetDesc() const = 0;
 
     /**
@@ -5523,14 +5523,14 @@ protected:
 public:
     /**
      * @brief このセットに対応するディスクリプタセットレイアウトを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
-     * @return IRootSignature* 
+     * @return IRootSignature*
     */
     virtual IDescriptorSetLayout*
         B3D_APIENTRY GetDescriptorSetLayout() const = 0;
 
     /**
      * @brief 割り当て元のプールを取得します。 戻り値を保持して利用する場合、参照カウントの増加はアプリケーションの責任です。
-     * @return IDescriptorPool* 
+     * @return IDescriptorPool*
     */
     virtual IDescriptorPool*
         B3D_APIENTRY GetPool() const = 0;
@@ -5600,13 +5600,13 @@ protected:
     B3D_APIENTRY ~IPipelineLayout() {}
 
 public:
-    virtual const PIPELINE_LAYOUT_DESC& 
+    virtual const PIPELINE_LAYOUT_DESC&
         B3D_APIENTRY GetDesc() const = 0;
 
 };
 
 /**
- * @brief 
+ * @brief
 */
 B3D_INTERFACE IShaderModule : public IDeviceChild
 {
@@ -5631,7 +5631,7 @@ public:
         B3D_APIENTRY GetPipelineBindPoint() const = 0;
 
     /**
-     * @brief パイプラインキャッシュを取得します。 
+     * @brief パイプラインキャッシュを取得します。
      * @param[out] _dst キャッシュされたパイプラインのデータを保持するblobです。 取得された場合、参照カウントが増加することに注意してください。
      * @return 成功した場合BMRESULT_SUCCEEDが返ります。
     */
@@ -5707,7 +5707,7 @@ public:
         B3D_APIENTRY GetDesc() const = 0;
 
     /**
-     * @brief コマンドアロケーターをリセットします。 割り当てられた全てのコマンドリストは全て初期状態となり、再び記録を開始することが可能になります。 
+     * @brief コマンドアロケーターをリセットします。 割り当てられた全てのコマンドリストは全て初期状態となり、再び記録を開始することが可能になります。
      * @param _flags リセットで使用する追加のフラグを指定します。
      * @return リセットに成功した場合、BMRESULT_SUCCEEDが返ります。
      * @remark このアロケーターから割り当てられたどのコマンドリストも現在記録状態であってはなりません。
@@ -5737,18 +5737,18 @@ public:
     /**
      * @brief 記録されたコマンドをリセットし、初期状態にします。
      * @param _flags リセットで使用する追加のフラグを指定します。 このフラグは現在予約されています。
-     * @return リセットに成功した場合、BMRESULT_SUCCEEDが返ります。 
-     * @remark 現在の状態が記録、実行中であってはなりません。 
-     *         次の制約は暫定で必要ですが、廃止される可能性があります: リセットされる際にこのコマンドリストが使用するアロケータに関連付けられた他のすべてのコマンドリストは、現在記録状態であってはなりません。 
+     * @return リセットに成功した場合、BMRESULT_SUCCEEDが返ります。
+     * @remark 現在の状態が記録、実行中であってはなりません。
+     *         次の制約は暫定で必要ですが、廃止される可能性があります: リセットされる際にこのコマンドリストが使用するアロケータに関連付けられた他のすべてのコマンドリストは、現在記録状態であってはなりません。
     */
     virtual BMRESULT
         B3D_APIENTRY Reset(COMMAND_LIST_RESET_FLAGS _flags) = 0;
 
     /**
-     * @brief コマンドリストの記録を開始します。 記録状態に移行します。 
+     * @brief コマンドリストの記録を開始します。 記録状態に移行します。
      * @param _begin_desc コマンドリストの記録開始時に使用する情報を指定します。
-     * @return 記録開始に成功した場合、BMRESULT_SUCCEEDが返ります。 
-     * @remark このコマンドリストが使用するアロケータに関連付けられた他のすべてのコマンドリストは、現在記録状態であってはなりません。 
+     * @return 記録開始に成功した場合、BMRESULT_SUCCEEDが返ります。
+     * @remark このコマンドリストが使用するアロケータに関連付けられた他のすべてのコマンドリストは、現在記録状態であってはなりません。
      *         現在の状態が記録、実行中であってはなりません。
      *         RESET_COMMAND_BUFFER_BITフラグが設定されていないアロケータから割り当てられた場合、現在の状態は初期状態のみである必要があります。
     */
@@ -5756,8 +5756,8 @@ public:
         B3D_APIENTRY BeginRecord(const COMMAND_LIST_BEGIN_DESC& _begin_desc) = 0;
 
     /**
-     * @brief コマンドの記録を終了し、実行可能状態に移行します。 
-     * @return 記録終了に成功した場合、BMRESULT_SUCCEEDが返ります。 
+     * @brief コマンドの記録を終了し、実行可能状態に移行します。
+     * @return 記録終了に成功した場合、BMRESULT_SUCCEEDが返ります。
      * @remark 現在の状態は記録状態のみである必要があります。
     */
     virtual BMRESULT
@@ -5798,7 +5798,7 @@ public:
         B3D_APIENTRY BindDescriptorSets(
               PIPELINE_BIND_POINT               _bind_point
             , const CMD_BIND_DESCRIPTOR_SETS&   _args) = 0;
-    
+
     virtual void
         B3D_APIENTRY Push32BitConstants(
               PIPELINE_BIND_POINT               _bind_point
@@ -5823,7 +5823,7 @@ public:
             const CMD_BIND_VERTEX_BUFFER_VIEWS& _args) = 0;
 
     /**
-     * @brief 頂点バッファをIVertexBufferViewを介さずにバインドします。 
+     * @brief 頂点バッファをIVertexBufferViewを介さずにバインドします。
      *        頂点バッファはインラインで構築されるため、IVertexBufferViewバインドと比較して追加のコストが発生します。
      * @param _args 頂点バッファを構築するパラメータを指定します。
     */
@@ -5866,12 +5866,12 @@ public:
         B3D_APIENTRY SetDepthBias(
             const CMD_SET_DEPTH_BIAS& _args) = 0;
 
-    virtual void 
+    virtual void
         B3D_APIENTRY SetStencilCompareMask(
               STENCIL_FACE  _faces_to_set
             , uint32_t      _compare_mask) = 0;
 
-    virtual void 
+    virtual void
         B3D_APIENTRY SetStencilWriteMask(
               STENCIL_FACE  _faces_to_set
             , uint32_t      _write_mask) = 0;
@@ -5938,7 +5938,7 @@ public:
     virtual void
         B3D_APIENTRY CopyBufferToTexture(
             const CMD_COPY_BUFFER_TO_TEXTURE& _args) = 0;
-    
+
     virtual void
         B3D_APIENTRY CopyTextureToBuffer(
             const CMD_COPY_TEXTURE_TO_BUFFER& _args) = 0;
@@ -6037,13 +6037,13 @@ public:
     // virtual void
     //     B3D_APIENTRY BuildRaytracingAccelerationStructure(
     //         const BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC& _desc) = 0;
-    // 
+    //
     // virtual void
     //     B3D_APIENTRY CopyRaytracingAccelerationStructure(
     //           GpuVirtualAddress                           _dest_acceleration_structure_data
     //         , GpuVirtualAddress                           _source_acceleration_structure_data
     //         , RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE _mode) = 0;
-    // 
+    //
     // virtual void
     //     B3D_APIENTRY DispatchRays(
     //         const DISPATCH_RAYS_DESC& _desc) = 0;
@@ -6060,9 +6060,9 @@ protected:
 public:
     virtual const FENCE_DESC&
         B3D_APIENTRY GetDesc() const = 0;
-    
+
     /**
-     * @brief フェンスをリセット、またはFENCE_DESCの値で再作成します。 
+     * @brief フェンスをリセット、またはFENCE_DESCの値で再作成します。
      * @return リセットに成功した場合、BMRESULT_SUCCEEDが返ります。
      * @remark FENCE_TYPE_BINARY_GPU_TO_CPUフェンスの場合、シグナルの再送信前にこの関数を呼び出してリセットする必要があります。
      *         それ以外の場合、フェンスはFENCE_DESCのパラメータに基づいて再作成されます。
@@ -6086,7 +6086,7 @@ public:
      * @brief 指定のシグナル値に達するまで、またはシグナルされるまで待機します。FENCE_TYPE_BINARY_GPU_TO_GPUの場合この関数呼び出しは無効です。
      * @param _value 待機するシグナル値。FENCE_TYPE_BINARY_GPU_TO_CPUの場合この値は使用されません。
      * @param _timeout_millisec 待機継続するミリ秒単位の時間。ゼロを指定すると呼び出し時点での状態を即時に返します。
-     * @return _timeout_millisec時間内に_valueの値が完了した場合BMRESULT_SUCCEEDが返ります。時間内に完了しなかった場合、BMRESULT_SUCCEED_TIMEOUTが返ります。 
+     * @return _timeout_millisec時間内に_valueの値が完了した場合BMRESULT_SUCCEEDが返ります。時間内に完了しなかった場合、BMRESULT_SUCCEED_TIMEOUTが返ります。
      *         FENCE_TYPE_BINARY_GPU_TO_CPUの場合、時間内にシグナルされた場合BMRESULT_SUCCEED、それ以外の場合BMRESULT_SUCCEED_TIMEOUTが返ります。
      *         どちらの場合でも、_timeout_millisecにゼロが指定されており、現在シグナルされていない場合、BMRESULT_SUCCEED_NOT_READYが返ります。
      * @remark デバイスが削除された場合、BMRESULT_FAILED_DEVICE_REMOVEDが返ります。
@@ -6119,7 +6119,7 @@ public:
 
 };
 
-// TODO: ICommandSignature 
+// TODO: ICommandSignature
 B3D_INTERFACE ICommandSignature : public IDeviceChild
 {
 protected:
@@ -6131,7 +6131,7 @@ public:
 
 };
 
-// TODO: IAccelerationStructure 
+// TODO: IAccelerationStructure
 B3D_INTERFACE IAccelerationStructure : public IDeviceChild
 {
 protected:
