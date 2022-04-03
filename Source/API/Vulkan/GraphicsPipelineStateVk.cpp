@@ -548,7 +548,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyMultisampleState(DESC_DATA* _dd, const
 
     auto num_sample_masks = hlp::DivideByMultiple(_multisample_state.rasterization_samples, 32/*per SampleMask*/);
     multisample_state.sample_masks.resize(num_sample_masks, MULTISAMPLE_STATE_DESC_DATA::DEFAULT_SAMPLE_MASK);
-    if (_multisample_state.sample_masks == nullptr)
+    if (_multisample_state.sample_masks)
         util::MemCopyArray(multisample_state.sample_masks.data(), _multisample_state.sample_masks, num_sample_masks);
 
     if (_multisample_state.sample_position_state.is_enabled)

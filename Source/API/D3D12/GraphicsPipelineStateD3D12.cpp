@@ -756,7 +756,7 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CopyMultisampleState(DESC_DATA* _dd, co
 
     auto num_sample_masks = hlp::DivideByMultiple(_multisample_state.rasterization_samples, 32/*per SampleMask*/);
     multisample_state.sample_masks.resize(num_sample_masks, MULTISAMPLE_STATE_DESC_DATA::DEFAULT_SAMPLE_MASK);
-    if (_multisample_state.sample_masks == nullptr)
+    if (_multisample_state.sample_masks)
         util::MemCopyArray(multisample_state.sample_masks.data(), _multisample_state.sample_masks, num_sample_masks);
 
     if (_multisample_state.sample_position_state.is_enabled)
@@ -1104,7 +1104,9 @@ B3D_APIENTRY GraphicsPipelineStateD3D12::CreateGraphicsD3D12PipelineState()
         // QualityLevel = 0の振る舞いがQualityLevel = D3D11_STANDARD_MULTISAMPLE_PATTERNと同じように振る舞う可能性があります。https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#19.2.3%20Optional%20Multisample%20Support
         SampleDesc.Quality = 0; // SampleDesc.Count > 1 ? DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN : 0;
 
-        stream.SampleMask = desc.multisample_state->sample_masks[0];
+        stream.SampleMask = desc.multisample_state->sample_masks
+            ? desc.multisample_state->sample_masks[0]
+            : buma3d::B3D_DEFAULT_SAMPLE_MASK[0];
     }
 
     // CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER;
