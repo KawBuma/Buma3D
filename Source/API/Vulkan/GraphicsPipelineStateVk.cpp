@@ -588,7 +588,7 @@ B3D_APIENTRY GraphicsPipelineStateVk::CopyBlendState(DESC_DATA* _dd, const GRAPH
         blend_state.attachments.resize(_blend_state.num_attachments);
         util::MemCopyArray(blend_state.attachments.data(), _blend_state.attachments, _blend_state.num_attachments);
     }
-    else
+    else if (_blend_state.num_attachments != 0)
     {
         blend_state.attachments.resize(1);
         util::MemCopyArray(blend_state.attachments.data(), _blend_state.attachments, 1);
