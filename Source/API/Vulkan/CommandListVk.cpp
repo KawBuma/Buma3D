@@ -459,13 +459,14 @@ B3D_APIENTRY CommandListVk::BindDescriptorSets(PIPELINE_BIND_POINT _bind_point, 
     if (_args.num_descriptor_sets > (uint32_t)d.descriptor_sets.size())
         d.descriptor_sets.resize(_args.num_descriptor_sets);
 
-    uint32_t cnt = 0;
-    for (auto& i : d.descriptor_sets)
-        i = _args.descriptor_sets[cnt++]->As<DescriptorSetVk>()->GetVkDescriptorSet();
+    auto descriptor_sets_data = d.descriptor_sets.data();
+
+    for (uint32_t i = 0; i < _args.num_descriptor_sets; i++)
+        descriptor_sets_data[i] = _args.descriptor_sets[i]->As<DescriptorSetVk>()->GetVkDescriptorSet();
 
     vkCmdBindDescriptorSets(command_buffer, util::GetNativePipelineBindPoint(_bind_point), cmd_states->pipeline.pipeline_layouts[_bind_point]
                             , _args.first_set
-                            , _args.num_descriptor_sets           , d.descriptor_sets.data()
+                            , _args.num_descriptor_sets           , descriptor_sets_data
                             , _args.num_dynamic_descriptor_offsets, _args.dynamic_descriptor_offsets);
 }
 
