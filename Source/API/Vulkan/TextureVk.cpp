@@ -317,7 +317,7 @@ BMRESULT
 B3D_APIENTRY TextureVk::PrepareCreateInfo(const RESOURCE_DESC& _desc, VkImageCreateInfo* _dst_ci)
 {
     auto&& t = _desc.texture;
-    _dst_ci->flags         = util::GetNativeTextureCreateFlags(_desc.flags, t.flags);
+    _dst_ci->flags         = util::GetNativeTextureCreateFlags(_desc);
     _dst_ci->imageType     = util::GetNativeResourceDimension (_desc.dimension);
     _dst_ci->format        = util::GetNativeFormat            (_desc.texture.format_desc.format);
     _dst_ci->extent.width  = t.extent.width;

@@ -226,8 +226,12 @@ inline VkBufferUsageFlags GetNativeBufferUsageFlags(BUFFER_USAGE_FLAGS _usage_fl
     return result;
 }
 
-inline VkImageCreateFlags GetNativeTextureCreateFlags(RESOURCE_FLAGS _flags, TEXTURE_CREATE_FLAGS _create_flags)
+inline VkImageCreateFlags GetNativeTextureCreateFlags(const buma3d::RESOURCE_DESC& _desc)
 {
+    auto&& _flags        = _desc.flags;
+    auto&& _create_flags = _desc.texture.flags;
+    auto&& _format_desc  = _desc.texture.format_desc;
+
     VkImageCreateFlags result = 0;
     if (_flags & RESOURCE_FLAG_PROTECTED)
         result |= VK_IMAGE_CREATE_PROTECTED_BIT;
@@ -252,6 +256,9 @@ inline VkImageCreateFlags GetNativeTextureCreateFlags(RESOURCE_FLAGS _flags, TEX
 
     //if (_create_flags & TEXTURE_CREATE_FLAG_SPLIT_INSTANCE_BIND_REGIONS)
     // result |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
+
+    if (util::IsTypelessFormat(_format_desc.format))
+        result |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
     return result;
 }

@@ -38,6 +38,9 @@ bool IsSintFormat(RESOURCE_FORMAT _format);
 bool IsUintFormat(RESOURCE_FORMAT _format);
 bool IsSrgbFormat(RESOURCE_FORMAT _format);
 
+RESOURCE_FORMAT GetSrgbFormat(buma3d::RESOURCE_FORMAT _non_srgb_format);
+RESOURCE_FORMAT RemoveSrgbFormat(buma3d::RESOURCE_FORMAT _format);
+
 
 #pragma region implementation
 

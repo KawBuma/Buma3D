@@ -4,6 +4,28 @@
 namespace buma3d
 {
 
+namespace /*anonymous*/
+{
+
+VkSwapchainCreateFlagsKHR ConvertToSwapchainCreateFlags(const buma3d::SWAP_CHAIN_DESC& _desc)
+{
+    VkSwapchainCreateFlagsKHR result = 0x0;
+    
+    //if (_desc.num_present_queues > 1)
+    //    result |= VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR;
+
+    if (_desc.flags & buma3d::SWAP_CHAIN_FLAG_PROTECT_CONTENTS)
+        result |= VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR;
+
+    if (util::IsTypelessFormat(_desc.buffer.format_desc.format))
+        result |= VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR;
+
+    return result;
+}
+
+} // namespace /*anonymous*/
+
+
 B3D_APIENTRY SwapChainVk::SwapChainVk()
     : ref_count             { 1 }
     , name                  {}
@@ -276,7 +298,7 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
 
     auto vksurface = surface->GetVkSurface();
     auto&& sd = surface->GetSurfaceData();
-    _ci->flags              = /*desc.num_present_queues > 1 ? VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR : 0*/0;
+    _ci->flags              = ConvertToSwapchainCreateFlags(desc);
     _ci->surface            = vksurface;
     _ci->minImageCount      = _desc.buffer.count;
     _ci->imageFormat        = util::GetNativeFormat(_desc.buffer.format_desc.format);
@@ -348,11 +370,8 @@ B3D_APIENTRY SwapChainVk::CreateVkSwapchain(const SWAP_CHAIN_DESC& _desc, VkSwap
 
     // バックバッファでマルチプラナーフォーマットを扱う際にそのフォーマットをリストする構造体。
     VkImageFormatListCreateInfo iflist_ci { VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO };
-    if (false)
-    {
-
-        last_pnext = util::ConnectPNextChains(last_pnext, iflist_ci);
-    }
+    util::SharedPtr<util::DyArray<VkFormat>> view_formats;
+    B3D_RET_IF_FAILED(PrepareFormatListCI(last_pnext, *_ci, &iflist_ci, &view_formats));
 
     // 表面に関連付けられたディスプレイで垂直ブランキング期間が発生するたびに1ずつ増分するカウンターを指定します。
     VkSwapchainCounterCreateInfoEXT counter_ci_ext { VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT };

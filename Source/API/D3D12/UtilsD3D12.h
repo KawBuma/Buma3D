@@ -369,6 +369,21 @@ inline void GetNativeResourceDesc(const RESOURCE_DESC& _desc, D3D12_RESOURCE_DES
             // DSVとSRVの両方を作成するために必要です: https://docs.microsoft.com/en-us/windows/win32/direct3d11/d3d10-graphics-programming-guide-depth-stencil
             _result->Format = GetNativeDepthStencilTypelessFormat(_desc.texture.format_desc.format);
         }
+        else if (_desc.texture.format_desc.num_mutable_formats == 2 && IsTypelessFormat(_desc.texture.format_desc.format))
+        {
+            // D3D12では、SRGBフォーマットはTYPELESSの制限を受けることなく異なるフォーマットのViewを作成可能であるため、
+            // スワップチェイン作成時にSRGBフォーマットを使用してバックバッファを作成できなくなっています。
+            // (Vulkan API ではVK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHRを指定して、SRGBまたは非SRGBフォーマットで作成し、それぞれのImageViewを作成できます)
+
+            // TODO: 現在の条件を明文化、または見直す
+            // SRGBと非SRGBフォーマットのみがmutable_formatsに指定されていた場合、非SRGBフォーマットとして作成します。
+            auto f0 = RemoveSrgbFormat(_desc.texture.format_desc.mutable_formats[0]);
+            auto f1 = RemoveSrgbFormat(_desc.texture.format_desc.mutable_formats[1]);
+            if (f0 == f1)
+                _result->Format = GetNativeFormat(f0);
+            else
+                _result->Format = GetNativeFormat(_desc.texture.format_desc.format);
+        }
         else
         {
             _result->Format = GetNativeFormat(_desc.texture.format_desc.format);
