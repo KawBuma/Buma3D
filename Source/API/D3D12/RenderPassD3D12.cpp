@@ -232,16 +232,18 @@ RenderPassD3D12::FindAttachment(uint32_t _attachment_index, uint32_t _num_attach
     if (_num_attachments == 0 || _attachments == nullptr)
         return nullptr;
 
-    return std::find_if(_attachments, _attachments + _num_attachments, [_attachment_index](const ATTACHMENT_REFERENCE& _at) {
+    auto end  = _attachments + _num_attachments;
+    auto find = std::find_if(_attachments, end, [_attachment_index](const ATTACHMENT_REFERENCE& _at) {
         return _at.attachment_index == _attachment_index;
     });
+    return find != end ? find : nullptr;
 }
 
 const ATTACHMENT_REFERENCE*
 RenderPassD3D12::GetAttachmentRef(uint32_t _attachment_index, uint32_t _current_subpass_index)
 {
     if (_attachment_index == B3D_UNUSED_ATTACHMENT)
-        return false;
+        return nullptr;
 
     // TODO: アタッチメント エイリアスの考慮
     auto&& subpasses = desc.subpasses[_current_subpass_index];
@@ -472,7 +474,7 @@ B3D_APIENTRY RenderPassD3D12::PrepareUnusedAttachmentBarriers()
             barrier.is_stnecil = true;
             barrier.state_before = util::GetNativeResourceState(attachment.stencil_begin_state);
             barrier.state_after  = util::GetNativeResourceState(attachment.stencil_end_state);
-        
+
             if (barrier.state_before != barrier.state_after)
                 subpass_workloads.back().final_barriers.emplace_back(barrier);
         }
