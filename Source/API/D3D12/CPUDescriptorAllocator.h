@@ -58,7 +58,7 @@ public:
     {
     }
 
-    ~CPUDescriptorAllocator() 
+    ~CPUDescriptorAllocator()
     {
         for (auto& i : entries)
             B3DSafeDelete(i);
@@ -69,7 +69,7 @@ public:
 
     [[nodiscard]] CPU_DESCRIPTOR_ALLOCATION Allocate(size_t _num_descriptors = 1)
     {
-        B3D_ASSERT(_num_descriptors <= (size_t)DEFAULT_NUM_DESCRIPTORS);
+        B3D_ASSERT(_num_descriptors <= (size_t)dh_desc.NumDescriptors);
         std::lock_guard lock(allocation_mutex);
 
         auto size = dh_increment_size * _num_descriptors;
