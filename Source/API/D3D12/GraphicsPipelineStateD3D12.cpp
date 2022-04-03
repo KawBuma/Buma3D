@@ -2,7 +2,6 @@
 #include "GraphicsPipelineStateD3D12.h"
 
 // TODO: GraphicsPipelineStateD3D12: リファクタリング
-// TODO: サンプル位置、深度境界テスト、ブレンド係数等のパラメーターと、それらの動的ステート
 // TODO: 指定されたシェーダーステージに応じたSTATE_DESCが設定されているかどうかをチェックします。
 
 namespace buma3d
