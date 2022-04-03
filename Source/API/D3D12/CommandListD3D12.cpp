@@ -1224,7 +1224,7 @@ B3D_APIENTRY CommandListD3D12::LoadOperations()
 {
     auto&& rp = cmd_states->render_pass;
     static const CLEAR_VALUE DEFAULT_CLEAR = {};
-    
+
     auto attachment_operators_data = rp.framebuffer->GetAttachmentOperators().data();
     for (auto& load_op : rp.workloads->load_ops)
     {
@@ -1318,7 +1318,7 @@ void
 B3D_APIENTRY CommandListD3D12::StoreOperations()
 {
     auto&& rp = cmd_states->render_pass;
-    
+
     auto attachment_operators_data = rp.framebuffer->GetAttachmentOperators().data();
     for (auto& store_op : rp.workloads->store_ops)
     {
@@ -1549,7 +1549,7 @@ void
 B3D_APIENTRY CommandListD3D12::DrawIndexed(const DRAW_INDEXED_ARGUMENTS& _args)
 {
     B3D_ASSERT(cmd_states->render_pass.is_render_pass_scope && __FUNCTION__"はレンダーパススコープ内でのみ呼び出す必要があります。");
-    cmd.l->DrawIndexedInstanced(_args.index_count_per_instance, _args.instance_count, _args.start_index_location, _args.base_vertex_location, _args.start_index_location);
+    cmd.l->DrawIndexedInstanced(_args.index_count_per_instance, _args.instance_count, _args.start_index_location, _args.base_vertex_location, _args.start_instance_location);
 }
 
 void
