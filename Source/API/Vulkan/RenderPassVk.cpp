@@ -222,7 +222,7 @@ B3D_APIENTRY RenderPassVk::PrepareCreateInfo(VkRenderPassCreateInfo2* _ci, DESC_
         {
             _arvk.aspectMask = util::GetNativeAspectFlags(_ar.input_attachment_aspect_mask);
             _arvk.attachment = _ar.attachment_index;
-            _arvk.layout     = util::GetNativeResourceStateForLayout(_ar.state_at_pass);
+            _arvk.layout     = util::GetNativeResourceStateForLayout(_ar.state_at_pass, _ar.input_attachment_aspect_mask);
         };
 
         auto SetReferences = [&](const ATTACHMENT_REFERENCE& _ar, VkAttachmentReference2& _arvk)
